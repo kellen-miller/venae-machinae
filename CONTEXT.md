@@ -72,6 +72,18 @@ One independently connectable terminal or pin. It records permitted electrical
 roles, while actual direction belongs to an Operating State.
 _Avoid_: Connector, device function
 
+**Ground Point**:
+A project-specific physical attachment to chassis, body, or engine return
+structure, represented as a Component with Electrical Ports and interface
+evidence. Its symbol implies neither global continuity nor zero resistance.
+_Avoid_: Ground symbol, implicit ground, zero-ohm return
+
+**Connector**:
+A Component whose Electrical Ports are organized as mechanically keyed
+cavities for bulk mating and termination. An integral device receptacle stays
+part of its device Component rather than becoming a separate Connector.
+_Avoid_: Electrical Port, terminal, Mate
+
 **Fluid Port**:
 One independently connectable fluid opening. It records permitted inlet,
 outlet, or bidirectional use, while actual flow belongs to an Operating State.
