@@ -1,2 +1,3 @@
-# project-car-systems
-Hobbyist project-car wiring and fluid-system design
+# Venae Machinae
+
+Design automotive wiring and fluid systems without CAD overhead.
