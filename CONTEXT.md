@@ -293,15 +293,105 @@ Component Behavior under stated conditions. It is reusable evidence, not an
 actual operating point.
 _Avoid_: Operating State, Boundary Condition, Calculation Result
 
+**Assumption**:
+An explicitly authored Engineering Value or State Binding used for a stated
+subject, scope, and applicability without treating it as direct evidence.
+_Avoid_: Default, inferred fact, hidden input
+
 **Calculation Result**:
 An Engineering Value produced by an identified formula from referenced inputs
 within an explicit applicability envelope.
 _Avoid_: Source value, hidden formula
 
+**Margin**:
+A Calculation Result expressing the directed distance between an explicit
+value or bounded result and one sourced or user-entered limit.
+_Avoid_: Safety factor, pass verdict, confidence
+
+**Caution Band**:
+An explicit sourced or user-entered interval adjacent to a limit within which
+a Margin warrants review without implying failure or danger.
+_Avoid_: Hidden buffer, universal safety margin, default tolerance
+
 **Screening Result**:
 An assessment comparing an explicit candidate against sourced limits without
 claiming final suitability.
 _Avoid_: Selection, certification
+
+**Screen Outcome**:
+The pass, fail, indeterminate, unevaluated, or not-applicable result of one
+explicit comparison within a Screening Result.
+_Avoid_: Candidate suitability, safety verdict, aggregate status
+
+**Result Completeness**:
+The complete-for-stated-model, known-subtotal, unknown, or unsupported scope of
+a Calculation Result, independent of evaluator success or failure.
+_Avoid_: Accuracy, confidence, safety rating
+
+**Unknown**:
+An explicit unresolved conclusion whose recorded reason identifies missing,
+conflicting, ambiguous, unsupported, unevaluated, stale, or unobservable input.
+_Avoid_: Zero, false, blank, compatible
+
+**Finding**:
+A derived, subject-linked assessment of topology, evidence, or results with
+independent kind, severity, evaluation state, and lifecycle state.
+_Avoid_: Engineering Value, universal verdict, unqualified warning
+
+**Finding Trace**:
+The complete relationship from a Finding through its Validation Rule, subject,
+inputs, evidence, assumptions, and derived results.
+_Avoid_: Warning message, opaque explanation, detached log
+
+**Validation Rule**:
+A versioned, explicit assessment applied to identified project subjects and
+evidence within a stated scope to produce Findings.
+_Avoid_: Hidden heuristic, certification requirement, safety rule
+
+**Finding Severity**:
+The scoped actionability of a Finding: blocker, warning, caution, or
+information. It is neither failure probability nor a safety rating.
+_Avoid_: Risk score, confidence, project health
+
+**Finding Lifecycle**:
+The derived active or resolved state of a Finding under current evidence and
+the applicable Validation Rule.
+_Avoid_: Acknowledgement, dismissal, suppression
+
+**Finding Occurrence**:
+One active-to-resolved interval within a persistent Finding identity for the
+same Validation Rule, subject, and scope.
+_Avoid_: New Finding, audit event, user disposition
+
+**Finding Disposition**:
+The user's unreviewed, acknowledged, or suppressed treatment of a Finding,
+which does not change its severity, evidence, or lifecycle.
+_Avoid_: Resolution, waiver, safety acceptance
+
+**Validation Run**:
+An evaluation of identified Validation Rules against one project revision and
+scope, retaining both Findings and evaluation coverage.
+_Avoid_: Certification, safety audit, completeness claim
+
+**Validation Report**:
+A derived record of one Validation Run's scope, coverage, Findings, filters,
+and rule revisions for one project revision.
+_Avoid_: Project Snapshot, certification, safety report
+
+**Review Profile**:
+A versioned selection of Validation Rules and completeness expectations for a
+named review purpose without producing a readiness or safety verdict.
+_Avoid_: Certification checklist, project phase, health score
+
+**Validation Coverage**:
+The accounting of applicable, evaluated, stale, unsupported, failed, and
+excluded rules and subjects within one Validation Run.
+_Avoid_: Completeness score, safety score, pass percentage
+
+**Applicability Decision**:
+An evidenced determination that a rule-declared condition does not apply to an
+identified subject and scope.
+_Avoid_: Suppression, Unknown, severity override
 
 **Provenance**:
 The source identity, revision, location, applicability, and observation context
