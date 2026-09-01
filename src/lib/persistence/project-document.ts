@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { validateElectricalModel } from '../electrical/electrical';
 import { validateTopology } from '../topology/topology';
 import { APPLICATION_VERSIONS } from '../version/version-registry';
 
@@ -48,7 +49,7 @@ const connectionSchema = z.strictObject({
   targetPortId: identity,
   domain,
   mediumId: identity.nullable(),
-  kind: z.enum(['electrical-wire', 'fluid-hose', 'fluid-tube', 'fluid-pipe']),
+  kind: z.enum(['electrical-wire', 'electrical-mate', 'fluid-hose', 'fluid-tube', 'fluid-pipe']),
   interfaceAssessment: z.enum(['compatible', 'incompatible', 'unknown']),
   routeId: identity.nullable()
 });
@@ -100,6 +101,153 @@ const tombstoneSchema = z.strictObject({
   successorId: identity
 });
 
+const electricalLengthSchema = z.strictObject({
+  decimal: decimalString,
+  unit: z.enum(['mm', 'cm', 'm', 'in', 'ft']),
+  source: z.enum(['estimated', 'measured', 'entered', 'sourced']),
+  provenance: z.string().min(1)
+});
+
+const electricalPropertySchema = z.strictObject({
+  state: z.enum(['known', 'unknown', 'conflicting']),
+  value: z.string().nullable(),
+  unit: z.string().nullable(),
+  provenance: z.string().nullable(),
+  conflictValues: z.array(z.string())
+});
+
+const electricalModelSchema = z.strictObject({
+  components: z.array(
+    z.strictObject({
+      componentId: identity,
+      role: z.enum([
+        'source',
+        'ground',
+        'fuse',
+        'relay',
+        'switch',
+        'load',
+        'controller',
+        'connector',
+        'splice',
+        'bus'
+      ])
+    })
+  ),
+  wires: z.array(
+    z.strictObject({
+      connectionId: identity,
+      partDefinitionId: identity.nullable(),
+      role: z.enum(['power', 'return', 'analog', 'discrete', 'pwm', 'data']),
+      protocol: z.string().min(1).nullable(),
+      routeLength: electricalLengthSchema.nullable(),
+      cutLength: electricalLengthSchema.nullable(),
+      serviceAllowance: electricalLengthSchema.nullable(),
+      environment: z.string()
+    })
+  ),
+  circuits: z.array(
+    z.strictObject({
+      id: identity,
+      label: z.string().min(1).max(160),
+      systemId: identity,
+      connectionIds: z.array(identity),
+      componentIds: z.array(identity),
+      protectionComponentIds: z.array(identity)
+    })
+  ),
+  connectors: z.array(
+    z.strictObject({
+      componentId: identity,
+      cavities: z.array(
+        z.strictObject({
+          portId: identity,
+          cavityName: z.string().min(1).max(160),
+          pinMapping: z.string().nullable(),
+          mateConnectionId: identity.nullable(),
+          wireConnectionId: identity.nullable(),
+          terminalPartDefinitionId: identity.nullable(),
+          sealPartDefinitionId: identity.nullable(),
+          plugPartDefinitionId: identity.nullable(),
+          unusedRequirement: z.enum([
+            'occupied',
+            'cavity-plug-required',
+            'seal-required',
+            'open-allowed'
+          ])
+        })
+      )
+    })
+  ),
+  harnesses: z.array(
+    z.strictObject({
+      id: identity,
+      label: z.string().min(1).max(160),
+      componentIds: z.array(identity),
+      wireConnectionIds: z.array(identity)
+    })
+  ),
+  bundles: z.array(
+    z.strictObject({
+      id: identity,
+      harnessId: identity,
+      label: z.string().min(1).max(160),
+      wireConnectionIds: z.array(identity),
+      segmentIds: z.array(identity),
+      transitions: z.array(
+        z.strictObject({ segmentId: identity, kind: z.enum(['split', 'join']) })
+      ),
+      coverings: z.array(
+        z.strictObject({
+          segmentId: identity,
+          description: z.string().min(1),
+          partDefinitionId: identity.nullable()
+        })
+      ),
+      twistedPairs: z.array(
+        z.strictObject({
+          id: identity,
+          wireConnectionIds: z.tuple([identity, identity]),
+          shield: z.string().nullable(),
+          drainWireConnectionId: identity.nullable(),
+          cutLengthAllowance: electricalLengthSchema.nullable(),
+          notes: z.string()
+        })
+      ),
+      concentric: z
+        .strictObject({
+          layers: z.array(
+            z.strictObject({
+              order: z.number().int().positive(),
+              wireConnectionIds: z.array(identity)
+            })
+          ),
+          pitch: electricalLengthSchema.nullable(),
+          layDirection: z.enum(['left', 'right']),
+          cutLengthAllowance: electricalLengthSchema.nullable(),
+          notes: z.string()
+        })
+        .nullable(),
+      notes: z.string()
+    })
+  ),
+  cableSpecifications: z.array(
+    z.strictObject({
+      partDefinitionId: identity,
+      conductorAreaOrGauge: electricalPropertySchema,
+      material: electricalPropertySchema,
+      strandConstruction: electricalPropertySchema,
+      insulation: electricalPropertySchema,
+      color: electricalPropertySchema,
+      stripe: electricalPropertySchema,
+      minimumTemperature: electricalPropertySchema,
+      maximumTemperature: electricalPropertySchema,
+      resistancePerLength: electricalPropertySchema,
+      applicableCurrentData: electricalPropertySchema
+    })
+  )
+});
+
 export const projectDocumentSchema = z.strictObject({
   schemaVersion: z.literal(APPLICATION_VERSIONS.projectDocumentSchema),
   project: z.strictObject({
@@ -115,6 +263,7 @@ export const projectDocumentSchema = z.strictObject({
     routes: z.array(routeSchema),
     segments: z.array(routeSegmentSchema)
   }),
+  electrical: electricalModelSchema,
   partDefinitions: z.array(partDefinitionSchema),
   partRequirements: z.array(partRequirementSchema),
   evidence: z.array(evidenceSchema),
@@ -165,6 +314,7 @@ export function projectSnapshotToDocument(snapshot: ProjectSnapshot): ProjectDoc
       createdAt: snapshot.createdAt
     },
     topology: snapshot.topology,
+    electrical: snapshot.electrical,
     partDefinitions: snapshot.partDefinitions,
     partRequirements: snapshot.partRequirements,
     evidence: snapshot.evidence,
@@ -186,6 +336,7 @@ export function projectDocumentToSnapshot(document: ProjectDocument): ProjectSna
     revision: parsed.project.revision,
     createdAt: parsed.project.createdAt,
     topology: parsed.topology,
+    electrical: parsed.electrical,
     partDefinitions: parsed.partDefinitions,
     partRequirements: parsed.partRequirements,
     evidence: parsed.evidence,
@@ -199,5 +350,15 @@ export function projectDocumentToSnapshot(document: ProjectDocument): ProjectSna
   };
   const rejection = validateTopology(snapshot.topology);
   if (rejection) throw new Error(`Persisted Project topology is invalid: ${rejection.message}`);
+  const electricalRejection = validateElectricalModel(
+    snapshot.topology,
+    snapshot.partDefinitions,
+    snapshot.electrical
+  );
+  if (electricalRejection) {
+    throw new Error(
+      `Persisted Project electrical model is invalid: ${electricalRejection.message}`
+    );
+  }
   return snapshot;
 }

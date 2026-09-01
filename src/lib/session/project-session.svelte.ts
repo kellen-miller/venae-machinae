@@ -152,8 +152,8 @@ export function createProjectSession(dependencies: {
     status: 'idle',
     sourceRevision: null
   });
-  let undoFrames: readonly UndoFrame[] = [];
-  let redoFrames: readonly UndoFrame[] = [];
+  let undoFrames = $state.raw<readonly UndoFrame[]>([]);
+  let redoFrames = $state.raw<readonly UndoFrame[]>([]);
   let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
   let savePromise: Promise<SaveOutcome> | null = null;
   let closed = false;

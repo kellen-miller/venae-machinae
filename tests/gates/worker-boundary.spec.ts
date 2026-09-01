@@ -35,7 +35,7 @@ function createInitialization(
     inputFingerprint: fingerprint,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 3,
+    schemaVersion: 4,
     project
   };
 }
@@ -147,7 +147,7 @@ describe('MVP-GATE-005 worker boundary', () => {
       inputFingerprint: fingerprintTwo,
       formulaCatalogVersion: 1,
       validationRuleCatalogVersion: 1,
-      schemaVersion: 3,
+      schemaVersion: 4,
       changeSet: {
         baseRevision: 1,
         upsertComponents: [],
@@ -201,7 +201,7 @@ describe('MVP-GATE-005 worker boundary', () => {
       inputFingerprint: fingerprintOne,
       formulaCatalogVersion: 1,
       validationRuleCatalogVersion: 1,
-      schemaVersion: 3
+      schemaVersion: 4
     });
     expect(harness.workers[0]?.sent.map((message) => message.requestId)).toEqual([
       'first',

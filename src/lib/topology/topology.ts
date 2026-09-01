@@ -1,6 +1,7 @@
 export type SubjectId = string;
 export type EngineeringDomain = 'electrical' | 'fluid';
-export type ConnectionKind = 'electrical-wire' | 'fluid-hose' | 'fluid-tube' | 'fluid-pipe';
+export type ConnectionKind =
+  'electrical-wire' | 'electrical-mate' | 'fluid-hose' | 'fluid-tube' | 'fluid-pipe';
 export type InterfaceAssessment = 'compatible' | 'incompatible' | 'unknown';
 
 export type Point = Readonly<{
@@ -167,7 +168,7 @@ export function validateTopology(topology: Topology): TopologyRejection | null {
     }
   }
 
-  const occupiedPorts = new Set<SubjectId>();
+  const occupiedPorts = new Map<SubjectId, Set<'wire' | 'mate' | 'fluid'>>();
   for (const connection of topology.connections) {
     const system = topology.systems.find((candidate) => candidate.id === connection.systemId);
     const source = findPort(topology, connection.sourcePortId);
@@ -219,18 +220,36 @@ export function validateTopology(topology: Topology): TopologyRejection | null {
       };
     }
     if (
-      (connection.domain === 'electrical' && connection.kind !== 'electrical-wire') ||
-      (connection.domain === 'fluid' && connection.kind === 'electrical-wire')
+      (connection.domain === 'electrical' &&
+        connection.kind !== 'electrical-wire' &&
+        connection.kind !== 'electrical-mate') ||
+      (connection.domain === 'fluid' &&
+        (connection.kind === 'electrical-wire' || connection.kind === 'electrical-mate'))
     ) {
       return {
         code: 'invalid-connection-kind',
         message: `Connection ${connection.id} has a kind inconsistent with its domain`
       };
     }
-    if (occupiedPorts.has(connection.sourcePortId) || occupiedPorts.has(connection.targetPortId)) {
+    const occupancy =
+      connection.kind === 'electrical-wire'
+        ? 'wire'
+        : connection.kind === 'electrical-mate'
+          ? 'mate'
+          : 'fluid';
+    if (
+      occupiedPorts.get(connection.sourcePortId)?.has(occupancy) ||
+      occupiedPorts.get(connection.targetPortId)?.has(occupancy)
+    ) {
       return {
         code: 'port-already-connected',
-        message: `Connection ${connection.id} reuses an occupied Port; add an explicit Junction`
+        message: `Connection ${connection.id} reuses an occupied Port for the same connection role; add an explicit Junction`
+      };
+    }
+    if (connection.kind === 'electrical-mate' && connection.routeId !== null) {
+      return {
+        code: 'invalid-reference',
+        message: `Electrical Mate ${connection.id} cannot reference a Route`
       };
     }
     if (
@@ -243,8 +262,11 @@ export function validateTopology(topology: Topology): TopologyRejection | null {
       };
     }
 
-    occupiedPorts.add(connection.sourcePortId);
-    occupiedPorts.add(connection.targetPortId);
+    for (const portId of [connection.sourcePortId, connection.targetPortId]) {
+      const uses = occupiedPorts.get(portId) ?? new Set();
+      uses.add(occupancy);
+      occupiedPorts.set(portId, uses);
+    }
   }
 
   for (const route of topology.routes) {

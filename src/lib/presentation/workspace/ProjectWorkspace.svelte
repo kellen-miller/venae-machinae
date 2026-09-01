@@ -17,7 +17,8 @@
 
   import type { RendererIntent } from '../../renderer/intent';
   import type { RendererPoint } from '../../renderer/projection';
-  import type { ProjectAction } from '../../project/action';
+  import type { ElectricalComponentRole } from '../../electrical/electrical';
+  import type { ImpactPreview, ProjectAction } from '../../project/action';
   import type { VehicleBackground } from '../../project/project';
   import type { ProjectAsset } from '../../session/session-backing';
   import type { ProjectSession } from '../../session/project-session.svelte';
@@ -34,6 +35,11 @@
   const presentation = new WorkspacePresentation();
   let previewSourcePortId = $state<string | null>(null);
   let interactionStatus = $state('Canvas and dense projections share one Project revision.');
+  let pendingBranchAction = $state<Extract<
+    ProjectAction,
+    { type: 'insert-electrical-branch' }
+  > | null>(null);
+  let branchPreview = $state<ImpactPreview | null>(null);
   const canAuthor = $derived(session.view.capability.mode === 'author');
   const rendererCapability = $derived(canAuthor ? ('author' as const) : ('review' as const));
   const backgroundAsset = $derived(
@@ -241,15 +247,61 @@
         y: String(120 + Math.floor(index / 4) * 152)
       }
     });
+    const roleByPrimitive: Readonly<Record<string, ElectricalComponentRole>> = {
+      'electrical-source': 'source',
+      'ground-point': 'ground',
+      fuse: 'fuse',
+      relay: 'relay',
+      switch: 'switch',
+      'electrical-load': 'load',
+      controller: 'controller',
+      connector: 'connector',
+      splice: 'splice',
+      bus: 'bus'
+    };
+    const role = roleByPrimitive[primitiveId];
+    if (!role) {
+      interactionStatus = `Primitive ${primitiveId} has no authoring role.`;
+      return;
+    }
+
     if (
       execute({
-        type: 'add-component',
+        type: 'add-electrical-component',
         causationId: crypto.randomUUID(),
-        component
+        component,
+        role
       })
     ) {
       select({ kind: 'component', id: component.id });
     }
+  }
+
+  function previewBranch(
+    action: Extract<ProjectAction, { type: 'insert-electrical-branch' }>
+  ): void {
+    pendingBranchAction = action;
+    branchPreview = session.previewImpact(action);
+    interactionStatus = `Branch preview covers ${branchPreview.subjectIds.length} affected subjects.`;
+  }
+
+  function confirmBranch(): void {
+    if (!pendingBranchAction || !branchPreview) return;
+    if (
+      execute({
+        ...pendingBranchAction,
+        confirmedImpactSubjectIds: branchPreview.subjectIds
+      })
+    ) {
+      pendingBranchAction = null;
+      branchPreview = null;
+    }
+  }
+
+  function cancelBranch(): void {
+    pendingBranchAction = null;
+    branchPreview = null;
+    interactionStatus = 'Branch preview canceled without changing topology.';
   }
 
   function setBackground(background: VehicleBackground | null, asset: ProjectAsset | null): void {
@@ -404,6 +456,12 @@
         selection={presentation.selection}
         viewport={presentation.lensViewports[activeDenseView]}
         comparisonViewports={presentation.comparisonViewports}
+        {canAuthor}
+        {branchPreview}
+        onaction={execute}
+        onpreviewbranch={previewBranch}
+        onconfirmbranch={confirmBranch}
+        oncancelbranch={cancelBranch}
         onclose={() => presentation.openView('canvas')}
         onincreasezoom={() => presentation.increaseLensZoom(activeDenseView)}
         onincreasecomparison={(side) => presentation.increaseComparisonZoom(side)}

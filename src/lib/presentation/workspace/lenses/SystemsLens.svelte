@@ -1,17 +1,41 @@
 <script lang="ts">
   import type { ProjectSnapshot } from '../../../project/project';
+  import type { ProjectAction } from '../../../project/action';
 
   let {
     snapshot,
     selectionId,
+    canAuthor,
+    onaction,
     onpreview,
     onselect
   }: {
     snapshot: ProjectSnapshot;
     selectionId: string | null;
+    canAuthor: boolean;
+    onaction: (action: ProjectAction) => boolean;
     onpreview: (componentId: string) => void;
     onselect: (componentId: string) => void;
   } = $props();
+
+  let systemLabel = $state('Auxiliary cooling power');
+
+  function addElectricalSystem(): void {
+    if (
+      onaction({
+        type: 'add-system',
+        causationId: crypto.randomUUID(),
+        system: {
+          id: crypto.randomUUID(),
+          label: systemLabel.trim(),
+          domain: 'electrical',
+          mediumId: null
+        }
+      })
+    ) {
+      systemLabel = '';
+    }
+  }
 </script>
 
 <section class="systems-lens">
@@ -40,6 +64,20 @@
       </article>
     {/each}
   </div>
+
+  <form class="system-authoring" onsubmit={(event) => event.preventDefault()}>
+    <label>
+      <span>Electrical System label</span>
+      <input bind:value={systemLabel} disabled={!canAuthor} />
+    </label>
+    <button
+      type="button"
+      disabled={!canAuthor || systemLabel.trim().length === 0}
+      onclick={addElectricalSystem}
+    >
+      Add electrical System
+    </button>
+  </form>
 
   <table>
     <thead>
@@ -113,6 +151,52 @@
     grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
     gap: 0.45rem;
     margin-bottom: 1rem;
+  }
+
+  .system-authoring {
+    display: grid;
+    grid-template-columns: minmax(12rem, 1fr) auto;
+    gap: 0.5rem;
+    align-items: end;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border: 1px solid #cbd8d3;
+    background: #edf4f0;
+  }
+
+  .system-authoring label {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .system-authoring label span {
+    color: #596e6d;
+    font: 0.58rem var(--font-mono);
+    text-transform: uppercase;
+  }
+
+  .system-authoring input,
+  .system-authoring button {
+    min-height: 2.75rem;
+    border: 1px solid #9bb3ac;
+    border-radius: 0.3rem;
+  }
+
+  .system-authoring input {
+    padding: 0.45rem 0.55rem;
+    background: #fff;
+  }
+
+  .system-authoring button {
+    padding: 0.45rem 0.7rem;
+    background: #234d4c;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .system-authoring button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
   }
 
   article,
@@ -216,5 +300,11 @@
   button:focus-visible {
     outline: 2px solid #d3612f;
     outline-offset: 2px;
+  }
+
+  @media (max-width: 43.75rem) {
+    .system-authoring {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

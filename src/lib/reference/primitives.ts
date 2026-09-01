@@ -92,9 +92,12 @@ export const PRIMITIVES: readonly PrimitiveDefinition[] = Object.freeze([
   primitive({
     id: 'connector',
     label: 'Connector',
-    description: 'Project-owned connector shell starting with one explicit cavity.',
+    description: 'Project-owned connector shell starting with two explicit cavities.',
     kind: 'part',
-    ports: [{ label: 'Cavity 1', domain: 'electrical', interfaceKey: null }]
+    ports: [
+      { label: 'Cavity 1', domain: 'electrical', interfaceKey: null },
+      { label: 'Cavity 2', domain: 'electrical', interfaceKey: null }
+    ]
   }),
   primitive({
     id: 'splice',

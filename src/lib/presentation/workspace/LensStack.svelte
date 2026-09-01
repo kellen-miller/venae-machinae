@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ProjectSnapshot } from '../../project/project';
+  import type { ImpactPreview, ProjectAction } from '../../project/action';
   import type { RendererViewport } from '../../renderer/projection';
   import BomLens from './lenses/BomLens.svelte';
   import CalculationsLens from './lenses/CalculationsLens.svelte';
@@ -20,6 +21,12 @@
     selection,
     viewport,
     comparisonViewports,
+    canAuthor,
+    branchPreview,
+    onaction,
+    onpreviewbranch,
+    onconfirmbranch,
+    oncancelbranch,
     onclose,
     onincreasezoom,
     onincreasecomparison,
@@ -31,6 +38,12 @@
     selection: WorkspaceSubject | null;
     viewport: RendererViewport;
     comparisonViewports: Readonly<{ left: RendererViewport; right: RendererViewport }>;
+    canAuthor: boolean;
+    branchPreview: ImpactPreview | null;
+    onaction: (action: ProjectAction) => boolean;
+    onpreviewbranch: (action: Extract<ProjectAction, { type: 'insert-electrical-branch' }>) => void;
+    onconfirmbranch: () => void;
+    oncancelbranch: () => void;
     onclose: () => void;
     onincreasezoom: () => void;
     onincreasecomparison: (side: 'left' | 'right') => void;
@@ -68,15 +81,30 @@
 
   <div class="lens-content">
     {#if activeView === 'systems'}
-      <SystemsLens {snapshot} selectionId={selection?.id ?? null} {onpreview} {onselect} />
+      <SystemsLens
+        {snapshot}
+        selectionId={selection?.id ?? null}
+        {canAuthor}
+        {onaction}
+        {onpreview}
+        {onselect}
+      />
     {:else if activeView === 'circuits-lines'}
-      <CircuitsLinesLens {snapshot} />
+      <CircuitsLinesLens
+        {snapshot}
+        {canAuthor}
+        {branchPreview}
+        {onaction}
+        {onpreviewbranch}
+        {onconfirmbranch}
+        {oncancelbranch}
+      />
     {:else if activeView === 'interfaces'}
-      <InterfacesLens {snapshot} />
+      <InterfacesLens {snapshot} {canAuthor} {onaction} />
     {:else if activeView === 'routes'}
-      <RoutesLens {snapshot} />
+      <RoutesLens {snapshot} {canAuthor} {onaction} />
     {:else if activeView === 'harnesses-bundles'}
-      <HarnessesBundlesLens {snapshot} />
+      <HarnessesBundlesLens {snapshot} {canAuthor} {onaction} />
     {:else if activeView === 'calculations'}
       <CalculationsLens {snapshot} />
     {:else if activeView === 'evidence'}

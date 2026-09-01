@@ -52,7 +52,7 @@ export function generateCapacityProject(scale: CapacityScale): ProjectDocument {
   });
 
   return projectDocumentSchema.parse({
-    schemaVersion: 3,
+    schemaVersion: 4,
     project: {
       id: `capacity-project-${scale}x`,
       name: `Capacity ${scale}x`,
@@ -78,6 +78,15 @@ export function generateCapacityProject(scale: CapacityScale): ProjectDocument {
       connections,
       routes: [],
       segments: []
+    },
+    electrical: {
+      components: [],
+      wires: [],
+      circuits: [],
+      connectors: [],
+      harnesses: [],
+      bundles: [],
+      cableSpecifications: []
     },
     partDefinitions: [],
     partRequirements: [],

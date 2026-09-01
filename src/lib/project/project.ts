@@ -1,5 +1,7 @@
 import { createEmptyTopology } from '../topology/topology';
+import { createEmptyElectricalModel } from '../electrical/electrical';
 
+import type { ElectricalModel } from '../electrical/electrical';
 import type { EngineeringEvidence } from '../evidence/evidence';
 import type { Point, SubjectId, Topology } from '../topology/topology';
 
@@ -65,6 +67,7 @@ export type ProjectSnapshot = Readonly<{
   createdAt: string;
   revision: number;
   topology: Topology;
+  electrical: ElectricalModel;
   partDefinitions: readonly PartDefinition[];
   partRequirements: readonly PartRequirement[];
   evidence: readonly EngineeringEvidence[];
@@ -88,6 +91,7 @@ export function createBlankProject(input: {
     createdAt: input.createdAt,
     revision: 0,
     topology: createEmptyTopology(),
+    electrical: createEmptyElectricalModel(),
     partDefinitions: [],
     partRequirements: [],
     evidence: [],

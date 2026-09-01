@@ -32,7 +32,7 @@ const evaluationConnectionSchema = z.strictObject({
   id: identity,
   sourcePortId: identity,
   targetPortId: identity,
-  kind: z.enum(['electrical-wire', 'fluid-hose', 'fluid-tube', 'fluid-pipe'])
+  kind: z.enum(['electrical-wire', 'electrical-mate', 'fluid-hose', 'fluid-tube', 'fluid-pipe'])
 });
 
 const evaluationEngineeringValueSchema = z.strictObject({

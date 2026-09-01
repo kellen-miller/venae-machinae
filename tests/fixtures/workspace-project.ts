@@ -29,7 +29,7 @@ export async function seedWorkspaceProject(page: Page): Promise<void> {
     {
       projectId: WORKSPACE_PROJECT_ID,
       snapshot: {
-        schemaVersion: 3,
+        schemaVersion: 4,
         project: {
           id: WORKSPACE_PROJECT_ID,
           name: 'RX-7 workshop study',
@@ -272,6 +272,15 @@ export async function seedWorkspaceProject(page: Page): Promise<void> {
               end: { x: '360', y: '488' }
             }
           ]
+        },
+        electrical: {
+          components: [],
+          wires: [],
+          circuits: [],
+          connectors: [],
+          harnesses: [],
+          bundles: [],
+          cableSpecifications: []
         },
         partDefinitions: [],
         partRequirements: [],

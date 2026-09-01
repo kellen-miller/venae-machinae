@@ -266,7 +266,7 @@ export function projectSnapshotToRendererProjection(
         sourcePortId: connection.sourcePortId,
         targetPortId: connection.targetPortId,
         physical:
-          connection.kind === 'electrical-wire'
+          connection.domain === 'electrical'
             ? {
                 kind: 'wire',
                 conductorColor: '#b4483d',
