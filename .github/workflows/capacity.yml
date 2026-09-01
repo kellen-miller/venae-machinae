@@ -33,4 +33,4 @@ jobs:
         run: pnpm gate:capacity -- --ci-smoke
 
       - name: Clarify evidence scope
-        run: echo 'GitHub runner timings are non-normative and do not satisfy capacity acceptance.'
+        run: echo 'GitHub runner timings are non-normative; authority remains the committed recorded current-local environment.'

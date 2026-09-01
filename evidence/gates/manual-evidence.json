@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
-  "status": "unavailable",
+  "status": "superseded",
   "records": [],
-  "blocker": "No real Safari/iPadOS lifecycle artifact or user-controlled stable trusted HTTPS origin is available in this worktree. Playwright WebKit and localhost evidence cannot satisfy MVP-GATE-006."
+  "supersededBy": "MVP-GATE-006-production-browsers",
+  "note": "The explicit 2026-09-01 evidence-scope amendment removed real-device and external-origin proof from Gate 6. This manifest remains only as historical provenance."
 }

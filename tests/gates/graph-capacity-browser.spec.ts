@@ -364,8 +364,9 @@ test('MVP-GATE-002 exercises selected-renderer capacity locally', async ({
   }
 
   expect(cspViolations).toEqual([]);
-  if (process.env.CAPACITY_AUTHORITATIVE === '1') {
-    expect(process.env.CAPACITY_HARDWARE_RECORD?.trim()).toBeTruthy();
+  const evidenceScope = process.env.CAPACITY_EVIDENCE_SCOPE ?? 'authoritative-current-local';
+  expect(['authoritative-current-local', 'ci-smoke']).toContain(evidenceScope);
+  if (evidenceScope === 'authoritative-current-local') {
     for (const measurement of measurements) {
       expect(measurement.pointerFeedbackMs).toBeLessThan(
         lockedThresholds.pointerFeedbackMsExclusive
@@ -394,10 +395,9 @@ test('MVP-GATE-002 exercises selected-renderer capacity locally', async ({
   console.log(
     `MVP_GATE_002_LOCAL_MEASUREMENT ${JSON.stringify({
       evidenceScope:
-        process.env.CAPACITY_AUTHORITATIVE === '1'
-          ? 'authoritative recorded-hardware run'
-          : 'non-authoritative modern-host smoke',
-      hardwareRecord: process.env.CAPACITY_HARDWARE_RECORD ?? null,
+        evidenceScope === 'authoritative-current-local'
+          ? 'authoritative recorded current local environment'
+          : 'non-authoritative CI harness smoke',
       project: testInfo.project.name,
       browserVersion: browser.version(),
       thresholds: lockedThresholds,

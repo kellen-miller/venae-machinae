@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-006",
+  "recordId": "MVP-GATE-006-production-browsers",
+  "recordedAt": "2026-09-01T19:44:22Z",
+  "supersedes": "MVP-GATE-006-baseline",
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "origin": "http://localhost:4174",
+    "delivery": "production SvelteKit adapter-node server",
+    "browsers": {
+      "chromium": "151.0.7922.34",
+      "firefox": "153.0",
+      "webkit": "26.5"
+    },
+    "revision": "32f5e9a6e6062bf7ab3fdb1a4e1f016d87972cee",
+    "lockfileSha256": "10b2ac6a90023dd04ac7f6449e846b0e8998f2c83f58898634b8b12bd60ba682"
+  },
+  "versions": {
+    "idb": "8.0.3",
+    "playwright": "1.62.1",
+    "indexedDbStructure": 1
+  },
+  "fixtures": [
+    "tests/fixtures/capacity-project.ts",
+    "tests/gates/storage-lifecycle.spec.ts",
+    "tests/gates/storage-lifecycle-browser.spec.ts"
+  ],
+  "command": "PLAYWRIGHT_PORT=4174 pnpm gate:storage-lifecycle",
+  "rawArtifacts": ["evidence/gates/raw/MVP-GATE-006-automated-results.json"],
+  "measurements": {
+    "fixtureSha256": "050a17af49da66cdf0148ea78f16b75e3f21faeff9888f9c1ad9993734d26ea5",
+    "unitSpecSha256": "972327dcb0cc660ba510d06663efbe776fdcfe2c2ffe281c3e95b45fb9c5fedc",
+    "browserSpecSha256": "04869122961728e29fedb72088d40fd26c504671cad026d1184413e0c5a0bc96",
+    "rawMeasurementSha256": "d52fcec40c3f5df5f4e5b13a17a69f9840773592a334c32330769cdd1c1c0939",
+    "browserEngines": 3,
+    "browserCases": 3,
+    "storageStatusFixtureCases": 5,
+    "leaseExclusion": "Pass",
+    "libraryThenProjectLockOrder": "Pass",
+    "takeoverAfterExplicitRelease": "Pass",
+    "blockedUpgradeThenRecovery": "Pass",
+    "closeReopenSnapshotRecovery": "Pass"
+  },
+  "verdict": "Pass",
+  "boundedDecision": "Retain Web Locks with shared-library then exclusive-project ordering, BroadcastChannel takeover requests, bounded storage-status reporting, and IndexedDB blocked-upgrade handling. Automated production-build Chromium, Firefox, and WebKit lifecycle coverage is authoritative for the revised Gate 6 contract; no real-device, browser-brand, cross-device, or external-origin claim is made."
+}

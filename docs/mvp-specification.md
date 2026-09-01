@@ -266,7 +266,7 @@ private browsing, profile deletion, browser eviction, or device loss.
 | `MVP-ARCH-005` | SvelteKit MUST own delivery, routing, server-rendered shell, context, error pages, security headers, and application-version handling. Server load data, form actions, and remote functions MUST NOT carry project data or mutations. | Route, hydration, CSP/header, and network tests. |
 | `MVP-ARCH-006` | The canonical loopback origin MUST be `http://localhost:4173` with strict-port failure and `localhost`, never `127.0.0.1`. MVP release packaging and installation are not acceptance requirements. | Production-build launch, occupied-port, and origin tests. |
 | `MVP-ARCH-007` | No service worker ships in the MVP. Network-independent use means no internet or cloud dependency while the local server runs. An already-open editor MUST retain its loaded edit, undo, IndexedDB, and emergency-export loss-prevention core during server loss; cold launch and full serverless operation are not promised. | Offline-network, server-loss, refresh, worker-crash, and reconnect tests. |
-| `MVP-ARCH-008` | Loopback binding is the default. Another device MUST use a stable trusted HTTPS origin and owns an independent origin-local Project Library. Plain HTTP LAN access and implicit synchronization are unsupported. | Origin, secure-context, independent-library, and no-sync tests. |
+| `MVP-ARCH-008` | Loopback binding is the supported MVP delivery path. Cross-device access, plain-HTTP LAN editing, and implicit synchronization are unsupported. Any future non-loopback secure origin MUST own an independent origin-local Project Library. | Loopback-origin, no-LAN-editing, independent-library, and no-sync tests. |
 | `MVP-ARCH-009` | The application MUST use strict CSP and response headers, inert imported assets, explicit diagnostics export, and no telemetry or remote crash reporting. Diagnostic export MUST redact project values by default. | Security-header, injection, network, and redaction tests. |
 | `MVP-ARCH-010` | Svelte Flow MAY be adopted only after the renderer evidence gate passes. It MUST remain behind the renderer adapter, with raw SVG or Canvas as bounded fallback without domain or persistence changes. | Spike report and adapter import-boundary tests. |
 
@@ -274,13 +274,13 @@ private browsing, profile deletion, browser eviction, or device loss.
 
 | ID | Requirement | Acceptance evidence |
 | --- | --- | --- |
-| `MVP-NFR-001` | Desktop presentation at layout viewports above 1,120 CSS pixels and tablet presentation from 700 through 1,120 CSS pixels MUST support the complete lifecycle. Tablet authoring MUST use trusted HTTPS, touch-sized controls, compressed floating UI, and no hover-only behavior. | Real desktop/tablet production workflows at both breakpoint boundaries. |
+| `MVP-NFR-001` | Desktop presentation at layout viewports above 1,120 CSS pixels and responsive tablet presentation from 700 through 1,120 CSS pixels MUST support the complete lifecycle in supported production desktop browsers. Tablet presentation MUST use touch-sized controls, compressed floating UI, and no hover-only behavior. This responsive contract does not claim cross-device or physical-tablet support. | Automated production-browser workflows at both breakpoint boundaries. |
 | `MVP-NFR-002` | Mobile presentation below 700 CSS pixels MUST remain read-only, independent of user-agent strings. Entering it MUST complete the active action, flush pending persistence when possible, and reject new mutations until a capable authoring presentation resumes with a valid write lease. It MAY structurally validate and transiently open a `.venae.json` for review without importing or persisting it, switch states/channels, inspect traces and comparisons, filter/search, print/download reports, and export snapshots. It MUST NOT mutate the library, project, engineering validation, templates, applicability, acknowledgement, or disposition. | Breakpoint-transition, capability-denial, persistence, and complete mobile-review tests. |
 | `MVP-NFR-003` | Missing required browser APIs MUST block editing with a useful explanation while retaining permitted recovery/export behavior. | Capability-matrix tests. |
-| `MVP-NFR-004` | The application MUST support the current and previous stable desktop Chrome/Edge, Firefox, and Safari releases, Safari on iPadOS for tablet and mobile presentation, and Chrome on Android for tablet and mobile presentation. Device-support claims require real supported-device lifecycle evidence and required API capability. | Cross-browser production Playwright and real-device reports. |
+| `MVP-NFR-004` | The MVP-supported browser matrix is the recorded production-build Chromium, Firefox, and WebKit versions exercised by Playwright. Desktop, responsive tablet, and responsive mobile presentations MUST pass in that matrix. Named browser-brand, operating-system, and physical-device support remain outside the MVP claim. | Three-engine production Playwright reports with exact versions. |
 | `MVP-NFR-005` | Non-spatial workflows MUST target WCAG 2.2 AA. Spatial limitations MUST be documented. All meanings require text/symbol alternatives, keyboard paths, visible focus, screen-reader summaries, WCAG 2.2 AA target sizing or spacing, zoom/reflow support, and reduced-motion behavior. Primary tablet/mobile controls MUST retain the approved 44-CSS-pixel target. | axe-core plus manual keyboard, screen-reader, zoom, contrast, reflow, touch, and motion review. |
-| `MVP-NFR-006` | The expected 1x fixture is approximately 300 Components, 1,500 Ports, and 1,200 mixed Connections. Capacity MUST be measured at 1x, 2x, and 5x on a 2020-era laptop. | Reproducible benchmark fixture and recorded environment. |
-| `MVP-NFR-007` | At 1x and 2x, pointer feedback MUST remain below 100 ms and pan/zoom near 60 fps. At 5x, the workspace MUST remain usable above 30 fps without data loss. At 1x and 2x, elapsed time from the persistence repository returning a Project Snapshot to the Project Session until the first interactive canvas paint MUST remain below two seconds. Expensive evaluation MUST NOT block editing. | Renderer, persistence, and worker benchmarks with recorded start/end marks. |
+| `MVP-NFR-006` | The expected 1x fixture is approximately 300 Components, 1,500 Ports, and 1,200 mixed Connections. Capacity MUST be measured at 1x, 2x, and 5x in a reproducible recorded current local environment that identifies hardware, operating system, architecture, tool and browser versions, viewport, command, fixture hashes, and revision. A passing record MUST NOT establish a minimum hardware claim or an age-class claim. | Reproducible benchmark fixture and complete current-environment record. |
+| `MVP-NFR-007` | In the recorded environment, at 1x and 2x, pointer feedback MUST remain below 100 ms and pan/zoom near 60 fps. At 5x, the workspace MUST remain usable above 30 fps without data loss. At 1x and 2x, elapsed time from the persistence repository returning a Project Snapshot to the Project Session until the first interactive canvas paint MUST remain below two seconds. Expensive evaluation MUST NOT block editing. Results are authoritative only for the recorded environment and MUST be remeasured against the final production stack. | Renderer, persistence, and worker benchmarks with recorded start/end marks and environment identity. |
 
 ## Mandatory evidence gates
 
@@ -291,11 +291,11 @@ weaken the product contract silently.
 | ID | Gate | Required evidence |
 | --- | --- | --- |
 | `MVP-GATE-001` | Renderer fit | Production-style custom Ports, exact snapping, routed edges, distinct pipe/wire rendering, synchronized lenses, keyboard paths, responsive review, and renderer isolation. |
-| `MVP-GATE-002` | Graph capacity | Render, pan/zoom, selection, drag, route editing, labels, and Overlays at the 1x, 2x, and 5x fixtures against `MVP-NFR-007`. |
+| `MVP-GATE-002` | Graph capacity | Render, pan/zoom, selection, drag, route editing, labels, and Overlays at the 1x, 2x, and 5x fixtures against `MVP-NFR-007` in a reproducible recorded current local environment. |
 | `MVP-GATE-003` | Whole-snapshot persistence | Serialization, IndexedDB transaction time, checkpoints, asset deduplication, quota failure, and recovery at all three fixture sizes. |
 | `MVP-GATE-004` | Exchange limits | Peak parse, hashing, validation, clone, commit memory, and evidence-backed envelope/asset limits across Chromium, Firefox, and WebKit, with tested caps and environments recorded. If safe monolithic JSON cannot satisfy the fixture, reopen the exchange-format decision before implementation proceeds. |
 | `MVP-GATE-005` | Worker boundary | Clone cost, incremental change sets, cancellation, stale publication, crash/restart, and server-loss behavior. |
-| `MVP-GATE-006` | Browser storage lifecycle | Persistence grant/denial, eviction messaging, multi-tab upgrade, takeover, background/restore, and Safari recovery on real devices. |
+| `MVP-GATE-006` | Browser storage lifecycle | Automated production-build Chromium, Firefox, and WebKit coverage of persistence grant/denial/unsupported/failure reporting, eviction guidance, multi-tab upgrade blocking/recovery, write-lease takeover after explicit release, and close/reopen snapshot recovery. |
 | `MVP-GATE-007` | Numeric correctness | Formula golden fixtures, units, exact conversions, bounds, significant-figure presentation, and cross-browser deterministic display. |
 
 Safe exchange caps are intentionally evidence-gated values, not an unresolved
@@ -338,8 +338,8 @@ The following are DEFERRED beyond the MVP:
   project APIs, remote configuration, telemetry, and hosted infrastructure;
 - release packaging, installers, automatic distribution/update mechanisms,
   service-worker delivery, PWA installation, and publishing to npm;
-- mobile mutation, cross-device library sharing, implicit synchronization, and
-  plain-HTTP LAN editing;
+- mobile mutation, cross-device access or library sharing, physical-device
+  support claims, implicit synchronization, and plain-HTTP LAN editing;
 - comprehensive manufacturer catalogs, vendor ordering, pricing, inventory,
   automatic part selection, and authoritative wire/fuse/hose/component sizing;
 - 3D CAD, mechanical interference, fabrication-grade tube bending, CAD/netlist

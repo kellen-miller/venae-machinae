@@ -1,14 +1,12 @@
-# Trusted HTTPS device origin
+# Historical trusted-HTTPS evidence requirement
 
-Status: Unavailable
+Status: Historical — superseded
 
-No user-controlled stable trusted HTTPS test origin has been provided or discovered for this implementation run. The canonical loopback origin remains `http://localhost:4173`.
+Before the explicit 2026-09-01 evidence-scope amendment, Milestone 1 required an external
+trusted HTTPS origin for real-device Gate 6 evidence. That condition is no longer an active
+procedure or acceptance blocker. Cross-device access is outside MVP support and acceptance.
 
-Required unblock before Milestone 2:
-
-- provision an external TLS termination layer that proxies to the local Node server;
-- record the stable origin, certificate trust, proxy target, and device reachability;
-- verify that the other device owns an independent origin-local Project Library; and
-- execute the lifecycle and recovery procedure in real Safari on iPadOS.
-
-Playwright WebKit, browser emulation, localhost, or plain HTTP LAN access cannot substitute for this evidence.
+The canonical and supported MVP origin remains `http://localhost:4173` with loopback binding.
+Plain-HTTP LAN editing and implicit synchronization remain unsupported. Any future
+non-loopback secure origin would own an independent origin-local Project Library and require a
+separate support decision.

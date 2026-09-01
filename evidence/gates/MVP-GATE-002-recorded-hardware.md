@@ -1,28 +1,13 @@
-# MVP-GATE-002 recorded 2020-era laptop evidence
+# Historical MVP-GATE-002 hardware-age requirement
 
-Status: Unavailable.
+Status: Historical — superseded
 
-The authoritative run must be executed on an identified laptop model released in 2020 or
-earlier. Before running, record the manufacturer, model, release year, CPU, memory, operating
-system/build, power source, thermal mode, browser/version, viewport, display scaling, executor,
-time, Git commit, and lockfile hash. Do not reuse CI, this modern development machine, virtual
-hardware, Playwright WebKit, or a relabeled proxy result.
+Before the explicit 2026-09-01 evidence-scope amendment, Gate 2 required a recorded run on a
+laptop model released in 2020 or earlier. That unavailable condition is preserved in
+`MVP-GATE-002-baseline.*` as decision provenance; it is no longer an active procedure or
+acceptance blocker.
 
-Run from a clean checkout at the evidence commit:
-
-```sh
-CAPACITY_AUTHORITATIVE=1 \
-CAPACITY_HARDWARE_RECORD='<recorded device/browser/OS identity>' \
-PLAYWRIGHT_PORT=4174 \
-pnpm gate:capacity:local
-```
-
-Capture the complete command output without editing it. Record every 1x/2x/5x measurement:
-initial paint, snapshot-to-interactive paint, pointer feedback, selection, drag, route editing,
-pan and zoom frame rates/max frames, labels, Overlays, retained JS heap, retained DOM nodes,
-and structural fingerprint. Hash the raw output artifact.
-
-The test enforces pointer feedback below 100 ms; at least 55 fps at 1x/2x; more than 30 fps
-at 5x; and snapshot-to-interactive below two seconds at 1x/2x. A superseding canonical record
-may say Pass only when the command exits zero and the device record plus raw-output hash are
-complete.
+`MVP-GATE-002-current-local.*` supersedes the baseline with authority bounded to its
+reproducible recorded current local environment. It records hardware, operating system,
+architecture, tools, browser, viewport, revision, hashes, command, and measurements while
+making no minimum-hardware or hardware-age claim.

@@ -85,11 +85,11 @@ when the port is occupied. Always open `localhost`, never `127.0.0.1`. Tests use
 isolated browser profiles and origins. A future origin change must provide a
 Library Backup export/restore migration path.
 
-Bind loopback by default. Plain HTTP LAN access is unsupported because required
-browser APIs need a secure context. Another device requires a stable trusted
-HTTPS origin, normally through user-configured TLS termination. Each browser,
-profile, device, and origin has an independent Project Library; no implicit
-synchronization occurs.
+Bind loopback by default and treat it as the supported MVP delivery path. Plain
+HTTP LAN editing is unsupported because required browser APIs need a secure
+context. Cross-device access is not an MVP support or acceptance claim. Any
+future non-loopback secure origin owns an independent Project Library; no
+implicit synchronization occurs.
 
 Do not ship a service worker in the MVP. No internet connection is required
 while the local server is running. A Project Session is not reported ready
@@ -380,10 +380,12 @@ Provide a semantic tree/list/table equivalent, keyboard connection and routing
 workflows, named Ports, visible focus, and non-color cues. Target WCAG 2.2 AA
 for non-spatial workflows and document unavoidable spatial-editor limitations.
 
-Tablet supports the full lifecycle when served from a stable trusted HTTPS
-origin and owns an independent local library. Mobile remains read-only. It may
-validate and open an exported `.venae.json` transiently for review without
-importing or persisting it into a Project Library.
+Responsive tablet presentation supports the full lifecycle in the recorded
+production desktop-browser matrix; this is a viewport contract, not a
+physical-tablet or cross-device support claim. Responsive mobile presentation
+remains read-only. It may validate and open an exported `.venae.json`
+transiently for review without importing or persisting it into a Project
+Library.
 
 ### Security and diagnostics
 
@@ -418,14 +420,19 @@ Use:
 - axe-core plus manual keyboard, zoom/reflow, contrast, reduced-motion, and
   screen-reader passes.
 
-Support the current and previous stable desktop Chrome/Edge, Firefox, and
-Safari releases. Test responsive tablet and mobile behavior and real supported
-device lifecycle before claiming device support. Detect missing required APIs
-and block editing with a useful explanation.
+Support the exact production-build Chromium, Firefox, and WebKit versions
+recorded by the automated Playwright matrix. Test desktop, responsive tablet,
+and responsive mobile behavior in that matrix. Do not make named browser-brand,
+operating-system, physical-device, or cross-device support claims. Detect
+missing required APIs and block editing with a useful explanation.
 
 Define the expected benchmark fixture as approximately 300 Components, 1,500
 Ports, and 1,200 Connections with mixed Wires, Fluid Lines, branches, bundles,
-labels, and Overlays. Benchmark at 1x, 2x, and 5x on a 2020-era laptop.
+labels, and Overlays. Benchmark at 1x, 2x, and 5x in a reproducible recorded
+current local environment. Record hardware, operating system, architecture,
+tool and browser versions, viewport, command, fixture hashes, and revision.
+Treat results as authoritative only for that environment; do not infer a
+minimum hardware or hardware-age support claim.
 
 Acceptance targets are:
 
@@ -447,16 +454,25 @@ guard are treated as proven:
    Chromium, Firefox, and WebKit.
 5. Worker clone cost, incremental change-set behavior, cancellation, stale
    publication, crash, and server-loss behavior.
-6. Browser lifecycle: persistent-storage grant/denial, eviction messaging,
-   multi-tab upgrade, takeover, background/restore, and Safari recovery on real
-   devices.
+6. Browser lifecycle: automated production-build Chromium, Firefox, and WebKit
+   persistence grant/denial/unsupported/failure reporting, eviction guidance,
+   multi-tab upgrade blocking/recovery, explicit takeover/release, and
+   close/reopen snapshot recovery.
 7. Numeric golden fixtures, significant figures, uncertainty handling, exact
    conversions, and cross-browser displayed determinism.
 
 Every pull request runs frozen pnpm installation, formatting, ESLint including
 dependency boundaries, `svelte-check`, unit/property/migration/component tests,
 the production build, Playwright, exchange golden fixtures, and a bundle-budget
-check. Run capacity benchmarks separately to avoid noisy pull-request gates.
+check. Run capacity benchmarks separately to avoid noisy pull-request gates;
+the committed current-local record is authoritative only for its named
+environment.
+
+This evidence-scope amendment was explicitly approved on 2026-09-01 after the
+initial gate runs. It supersedes the earlier 2020-era-hardware and real-device
+Safari/trusted-HTTPS acceptance requirements without changing the local-only
+architecture, secure-context boundary, browser-local authority, or stable MVP
+requirement IDs. Historical Unavailable records remain preserved as provenance.
 
 Pin direct dependencies and Node/pnpm versions exactly when implementation
 begins, and commit the lockfile. Track application, document schema, IndexedDB

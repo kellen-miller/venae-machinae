@@ -1,8 +1,11 @@
 # MVP-GATE-006 — Browser storage lifecycle
 
-- Current record: `evidence/gates/MVP-GATE-006-baseline.md`
-- Machine record: `evidence/gates/MVP-GATE-006-baseline.json`
-- Verdict: Unavailable
-- Supersedes: none
+- Current record: `evidence/gates/MVP-GATE-006-production-browsers.md`
+- Machine record: `evidence/gates/MVP-GATE-006-production-browsers.json`
+- Verdict: Pass
+- Supersedes: `MVP-GATE-006-baseline`
 
-Automated browser storage, lock, takeover, upgrade, and close/reopen recovery evidence passes. The mandatory user-controlled trusted HTTPS origin and real Safari/iPadOS lifecycle artifact are unavailable, so the gate does not pass and cannot be proxy-satisfied by WebKit or localhost.
+Automated production-build Chromium, Firefox, and WebKit storage-status, eviction-guidance,
+lock-ordering, takeover, blocked-upgrade recovery, and close/reopen snapshot recovery evidence
+passes. The user-approved evidence amendment removes real-device and external-origin acceptance
+from this gate while preserving the local-only, loopback-default, no-plain-HTTP-LAN boundary.
