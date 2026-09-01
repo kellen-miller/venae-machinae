@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "status": "unavailable",
+  "records": [],
+  "blocker": "No real Safari/iPadOS lifecycle artifact or user-controlled stable trusted HTTPS origin is available in this worktree. Playwright WebKit and localhost evidence cannot satisfy MVP-GATE-006."
+}

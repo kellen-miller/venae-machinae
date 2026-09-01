@@ -1,0 +1,4 @@
+minimumReleaseAgeExclude:
+  - '@xyflow/svelte@1.6.6'
+  - '@xyflow/system@0.0.82'
+  - globals@17.12.0

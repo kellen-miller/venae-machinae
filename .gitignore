@@ -1,1 +1,10 @@
 .worktrees/
+node_modules/
+.svelte-kit/
+build/
+coverage/
+playwright-report/
+test-results/
+blob-report/
+*.log
+.DS_Store

@@ -1,0 +1,1354 @@
+{
+  "schemaVersion": 1,
+  "normativeSource": "docs/mvp-specification.md",
+  "generatedBy": "scripts/generate-mvp-traceability.mjs",
+  "requirements": [
+    {
+      "id": "MVP-PROD-001",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/project/project.ts", "src/lib/session/project-session.svelte.ts"],
+      "proofPaths": ["tests/e2e/network-independent.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-PROD-002",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/project/project.ts", "src/lib/session/project-session.svelte.ts"],
+      "proofPaths": ["tests/domain/project.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-PROD-003",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/project/project.ts", "src/lib/session/project-session.svelte.ts"],
+      "proofPaths": ["tests/e2e/projection-revision.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-PROD-004",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/project/project.ts", "src/lib/session/project-session.svelte.ts"],
+      "proofPaths": ["tests/domain/project.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-PROD-005",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/project/project.ts", "src/lib/session/project-session.svelte.ts"],
+      "proofPaths": ["tests/content/prohibited-claims.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-MODEL-001",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/project/apply-action.ts", "src/lib/topology/topology.ts"],
+      "proofPaths": ["tests/domain/topology.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-MODEL-002",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/project/apply-action.ts", "src/lib/topology/topology.ts"],
+      "proofPaths": ["tests/domain/topology.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-MODEL-003",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/project/apply-action.ts", "src/lib/topology/topology.ts"],
+      "proofPaths": ["tests/domain/topology.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-MODEL-004",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/project/apply-action.ts", "src/lib/topology/topology.ts"],
+      "proofPaths": ["tests/domain/project.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-MODEL-005",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/project/apply-action.ts", "src/lib/topology/topology.ts"],
+      "proofPaths": ["tests/domain/project.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-MODEL-006",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/project/apply-action.ts", "src/lib/topology/topology.ts"],
+      "proofPaths": ["tests/domain/topology.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-MODEL-007",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/project/apply-action.ts", "src/lib/topology/topology.ts"],
+      "proofPaths": ["tests/domain/routing.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-MODEL-008",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/project/apply-action.ts", "src/lib/topology/topology.ts"],
+      "proofPaths": ["tests/domain/topology.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-MODEL-009",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/project/apply-action.ts", "src/lib/topology/topology.ts"],
+      "proofPaths": ["tests/domain/topology.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-UX-001",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": [
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": ["tests/e2e/workspace.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-UX-002",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": [
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": ["tests/e2e/workspace.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-UX-003",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": [
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": ["tests/e2e/workspace.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-UX-004",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": [
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": ["tests/e2e/workspace.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-UX-005",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": [
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": ["tests/e2e/workspace.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-UX-006",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": [
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": ["tests/e2e/visual-language.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-UX-007",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": [
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": ["tests/e2e/visual-language.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-UX-008",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": [
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": ["tests/e2e/project-library.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-UX-009",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": [
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": ["tests/e2e/project-library.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-UX-010",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": [
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": ["tests/e2e/project-library.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-UX-011",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": [
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": ["tests/e2e/action-equivalence.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-UX-012",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": [
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": ["tests/e2e/action-equivalence.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-UX-013",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": [
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": ["tests/component/contextual-help.spec.ts"],
+      "command": "pnpm test:component"
+    },
+    {
+      "id": "MVP-ELEC-001",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/domain/electrical.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-ELEC-002",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/domain/electrical.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-ELEC-003",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/domain/electrical.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-ELEC-004",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/domain/electrical.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-ELEC-005",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/domain/electrical.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-ELEC-006",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/domain/electrical.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-ELEC-007",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/domain/electrical.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-ELEC-008",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/domain/electrical.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-ELEC-009",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/domain/electrical.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-ELEC-010",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/domain/electrical-calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-ELEC-011",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/domain/electrical-calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-ELEC-012",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/domain/electrical-calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-ELEC-013",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/domain/electrical.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-ELEC-014",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/electrical/electrical.ts"],
+      "proofPaths": ["tests/e2e/electrical-output.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-FLUID-001",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/domain/fluid.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-FLUID-002",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/domain/fluid.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-FLUID-003",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/domain/fluid.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-FLUID-004",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/domain/fluid.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-FLUID-005",
+      "milestone": 3,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/domain/fluid.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-FLUID-006",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/domain/fluid-calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-FLUID-007",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/domain/fluid-calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-FLUID-008",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/domain/fluid-calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-FLUID-009",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/domain/fluid-calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-FLUID-010",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/domain/fluid-calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-FLUID-011",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/domain/fluid-calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-FLUID-012",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/domain/fluid-calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-FLUID-013",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/domain/fluid-calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-FLUID-014",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": [
+        "tests/e2e/fuel-boundary.spec.ts",
+        "tests/e2e/rx7-screening.spec.ts",
+        "tests/e2e/fluid-output.spec.ts"
+      ],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-FLUID-015",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "proofPaths": ["tests/e2e/fluid-output.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-STATE-001",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/operating-state/evaluate-overlay.ts"],
+      "proofPaths": ["tests/e2e/operating-state-overlay.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-STATE-002",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/operating-state/evaluate-overlay.ts"],
+      "proofPaths": ["tests/e2e/operating-state-overlay.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-STATE-003",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/operating-state/evaluate-overlay.ts"],
+      "proofPaths": ["tests/e2e/operating-state-overlay.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-STATE-004",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/operating-state/evaluate-overlay.ts"],
+      "proofPaths": ["tests/e2e/operating-state-overlay.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-STATE-005",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/operating-state/evaluate-overlay.ts"],
+      "proofPaths": ["tests/e2e/operating-state-overlay.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-STATE-006",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/operating-state/evaluate-overlay.ts"],
+      "proofPaths": ["tests/e2e/operating-state-overlay.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-STATE-007",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/operating-state/evaluate-overlay.ts"],
+      "proofPaths": ["tests/e2e/operating-state-overlay.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-STATE-008",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/operating-state/evaluate-overlay.ts"],
+      "proofPaths": ["tests/e2e/operating-state-overlay.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-STATE-009",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/operating-state/evaluate-overlay.ts"],
+      "proofPaths": ["tests/e2e/operating-state-overlay.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-STATE-010",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/operating-state/evaluate-overlay.ts"],
+      "proofPaths": ["tests/e2e/operating-state-overlay.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-STATE-011",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/operating-state/evaluate-overlay.ts"],
+      "proofPaths": ["tests/e2e/operating-state-overlay.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-STATE-012",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/operating-state/evaluate-overlay.ts"],
+      "proofPaths": ["tests/e2e/operating-state-overlay.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-STATE-013",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/operating-state/evaluate-overlay.ts"],
+      "proofPaths": ["tests/e2e/operating-state-overlay.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-CALC-001",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/calculation/evaluate-calculation.ts"],
+      "proofPaths": ["tests/domain/calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-CALC-002",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/calculation/evaluate-calculation.ts"],
+      "proofPaths": ["tests/domain/calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-CALC-003",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/calculation/evaluate-calculation.ts"],
+      "proofPaths": ["tests/domain/calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-CALC-004",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/calculation/evaluate-calculation.ts"],
+      "proofPaths": ["tests/domain/calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-CALC-005",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/calculation/evaluate-calculation.ts"],
+      "proofPaths": ["tests/domain/calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-CALC-006",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/calculation/evaluate-calculation.ts"],
+      "proofPaths": ["tests/domain/calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-CALC-007",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/calculation/evaluate-calculation.ts"],
+      "proofPaths": ["tests/domain/calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-CALC-008",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/calculation/evaluate-calculation.ts"],
+      "proofPaths": ["tests/domain/calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-CALC-009",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/calculation/evaluate-calculation.ts"],
+      "proofPaths": ["tests/domain/calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-CALC-010",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/calculation/evaluate-calculation.ts"],
+      "proofPaths": ["tests/domain/calculation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-001",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-002",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-003",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-004",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-005",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-006",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-007",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-008",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-009",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-010",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-011",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-012",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-013",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-VAL-014",
+      "milestone": 4,
+      "status": "planned",
+      "workPaths": ["src/lib/validation/evaluate-validation.ts"],
+      "proofPaths": ["tests/domain/validation.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-BUILD-001",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/build/build-record.ts", "src/lib/reporting/generate-output.ts"],
+      "proofPaths": ["tests/domain/build-record.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-BUILD-002",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/build/build-record.ts", "src/lib/reporting/generate-output.ts"],
+      "proofPaths": ["tests/domain/build-record.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-BUILD-003",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/build/build-record.ts", "src/lib/reporting/generate-output.ts"],
+      "proofPaths": ["tests/domain/build-record.spec.ts"],
+      "command": "pnpm test:unit"
+    },
+    {
+      "id": "MVP-BUILD-004",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/build/build-record.ts", "src/lib/reporting/generate-output.ts"],
+      "proofPaths": ["tests/e2e/reporting.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-BUILD-005",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/build/build-record.ts", "src/lib/reporting/generate-output.ts"],
+      "proofPaths": ["tests/e2e/reporting.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-BUILD-006",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/build/build-record.ts", "src/lib/reporting/generate-output.ts"],
+      "proofPaths": ["tests/e2e/reporting.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-BUILD-007",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/build/build-record.ts", "src/lib/reporting/generate-output.ts"],
+      "proofPaths": ["tests/e2e/reporting.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-001",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/project-library-lifecycle.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-002",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/project-library-lifecycle.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-003",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/project-library-lifecycle.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-004",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/project-library-lifecycle.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-005",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/project-library-lifecycle.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-006",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/project-library-lifecycle.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-007",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/project-library-lifecycle.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-008",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/project-library-lifecycle.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-009",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/project-library-lifecycle.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-010",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/project-library-lifecycle.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-011",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/exchange.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-012",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/exchange.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-013",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/exchange.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-014",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/exchange.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-015",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/exchange.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-016",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/exchange.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-017",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/project-library-lifecycle.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-018",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/output-revision.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-DATA-019",
+      "milestone": 5,
+      "status": "planned",
+      "workPaths": ["src/lib/persistence/project-library.ts", "src/lib/exchange/stage-exchange.ts"],
+      "proofPaths": ["tests/e2e/project-library-lifecycle.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ARCH-001",
+      "milestone": 0,
+      "status": "planned",
+      "workPaths": ["src/lib/composition/create-browser-application.ts"],
+      "proofPaths": ["tests/security/dependency-boundaries.spec.ts"],
+      "command": "pnpm test:security"
+    },
+    {
+      "id": "MVP-ARCH-002",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/composition/create-browser-application.ts"],
+      "proofPaths": ["tests/security/dependency-boundaries.spec.ts"],
+      "command": "pnpm test:security"
+    },
+    {
+      "id": "MVP-ARCH-003",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/composition/create-browser-application.ts"],
+      "proofPaths": ["tests/security/dependency-boundaries.spec.ts"],
+      "command": "pnpm test:security"
+    },
+    {
+      "id": "MVP-ARCH-004",
+      "milestone": 2,
+      "status": "planned",
+      "workPaths": ["src/lib/composition/create-browser-application.ts"],
+      "proofPaths": ["tests/security/dependency-boundaries.spec.ts"],
+      "command": "pnpm test:security"
+    },
+    {
+      "id": "MVP-ARCH-005",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/composition/create-browser-application.ts"],
+      "proofPaths": ["tests/e2e/server-boundary.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ARCH-006",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/composition/create-browser-application.ts"],
+      "proofPaths": ["tests/e2e/delivery-security.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ARCH-007",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/composition/create-browser-application.ts"],
+      "proofPaths": ["tests/e2e/delivery-security.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ARCH-008",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/composition/create-browser-application.ts"],
+      "proofPaths": ["tests/e2e/delivery-security.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ARCH-009",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/composition/create-browser-application.ts"],
+      "proofPaths": ["tests/e2e/delivery-security.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ARCH-010",
+      "milestone": 1,
+      "status": "planned",
+      "workPaths": ["src/lib/composition/create-browser-application.ts"],
+      "proofPaths": ["tests/gates/renderer-fit.spec.ts"],
+      "command": "pnpm gate:all"
+    },
+    {
+      "id": "MVP-NFR-001",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/presentation/workspace/ProjectWorkspace.svelte"],
+      "proofPaths": ["tests/e2e/platform-accessibility.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-NFR-002",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/presentation/workspace/ProjectWorkspace.svelte"],
+      "proofPaths": ["tests/e2e/platform-accessibility.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-NFR-003",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/presentation/workspace/ProjectWorkspace.svelte"],
+      "proofPaths": ["tests/e2e/platform-accessibility.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-NFR-004",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/presentation/workspace/ProjectWorkspace.svelte"],
+      "proofPaths": ["tests/e2e/platform-accessibility.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-NFR-005",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/presentation/workspace/ProjectWorkspace.svelte"],
+      "proofPaths": ["tests/e2e/platform-accessibility.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-NFR-006",
+      "milestone": 1,
+      "status": "planned",
+      "workPaths": ["src/lib/presentation/workspace/ProjectWorkspace.svelte"],
+      "proofPaths": ["tests/gates/graph-capacity.spec.ts"],
+      "command": "pnpm gate:all"
+    },
+    {
+      "id": "MVP-NFR-007",
+      "milestone": 1,
+      "status": "planned",
+      "workPaths": ["src/lib/presentation/workspace/ProjectWorkspace.svelte"],
+      "proofPaths": ["tests/gates/graph-capacity.spec.ts"],
+      "command": "pnpm gate:all"
+    },
+    {
+      "id": "MVP-GATE-001",
+      "milestone": 1,
+      "status": "planned",
+      "workPaths": ["evidence/gates"],
+      "proofPaths": ["evidence/gates/MVP-GATE-001.md"],
+      "command": "manual evidence review"
+    },
+    {
+      "id": "MVP-GATE-002",
+      "milestone": 1,
+      "status": "planned",
+      "workPaths": ["evidence/gates"],
+      "proofPaths": ["evidence/gates/MVP-GATE-002.md"],
+      "command": "manual evidence review"
+    },
+    {
+      "id": "MVP-GATE-003",
+      "milestone": 1,
+      "status": "planned",
+      "workPaths": ["evidence/gates"],
+      "proofPaths": ["evidence/gates/MVP-GATE-003.md"],
+      "command": "manual evidence review"
+    },
+    {
+      "id": "MVP-GATE-004",
+      "milestone": 1,
+      "status": "planned",
+      "workPaths": ["evidence/gates"],
+      "proofPaths": ["evidence/gates/MVP-GATE-004.md"],
+      "command": "manual evidence review"
+    },
+    {
+      "id": "MVP-GATE-005",
+      "milestone": 1,
+      "status": "planned",
+      "workPaths": ["evidence/gates"],
+      "proofPaths": ["evidence/gates/MVP-GATE-005.md"],
+      "command": "manual evidence review"
+    },
+    {
+      "id": "MVP-GATE-006",
+      "milestone": 1,
+      "status": "planned",
+      "workPaths": ["evidence/gates"],
+      "proofPaths": ["evidence/gates/MVP-GATE-006.md"],
+      "command": "manual evidence review"
+    },
+    {
+      "id": "MVP-GATE-007",
+      "milestone": 1,
+      "status": "planned",
+      "workPaths": ["evidence/gates"],
+      "proofPaths": ["evidence/gates/MVP-GATE-007.md"],
+      "command": "manual evidence review"
+    },
+    {
+      "id": "MVP-ACC-001",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-construction.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-002",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-construction.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-003",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-construction.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-004",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-construction.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-005",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-states.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-006",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-calculations.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-007",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-screening.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-008",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-validation.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-009",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-views-output.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-010",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-as-built.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-011",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-persistence.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-012",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-exchange.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-013",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-library-backup.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-014",
+      "milestone": 6,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-output.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-015",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-platform.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-016",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-network-server-loss.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-ACC-017",
+      "milestone": 7,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["evidence/platform/acceptance-matrix.md"],
+      "command": "manual evidence review"
+    },
+    {
+      "id": "MVP-ACC-018",
+      "milestone": 8,
+      "status": "planned",
+      "workPaths": ["src/lib/reference/rx7-example.v1.venae.json"],
+      "proofPaths": ["tests/e2e/rx7-round-trip.spec.ts"],
+      "command": "pnpm test:e2e"
+    },
+    {
+      "id": "MVP-HANDOFF-001",
+      "milestone": 0,
+      "status": "planned",
+      "workPaths": ["scripts/check-authority-baseline.mjs", "scripts/check-mvp-traceability.mjs"],
+      "proofPaths": ["evidence/traceability/authority-baseline.md"],
+      "command": "pnpm authority:check"
+    },
+    {
+      "id": "MVP-HANDOFF-002",
+      "milestone": 8,
+      "status": "planned",
+      "workPaths": ["scripts/check-authority-baseline.mjs", "scripts/check-mvp-traceability.mjs"],
+      "proofPaths": ["evidence/traceability/mvp-trace.json"],
+      "command": "pnpm traceability"
+    }
+  ]
+}

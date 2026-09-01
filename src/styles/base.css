@@ -1,0 +1,365 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 20rem;
+  background: var(--color-canvas);
+  font-family: var(--font-body);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    linear-gradient(rgb(227 255 99 / 3%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(227 255 99 / 3%) 1px, transparent 1px),
+    radial-gradient(circle at 72% 8%, rgb(53 100 99 / 22%), transparent 31rem), var(--color-canvas);
+  background-size:
+    3rem 3rem,
+    3rem 3rem,
+    auto,
+    auto;
+  color: var(--color-text);
+}
+
+button,
+a {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 0.2rem solid var(--color-accent);
+  outline-offset: 0.2rem;
+}
+
+.library-shell {
+  width: min(92rem, 100%);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 1.25rem clamp(1rem, 3vw, 3rem) 3rem;
+}
+
+.masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 4.5rem;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.wordmark-mark {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 50%;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+
+.wordmark strong,
+.wordmark small {
+  display: block;
+}
+
+.wordmark strong {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.wordmark small {
+  margin-top: 0.1rem;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+}
+
+.local-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.local-badge span {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 0.2rem rgb(227 255 99 / 12%);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 0.75fr);
+  gap: clamp(2rem, 7vw, 7rem);
+  align-items: end;
+  padding: clamp(4rem, 10vw, 8rem) 0 clamp(3rem, 7vw, 6rem);
+}
+
+.eyebrow {
+  margin: 0 0 0.8rem;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  text-wrap: pretty;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+h1 {
+  max-width: 13ch;
+  font-size: clamp(3.1rem, 7vw, 7.2rem);
+  line-height: 0.88;
+}
+
+h2 {
+  font-size: clamp(1.45rem, 2.5vw, 2.1rem);
+  line-height: 1.05;
+}
+
+.hero-summary {
+  max-width: 40rem;
+  margin: 1.75rem 0 0;
+  color: var(--color-text-muted);
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  line-height: 1.65;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.hero-actions button {
+  min-height: 3rem;
+  padding: 0.7rem 1.1rem;
+  border: 0;
+  border-radius: var(--radius-small);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  font-weight: 700;
+}
+
+.hero-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.hero-actions p {
+  max-width: 23rem;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.boundary-card {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-medium);
+  background: linear-gradient(145deg, rgb(34 57 59 / 94%), rgb(15 27 29 / 96%));
+  box-shadow: var(--shadow-raised);
+}
+
+.boundary-card dl {
+  margin: 1.75rem 0 0;
+}
+
+.boundary-card dl div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.boundary-card dt,
+.boundary-card dd {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.boundary-card dt {
+  color: var(--color-text-muted);
+}
+
+.boundary-card dd {
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  text-align: right;
+}
+
+.empty-library {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1.5rem;
+  border: 1px dashed var(--color-line-strong);
+  border-radius: var(--radius-medium);
+  background: rgb(17 29 31 / 76%);
+}
+
+.empty-library p:last-child {
+  margin: 0.65rem 0 0;
+  color: var(--color-text-muted);
+}
+
+.empty-icon {
+  position: relative;
+  width: 4rem;
+  height: 4rem;
+  border: 1px solid var(--color-line);
+  border-radius: 50%;
+}
+
+.empty-icon span {
+  position: absolute;
+  width: 0.6rem;
+  height: 0.6rem;
+  border: 2px solid var(--color-copper);
+  border-radius: 50%;
+}
+
+.empty-icon span:nth-child(1) {
+  top: 0.75rem;
+  left: 1.65rem;
+}
+
+.empty-icon span:nth-child(2) {
+  top: 2.35rem;
+  left: 0.85rem;
+}
+
+.empty-icon span:nth-child(3) {
+  top: 2.35rem;
+  left: 2.45rem;
+}
+
+.empty-icon::before,
+.empty-icon::after {
+  position: absolute;
+  width: 1.85rem;
+  height: 1px;
+  background: var(--color-copper);
+  content: '';
+  transform-origin: left center;
+}
+
+.empty-icon::before {
+  top: 1.35rem;
+  left: 1.85rem;
+  transform: rotate(115deg);
+}
+
+.empty-icon::after {
+  top: 2.65rem;
+  left: 1.25rem;
+}
+
+.route-error {
+  display: grid;
+  min-height: 100vh;
+  place-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.route-error h1 {
+  max-width: none;
+}
+
+.route-error p:not(.eyebrow) {
+  color: var(--color-text-muted);
+}
+
+.route-error a {
+  color: var(--color-accent);
+}
+
+@media (max-width: 52rem) {
+  .hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .boundary-card {
+    max-width: 34rem;
+  }
+}
+
+@media (max-width: 38rem) {
+  .library-shell {
+    padding-inline: 1rem;
+  }
+
+  .wordmark small,
+  .local-badge {
+    display: none;
+  }
+
+  .hero {
+    padding-top: 3.25rem;
+  }
+
+  h1 {
+    font-size: clamp(3rem, 16vw, 5rem);
+  }
+
+  .hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hero-actions button {
+    min-height: 3.25rem;
+  }
+
+  .empty-library {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
