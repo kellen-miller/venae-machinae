@@ -48,18 +48,24 @@ export function generateRendererCapacityProject(scale: CapacityScale): ProjectDo
     return {
       id: `renderer-component-${scale}x-${componentIndex}`,
       label: `Capacity component ${componentIndex + 1}`,
-      kind: domain,
-      x: String(position.x),
-      y: String(position.y),
+      kind: 'part' as const,
+      definitionId: null,
+      predecessorId: null,
+      successorId: null,
+      position: { x: String(position.x), y: String(position.y) },
       ports: Array.from({ length: 5 }, (_, localPortIndex) => ({
         id: portId(scale, componentIndex, localPortIndex),
+        componentId: `renderer-component-${scale}x-${componentIndex}`,
         label: `P${localPortIndex + 1}`,
-        domain
+        domain,
+        mediumId: domain === 'electrical' ? null : 'medium-renderer-fluid',
+        interfaceKey: null
       }))
     };
   });
-  const connections = Array.from({ length: counts.connections }, (_, connectionIndex) => {
-    const kind = CONNECTION_KINDS[connectionIndex % CONNECTION_KINDS.length];
+  const routedConnections = Array.from({ length: counts.connections }, (_, connectionIndex) => {
+    const kind = CONNECTION_KINDS[connectionIndex % CONNECTION_KINDS.length] ?? 'electrical-wire';
+    const domain = kind === 'electrical-wire' ? ('electrical' as const) : ('fluid' as const);
     const domainOffset = kind === 'electrical-wire' ? 0 : 1;
     const sourceDomainIndex =
       Math.floor(connectionIndex / CONNECTION_KINDS.length) % componentsPerDomain;
@@ -81,32 +87,71 @@ export function generateRendererCapacityProject(scale: CapacityScale): ProjectDo
       y: targetPosition.y + COMPONENT_HEIGHT * targetOffset
     };
 
+    const connectionId = `renderer-connection-${scale}x-${connectionIndex}`;
+    const routeId = `renderer-route-${scale}x-${connectionIndex}`;
+    const segmentId = `renderer-segment-${scale}x-${connectionIndex}`;
     return {
-      id: `renderer-connection-${scale}x-${connectionIndex}`,
-      sourcePortId: portId(scale, sourceComponentIndex, sourceLocalPortIndex),
-      targetPortId: portId(scale, targetComponentIndex, targetLocalPortIndex),
-      kind,
-      routePoints: [
-        {
+      connection: {
+        id: connectionId,
+        label: `Capacity path ${connectionIndex + 1}`,
+        systemId: domain === 'electrical' ? 'system-renderer-power' : 'system-renderer-fluid',
+        sourcePortId: portId(scale, sourceComponentIndex, sourceLocalPortIndex),
+        targetPortId: portId(scale, targetComponentIndex, targetLocalPortIndex),
+        domain,
+        mediumId: domain === 'electrical' ? null : 'medium-renderer-fluid',
+        kind,
+        interfaceAssessment: 'unknown' as const,
+        routeId
+      },
+      route: { id: routeId, segmentIds: [segmentId] },
+      segment: {
+        id: segmentId,
+        label: `Capacity route ${connectionIndex + 1}`,
+        start: { x: String(sourceCenter.x), y: String(sourceCenter.y) },
+        end: {
           x: String((sourceCenter.x + targetCenter.x) / 2),
           y: String((sourceCenter.y + targetCenter.y) / 2 + ((connectionIndex % 3) - 1) * 24)
         }
-      ]
+      }
     };
   });
+  const connections = routedConnections.map((entry) => entry.connection);
 
   return projectDocumentSchema.parse({
-    schemaVersion: 1,
+    schemaVersion: 2,
     project: {
       id: `renderer-capacity-project-${scale}x`,
       name: `Renderer capacity ${scale}x`,
       revision: 1,
-      updatedAt: '2026-09-01T00:00:00Z'
+      createdAt: '2026-09-01T00:00:00Z'
     },
-    topology: { components, connections },
+    topology: {
+      systems: [
+        {
+          id: 'system-renderer-power',
+          label: 'Renderer power',
+          domain: 'electrical',
+          mediumId: null
+        },
+        {
+          id: 'system-renderer-fluid',
+          label: 'Renderer fluid',
+          domain: 'fluid',
+          mediumId: 'medium-renderer-fluid'
+        }
+      ],
+      components,
+      connections,
+      routes: routedConnections.map((entry) => entry.route),
+      segments: routedConnections.map((entry) => entry.segment)
+    },
+    partDefinitions: [],
+    partRequirements: [],
+    evidence: [],
     engineeringValues: [],
     operatingStates: [],
     results: [],
+    tombstones: [],
     settings: { unitSystem: 'metric' },
     assetHashes: []
   });
@@ -142,7 +187,7 @@ export function projectRendererCapacityDocument(document: ProjectDocument): Rend
     id: component.id,
     label: component.label,
     kind: component.kind,
-    position: { x: Number(component.x), y: Number(component.y) },
+    position: { x: Number(component.position.x), y: Number(component.position.y) },
     width: COMPONENT_WIDTH,
     height: COMPONENT_HEIGHT,
     selected: false,
@@ -158,18 +203,31 @@ export function projectRendererCapacityDocument(document: ProjectDocument): Rend
     }))
   }));
   const connections: RendererConnection[] = parsed.topology.connections.map(
-    (connection, connectionIndex) => ({
-      id: connection.id,
-      label: `Capacity path ${connectionIndex + 1}`,
-      sourcePortId: connection.sourcePortId,
-      targetPortId: connection.targetPortId,
-      physical: physicalConnection(connection.kind, connectionIndex),
-      routePoints: connection.routePoints.map((point, routePointIndex) => ({
-        id: `${connection.id}-route-${routePointIndex + 1}`,
-        position: { x: Number(point.x), y: Number(point.y) }
-      })),
-      selected: false
-    })
+    (connection, connectionIndex) => {
+      const route = parsed.topology.routes.find((candidate) => candidate.id === connection.routeId);
+      return {
+        id: connection.id,
+        label: connection.label,
+        sourcePortId: connection.sourcePortId,
+        targetPortId: connection.targetPortId,
+        physical: physicalConnection(connection.kind, connectionIndex),
+        routePoints:
+          route?.segmentIds.flatMap((segmentId) => {
+            const segment = parsed.topology.segments.find(
+              (candidate) => candidate.id === segmentId
+            );
+            return segment
+              ? [
+                  {
+                    id: segment.id,
+                    position: { x: Number(segment.end.x), y: Number(segment.end.y) }
+                  }
+                ]
+              : [];
+          }) ?? [],
+        selected: false
+      };
+    }
   );
   const overlayMarks: RendererOverlayMark[] = [];
   for (let connectionIndex = 0; connectionIndex < connections.length; connectionIndex += 10) {

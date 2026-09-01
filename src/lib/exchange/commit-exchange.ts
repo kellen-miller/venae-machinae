@@ -21,6 +21,20 @@ export type ExchangeCommitOutcome =
 
 function rekeyProjectCopy(project: ProjectDocument): ProjectDocument {
   const projectId = crypto.randomUUID();
+  const systemIds = new Map(
+    project.topology.systems.map((system) => [system.id, crypto.randomUUID()])
+  );
+  const mediumIds = new Map(
+    [
+      ...project.topology.systems.map((system) => system.mediumId),
+      ...project.topology.components.flatMap((component) =>
+        component.ports.map((port) => port.mediumId)
+      ),
+      ...project.topology.connections.map((connection) => connection.mediumId)
+    ]
+      .filter((mediumId): mediumId is string => mediumId !== null)
+      .map((mediumId) => [mediumId, crypto.randomUUID()])
+  );
   const componentIds = new Map(
     project.topology.components.map((component) => [component.id, crypto.randomUUID()])
   );
@@ -29,6 +43,41 @@ function rekeyProjectCopy(project: ProjectDocument): ProjectDocument {
       component.ports.map((port) => [port.id, crypto.randomUUID()] as const)
     )
   );
+  const connectionIds = new Map(
+    project.topology.connections.map((connection) => [connection.id, crypto.randomUUID()])
+  );
+  const routeIds = new Map(project.topology.routes.map((route) => [route.id, crypto.randomUUID()]));
+  const segmentIds = new Map(
+    project.topology.segments.map((segment) => [segment.id, crypto.randomUUID()])
+  );
+  const definitionIds = new Map(
+    project.partDefinitions.map((definition) => [definition.id, crypto.randomUUID()])
+  );
+  const requirementIds = new Map(
+    project.partRequirements.map((requirement) => [requirement.id, crypto.randomUUID()])
+  );
+  const evidenceIds = new Map(
+    project.evidence.map((evidence) => [evidence.id, crypto.randomUUID()])
+  );
+  const tombstoneIds = new Map(
+    project.tombstones.flatMap((tombstone) => [
+      [tombstone.subjectId, crypto.randomUUID()] as const,
+      [tombstone.successorId, crypto.randomUUID()] as const
+    ])
+  );
+  const subjectId = (id: string): string =>
+    (id === project.project.id ? projectId : undefined) ??
+    systemIds.get(id) ??
+    componentIds.get(id) ??
+    portIds.get(id) ??
+    connectionIds.get(id) ??
+    routeIds.get(id) ??
+    segmentIds.get(id) ??
+    definitionIds.get(id) ??
+    requirementIds.get(id) ??
+    evidenceIds.get(id) ??
+    tombstoneIds.get(id) ??
+    id;
 
   return projectDocumentSchema.parse({
     ...project,
@@ -37,13 +86,26 @@ function rekeyProjectCopy(project: ProjectDocument): ProjectDocument {
       id: projectId,
       name: `${project.project.name} copy`,
       revision: 1,
-      updatedAt: new Date().toISOString()
+      createdAt: new Date().toISOString()
     },
     topology: {
+      systems: project.topology.systems.map((system) => ({
+        ...system,
+        id: systemIds.get(system.id),
+        mediumId: system.mediumId === null ? null : mediumIds.get(system.mediumId)
+      })),
       components: project.topology.components.map((component) => ({
         ...component,
         id: componentIds.get(component.id),
-        ports: component.ports.map((port) => ({ ...port, id: portIds.get(port.id) }))
+        definitionId: component.definitionId === null ? null : subjectId(component.definitionId),
+        predecessorId: component.predecessorId === null ? null : subjectId(component.predecessorId),
+        successorId: component.successorId === null ? null : subjectId(component.successorId),
+        ports: component.ports.map((port) => ({
+          ...port,
+          id: portIds.get(port.id),
+          componentId: componentIds.get(component.id),
+          mediumId: port.mediumId === null ? null : mediumIds.get(port.mediumId)
+        }))
       })),
       connections: project.topology.connections.map((connection) => {
         const sourcePortId = portIds.get(connection.sourcePortId);
@@ -54,12 +116,43 @@ function rekeyProjectCopy(project: ProjectDocument): ProjectDocument {
 
         return {
           ...connection,
-          id: crypto.randomUUID(),
+          id: connectionIds.get(connection.id),
+          systemId: systemIds.get(connection.systemId),
           sourcePortId,
-          targetPortId
+          targetPortId,
+          mediumId: connection.mediumId === null ? null : mediumIds.get(connection.mediumId),
+          routeId: connection.routeId === null ? null : routeIds.get(connection.routeId)
         };
-      })
+      }),
+      routes: project.topology.routes.map((route) => ({
+        ...route,
+        id: routeIds.get(route.id),
+        segmentIds: route.segmentIds.map((segmentId) => segmentIds.get(segmentId))
+      })),
+      segments: project.topology.segments.map((segment) => ({
+        ...segment,
+        id: segmentIds.get(segment.id)
+      }))
     },
+    partDefinitions: project.partDefinitions.map((definition) => ({
+      ...definition,
+      id: definitionIds.get(definition.id),
+      provenance: `Imported as copy from ${project.project.id}; ${definition.provenance}`
+    })),
+    partRequirements: project.partRequirements.map((requirement) => ({
+      ...requirement,
+      id: requirementIds.get(requirement.id),
+      subjectId: subjectId(requirement.subjectId)
+    })),
+    evidence: project.evidence.map((evidence) => ({
+      ...evidence,
+      id: evidenceIds.get(evidence.id),
+      subjectId: subjectId(evidence.subjectId),
+      provenance:
+        evidence.provenance === null
+          ? `Imported as copy from ${project.project.id}`
+          : `Imported as copy from ${project.project.id}; ${evidence.provenance}`
+    })),
     engineeringValues: project.engineeringValues.map((value) => ({
       ...value,
       id: crypto.randomUUID(),
@@ -74,6 +167,11 @@ function rekeyProjectCopy(project: ProjectDocument): ProjectDocument {
       id: crypto.randomUUID(),
       sourceRevision: 1,
       status: 'stale'
+    })),
+    tombstones: project.tombstones.map((tombstone) => ({
+      ...tombstone,
+      subjectId: subjectId(tombstone.subjectId),
+      successorId: subjectId(tombstone.successorId)
     }))
   });
 }

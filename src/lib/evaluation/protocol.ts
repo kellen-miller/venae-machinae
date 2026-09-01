@@ -25,7 +25,6 @@ const evaluationPortSchema = z.strictObject({
 
 const evaluationComponentSchema = z.strictObject({
   id: identity,
-  kind: z.enum(['electrical', 'fluid']),
   ports: z.array(evaluationPortSchema)
 });
 
@@ -151,7 +150,6 @@ export function createEvaluationProject(document: ProjectDocument): EvaluationPr
     projectRevision: document.project.revision,
     components: document.topology.components.map((component) => ({
       id: component.id,
-      kind: component.kind,
       ports: component.ports.map((port) => ({ id: port.id, domain: port.domain }))
     })),
     connections: document.topology.connections.map((connection) => ({

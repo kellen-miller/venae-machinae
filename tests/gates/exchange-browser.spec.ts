@@ -30,7 +30,7 @@ test('MVP-GATE-004 stages measured exchange limits in production browsers', asyn
   await page.addInitScript({
     content: `${browserBundle}\nwindow.VenaeExchangeGate = VenaeExchangeGate;`
   });
-  await page.goto('/');
+  await page.goto('/health');
   const result = await page.evaluate(() =>
     (
       window as unknown as {
@@ -104,7 +104,7 @@ test('MVP-GATE-004 stages measured exchange limits in production browsers', asyn
       originalAssetBytes: 65_536,
       assetCount: 1,
       maxNestingDepth: 7,
-      collectionEntries: 4_203
+      collectionEntries: 3_005
     },
     {
       scale: 2,
@@ -114,7 +114,7 @@ test('MVP-GATE-004 stages measured exchange limits in production browsers', asyn
       originalAssetBytes: 524_288,
       assetCount: 1,
       maxNestingDepth: 7,
-      collectionEntries: 8_403
+      collectionEntries: 6_005
     },
     {
       scale: 5,
@@ -124,7 +124,7 @@ test('MVP-GATE-004 stages measured exchange limits in production browsers', asyn
       originalAssetBytes: 12_582_912,
       assetCount: 2,
       maxNestingDepth: 7,
-      collectionEntries: 21_006
+      collectionEntries: 15_008
     }
   ]);
   for (const measurement of result.results) {

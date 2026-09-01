@@ -15,7 +15,7 @@ test('production shell exposes delivery state without a project endpoint', async
   await expect(
     page.getByRole('heading', { name: 'Your vehicle systems work stays in this browser.' })
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Blank project' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Blank project' })).toBeEnabled();
 
   const health = await request.get('/health');
   expect(health.status()).toBe(200);

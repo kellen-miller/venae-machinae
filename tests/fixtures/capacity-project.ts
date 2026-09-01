@@ -1,4 +1,7 @@
-import type { ProjectDocument } from '../../src/lib/persistence/project-document';
+import {
+  projectDocumentSchema,
+  type ProjectDocument
+} from '../../src/lib/persistence/project-document';
 
 export type CapacityScale = 1 | 2 | 5;
 
@@ -13,39 +16,77 @@ export function generateCapacityProject(scale: CapacityScale): ProjectDocument {
   const components = Array.from({ length: counts.components }, (_, componentIndex) => ({
     id: `component-${scale}x-${componentIndex}`,
     label: `Component ${componentIndex + 1}`,
-    kind: componentIndex % 2 === 0 ? ('electrical' as const) : ('fluid' as const),
-    x: String((componentIndex % 30) * 180),
-    y: String(Math.floor(componentIndex / 30) * 120),
+    kind: 'part' as const,
+    definitionId: null,
+    predecessorId: null,
+    successorId: null,
+    position: {
+      x: String((componentIndex % 30) * 180),
+      y: String(Math.floor(componentIndex / 30) * 120)
+    },
     ports: Array.from({ length: 5 }, (_, localPortIndex) => ({
       id: `port-${scale}x-${componentIndex * 5 + localPortIndex}`,
+      componentId: `component-${scale}x-${componentIndex}`,
       label: `P${localPortIndex + 1}`,
-      domain: componentIndex % 2 === 0 ? ('electrical' as const) : ('fluid' as const)
+      domain: componentIndex % 2 === 0 ? ('electrical' as const) : ('fluid' as const),
+      mediumId: componentIndex % 2 === 0 ? null : 'medium-capacity-fluid',
+      interfaceKey: null
     }))
   }));
   const connectionKinds = ['electrical-wire', 'fluid-hose', 'fluid-tube', 'fluid-pipe'] as const;
-  const connections = Array.from({ length: counts.connections }, (_, connectionIndex) => ({
-    id: `connection-${scale}x-${connectionIndex}`,
-    sourcePortId: `port-${scale}x-${connectionIndex}`,
-    targetPortId: `port-${scale}x-${(connectionIndex + 1) % counts.ports}`,
-    kind: connectionKinds[connectionIndex % connectionKinds.length] ?? 'electrical-wire',
-    routePoints: [
-      { x: String(connectionIndex % 100), y: String(Math.floor(connectionIndex / 100)) }
-    ]
-  }));
+  const connections = Array.from({ length: counts.connections }, (_, connectionIndex) => {
+    const kind = connectionKinds[connectionIndex % connectionKinds.length] ?? 'electrical-wire';
+    const domain = kind === 'electrical-wire' ? ('electrical' as const) : ('fluid' as const);
+    return {
+      id: `connection-${scale}x-${connectionIndex}`,
+      label: `Connection ${connectionIndex + 1}`,
+      systemId: domain === 'electrical' ? 'system-capacity-power' : 'system-capacity-fluid',
+      sourcePortId: `port-${scale}x-${connectionIndex}`,
+      targetPortId: `port-${scale}x-${(connectionIndex + 1) % counts.ports}`,
+      domain,
+      mediumId: domain === 'electrical' ? null : 'medium-capacity-fluid',
+      kind,
+      interfaceAssessment: 'unknown' as const,
+      routeId: null
+    };
+  });
 
-  return {
-    schemaVersion: 1,
+  return projectDocumentSchema.parse({
+    schemaVersion: 2,
     project: {
       id: `capacity-project-${scale}x`,
       name: `Capacity ${scale}x`,
       revision: 1,
-      updatedAt: '2026-09-01T00:00:00Z'
+      createdAt: '2026-09-01T00:00:00Z'
     },
-    topology: { components, connections },
+    topology: {
+      systems: [
+        {
+          id: 'system-capacity-power',
+          label: 'Capacity power',
+          domain: 'electrical',
+          mediumId: null
+        },
+        {
+          id: 'system-capacity-fluid',
+          label: 'Capacity fluid',
+          domain: 'fluid',
+          mediumId: 'medium-capacity-fluid'
+        }
+      ],
+      components,
+      connections,
+      routes: [],
+      segments: []
+    },
+    partDefinitions: [],
+    partRequirements: [],
+    evidence: [],
     engineeringValues: [],
     operatingStates: [],
     results: [],
+    tombstones: [],
     settings: { unitSystem: 'metric' },
     assetHashes: []
-  };
+  });
 }

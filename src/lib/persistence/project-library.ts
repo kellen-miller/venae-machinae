@@ -1,9 +1,15 @@
 import { openDB } from 'idb';
 
+import { createBlankProject as createBlankProjectSnapshot } from '../project/project';
 import { PROJECT_LIBRARY_DATABASE_NAME, PROJECT_LIBRARY_DATABASE_VERSION } from './database-schema';
-import { projectDocumentSchema } from './project-document';
+import {
+  projectDocumentSchema,
+  projectDocumentToSnapshot,
+  projectSnapshotToDocument
+} from './project-document';
 
 import type { IDBPDatabase } from 'idb';
+import type { ProjectSnapshot } from '../project/project';
 import type { ProjectLibraryDatabase, RecoveryCheckpoint, StoredAsset } from './database-schema';
 import type { ProjectDocument } from './project-document';
 
@@ -78,6 +84,55 @@ export class BrowserProjectLibrary {
   async loadProject(projectId: string): Promise<ProjectDocument | undefined> {
     const stored = await this.database.get('projects', projectId);
     return stored ? projectDocumentSchema.parse(stored.snapshot) : undefined;
+  }
+
+  async createBlankProject(input: {
+    id: string;
+    name: string;
+    createdAt: string;
+  }): Promise<
+    | { created: true; snapshot: ProjectSnapshot }
+    | { created: false; reason: 'already-exists' | 'quota-exceeded' | 'storage-error' }
+  > {
+    const snapshot = createBlankProjectSnapshot(input);
+    const outcome = await this.saveProject({
+      projectId: snapshot.id,
+      expectedRevision: null,
+      snapshot: projectSnapshotToDocument(snapshot),
+      newAssets: []
+    });
+    if (outcome.saved) return { created: true, snapshot };
+    if (outcome.reason === 'revision-conflict') return { created: false, reason: 'already-exists' };
+    return { created: false, reason: outcome.reason };
+  }
+
+  async listProjects(): Promise<
+    readonly Readonly<{
+      id: string;
+      name: string;
+      revision: number;
+      createdAt: string;
+    }>[]
+  > {
+    const projects = await this.database.getAll('projects');
+    return projects
+      .map((stored) => {
+        const document = projectDocumentSchema.parse(stored.snapshot);
+        return {
+          id: document.project.id,
+          name: document.project.name,
+          revision: document.project.revision,
+          createdAt: document.project.createdAt
+        };
+      })
+      .sort(
+        (left, right) => left.name.localeCompare(right.name) || left.id.localeCompare(right.id)
+      );
+  }
+
+  async openProject(projectId: string): Promise<ProjectSnapshot | undefined> {
+    const document = await this.loadProject(projectId);
+    return document ? projectDocumentToSnapshot(document) : undefined;
   }
 
   async createCheckpoint(input: {

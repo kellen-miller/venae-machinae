@@ -55,11 +55,59 @@ export default defineConfig(
     }
   },
   {
-    files: pureDomainFiles,
+    files: ['src/**/*.{js,svelte,ts}'],
+    ignores: ['src/lib/renderer/xyflow/**'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
+          paths: [
+            {
+              name: '@xyflow/svelte',
+              message: 'Renderer-library imports belong only in src/lib/renderer/xyflow.'
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    files: pureDomainFiles,
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        ...[
+          'window',
+          'document',
+          'navigator',
+          'indexedDB',
+          'localStorage',
+          'sessionStorage',
+          'Worker',
+          'BroadcastChannel',
+          'WebSocket',
+          'fetch',
+          'crypto',
+          'process',
+          'Buffer',
+          'setTimeout',
+          'clearTimeout',
+          'requestAnimationFrame',
+          'structuredClone'
+        ].map((name) => ({
+          name,
+          message: 'Pure domain modules cannot depend on browser, worker, or Node globals.'
+        }))
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@xyflow/svelte',
+              message: 'Renderer-library imports belong only in src/lib/renderer/xyflow.'
+            }
+          ],
           patterns: [
             {
               group: [
@@ -73,6 +121,14 @@ export default defineConfig(
                 '$lib/renderer/*',
                 '$lib/reporting/*',
                 '$lib/session/*',
+                '**/composition/**',
+                '**/evaluation/**',
+                '**/exchange/**',
+                '**/persistence/**',
+                '**/presentation/**',
+                '**/renderer/**',
+                '**/reporting/**',
+                '**/session/**',
                 '@sveltejs/*',
                 'node:*',
                 'svelte',
@@ -80,23 +136,6 @@ export default defineConfig(
               ],
               message:
                 'Pure domain modules cannot depend on framework, browser-adapter, worker, renderer, or server code.'
-            }
-          ]
-        }
-      ]
-    }
-  },
-  {
-    files: ['src/**/*.{js,svelte,ts}'],
-    ignores: ['src/lib/renderer/xyflow/**'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: '@xyflow/svelte',
-              message: 'Renderer-library imports belong only in src/lib/renderer/xyflow.'
             }
           ]
         }

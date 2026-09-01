@@ -35,7 +35,7 @@ function createInitialization(
     inputFingerprint: fingerprint,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 1,
+    schemaVersion: 2,
     project
   };
 }
@@ -125,7 +125,6 @@ describe('MVP-GATE-005 worker boundary', () => {
       expect(cloned.project.connections).toHaveLength(connectionCount);
       expect(cloned.project.components[0]).toEqual({
         id: `component-${scale}x-0`,
-        kind: 'electrical',
         ports: [
           { id: `port-${scale}x-0`, domain: 'electrical' },
           { id: `port-${scale}x-1`, domain: 'electrical' },
@@ -148,7 +147,7 @@ describe('MVP-GATE-005 worker boundary', () => {
       inputFingerprint: fingerprintTwo,
       formulaCatalogVersion: 1,
       validationRuleCatalogVersion: 1,
-      schemaVersion: 1,
+      schemaVersion: 2,
       changeSet: {
         baseRevision: 1,
         upsertComponents: [],
@@ -202,7 +201,7 @@ describe('MVP-GATE-005 worker boundary', () => {
       inputFingerprint: fingerprintOne,
       formulaCatalogVersion: 1,
       validationRuleCatalogVersion: 1,
-      schemaVersion: 1
+      schemaVersion: 2
     });
     expect(harness.workers[0]?.sent.map((message) => message.requestId)).toEqual([
       'first',

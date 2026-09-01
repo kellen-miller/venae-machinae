@@ -15,23 +15,40 @@
       "id": "MVP-PROD-002",
       "milestone": 2,
       "status": "planned",
-      "workPaths": ["src/lib/project/project.ts", "src/lib/session/project-session.svelte.ts"],
-      "proofPaths": ["tests/domain/project.spec.ts"],
+      "workPaths": [
+        "src/lib/project/project.ts",
+        "src/lib/project/apply-action.ts",
+        "src/lib/topology/topology.ts"
+      ],
+      "proofPaths": ["tests/domain/project.spec.ts", "tests/domain/topology.spec.ts"],
       "command": "pnpm test:unit"
     },
     {
       "id": "MVP-PROD-003",
       "milestone": 2,
       "status": "planned",
-      "workPaths": ["src/lib/project/project.ts", "src/lib/session/project-session.svelte.ts"],
-      "proofPaths": ["tests/e2e/projection-revision.spec.ts"],
+      "workPaths": [
+        "src/lib/project/project.ts",
+        "src/lib/session/project-session.svelte.ts",
+        "src/lib/presentation/workspace/ProjectWorkspace.svelte",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": [
+        "tests/domain/project.spec.ts",
+        "tests/domain/project-session.spec.ts",
+        "tests/e2e/projection-revision.spec.ts"
+      ],
       "command": "pnpm test:e2e"
     },
     {
       "id": "MVP-PROD-004",
       "milestone": 2,
       "status": "planned",
-      "workPaths": ["src/lib/project/project.ts", "src/lib/session/project-session.svelte.ts"],
+      "workPaths": [
+        "src/lib/project/project.ts",
+        "src/lib/project/apply-action.ts",
+        "src/lib/evidence/evidence.ts"
+      ],
       "proofPaths": ["tests/domain/project.spec.ts"],
       "command": "pnpm test:unit"
     },
@@ -1010,24 +1027,53 @@
       "id": "MVP-ARCH-002",
       "milestone": 2,
       "status": "planned",
-      "workPaths": ["src/lib/composition/create-browser-application.ts"],
-      "proofPaths": ["tests/security/dependency-boundaries.spec.ts"],
+      "workPaths": [
+        "src/lib/composition/create-browser-application.ts",
+        "src/lib/persistence/project-library.ts",
+        "src/lib/session/project-session.svelte.ts"
+      ],
+      "proofPaths": [
+        "tests/domain/project-session.spec.ts",
+        "tests/security/dependency-boundaries.spec.ts"
+      ],
       "command": "pnpm test:security"
     },
     {
       "id": "MVP-ARCH-003",
       "milestone": 2,
       "status": "planned",
-      "workPaths": ["src/lib/composition/create-browser-application.ts"],
-      "proofPaths": ["tests/security/dependency-boundaries.spec.ts"],
+      "workPaths": [
+        "eslint.config.js",
+        "src/lib/composition/create-browser-application.ts",
+        "src/lib/persistence/persisted-session-backing.ts",
+        "src/lib/session/project-context.ts",
+        "src/lib/session/project-session.svelte.ts",
+        "src/lib/session/session-backing.ts"
+      ],
+      "proofPaths": [
+        "tests/domain/project-library-session.spec.ts",
+        "tests/domain/project-session.spec.ts",
+        "tests/security/dependency-boundaries.spec.ts"
+      ],
       "command": "pnpm test:security"
     },
     {
       "id": "MVP-ARCH-004",
       "milestone": 2,
       "status": "planned",
-      "workPaths": ["src/lib/composition/create-browser-application.ts"],
-      "proofPaths": ["tests/security/dependency-boundaries.spec.ts"],
+      "workPaths": [
+        "src/lib/composition/create-browser-application.ts",
+        "src/lib/evaluation/evaluation-client.ts",
+        "src/lib/evaluation/protocol.ts",
+        "src/lib/persistence/project-document.ts",
+        "src/lib/persistence/project-lease.ts",
+        "src/lib/renderer/projection.ts"
+      ],
+      "proofPaths": [
+        "tests/domain/project-evaluation-scheduler.spec.ts",
+        "tests/domain/project-session.spec.ts",
+        "tests/security/dependency-boundaries.spec.ts"
+      ],
       "command": "pnpm test:security"
     },
     {

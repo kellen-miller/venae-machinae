@@ -1,12 +1,20 @@
 import {
   cancelEvaluationSchema,
+  createEvaluationProject,
   evaluationIdentityMatches,
   initializeEvaluationSchema,
   workerRequestSchema,
   workerResultSchema
 } from './protocol';
+import { canonicalJson, sha256Hex } from '../exchange/canonical-json';
+import { projectSnapshotToDocument } from '../persistence/project-document';
+import { APPLICATION_VERSIONS } from '../version/version-registry';
 
 import type { EvaluationRequest, InitializeEvaluation, ProjectSystemAction } from './protocol';
+import type {
+  ProjectEvaluationRequest,
+  ProjectEvaluationScheduler
+} from '../session/project-session.svelte';
 
 type ScheduledEvaluation = {
   request: EvaluationRequest;
@@ -202,5 +210,78 @@ export class EvaluationClient {
     if (!this.#cancellationTimer) return;
     clearTimeout(this.#cancellationTimer);
     this.#cancellationTimer = null;
+  }
+}
+
+export class BrowserProjectEvaluationScheduler implements ProjectEvaluationScheduler {
+  readonly #client: EvaluationClient;
+  readonly #requests = new Map<string, ProjectEvaluationRequest>();
+  #sequence = 0;
+  #closed = false;
+
+  constructor(dependencies: { createWorker: () => Worker; isServerConnected: () => boolean }) {
+    this.#client = new EvaluationClient({
+      ...dependencies,
+      publish: (action) => this.#publish(action)
+    });
+  }
+
+  schedule(request: ProjectEvaluationRequest): void {
+    if (this.#closed) throw new Error('Project evaluation scheduler is closed');
+    const sequence = ++this.#sequence;
+    void this.#prepare(request, sequence).catch(() => {
+      if (this.#closed || sequence !== this.#sequence) return;
+      request.publish([
+        {
+          id: 'result-evaluation-summary',
+          sourceRevision: request.sourceRevision,
+          status: 'failed',
+          kind: 'evaluation-summary'
+        }
+      ]);
+    });
+  }
+
+  close(): void {
+    if (this.#closed) return;
+    this.#closed = true;
+    this.#sequence += 1;
+    this.#requests.clear();
+    this.#client.close();
+  }
+
+  async #prepare(request: ProjectEvaluationRequest, sequence: number): Promise<void> {
+    const document = projectSnapshotToDocument(request.snapshot);
+    const project = createEvaluationProject(document);
+    const inputFingerprint = await sha256Hex(canonicalJson(project));
+    if (this.#closed || sequence !== this.#sequence) return;
+
+    const initialization: InitializeEvaluation = {
+      type: 'initialize-evaluation',
+      requestId: crypto.randomUUID(),
+      projectRevision: request.sourceRevision,
+      inputFingerprint,
+      formulaCatalogVersion: APPLICATION_VERSIONS.formulaCatalog,
+      validationRuleCatalogVersion: APPLICATION_VERSIONS.validationRuleCatalog,
+      schemaVersion: APPLICATION_VERSIONS.projectDocumentSchema,
+      project
+    };
+    this.#requests.clear();
+    this.#requests.set(initialization.requestId, request);
+    this.#client.schedule({ request: initialization, initialization });
+  }
+
+  #publish(action: ProjectSystemAction): void {
+    const request = this.#requests.get(action.outcome.requestId);
+    if (!request) return;
+    this.#requests.delete(action.outcome.requestId);
+    request.publish([
+      {
+        id: 'result-evaluation-summary',
+        sourceRevision: request.sourceRevision,
+        status: action.outcome.type === 'evaluation-succeeded' ? 'current' : 'failed',
+        kind: 'evaluation-summary'
+      }
+    ]);
   }
 }

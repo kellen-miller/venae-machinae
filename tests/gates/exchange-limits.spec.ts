@@ -82,7 +82,7 @@ describe('MVP-GATE-004 exchange limits', () => {
     });
     expect(outcome.measurements.envelopeBytes).toBeGreaterThan(250_000);
     expect(outcome.measurements.maxNestingDepth).toBe(7);
-    expect(outcome.measurements.collectionEntries).toBe(4_203);
+    expect(outcome.measurements.collectionEntries).toBe(3_005);
   });
 
   it('rejects payload mutation even when export metadata is unchanged', async () => {
@@ -152,7 +152,7 @@ describe('MVP-GATE-004 exchange limits', () => {
     ).resolves.toEqual(expect.objectContaining({ staged: false, reason: 'nesting-depth' }));
 
     await expect(
-      stageExchange(asBlob(counted), { ...MEASURED_EXCHANGE_LIMITS, maxCollectionEntries: 4_202 })
+      stageExchange(asBlob(counted), { ...MEASURED_EXCHANGE_LIMITS, maxCollectionEntries: 3_004 })
     ).resolves.toEqual(expect.objectContaining({ staged: false, reason: 'collection-count' }));
   });
 
@@ -178,7 +178,12 @@ describe('MVP-GATE-004 exchange limits', () => {
 
   it('imports a copy by rekeying every provisional project-owned identity', async () => {
     const project = generateCapacityProject(1);
-    project.results.push({ id: 'result-original', sourceRevision: 1, status: 'current' });
+    project.results.push({
+      id: 'result-original',
+      sourceRevision: 1,
+      status: 'current',
+      kind: 'evaluation-summary'
+    });
     const envelope = await createProjectExchange({
       project,
       assets: [],

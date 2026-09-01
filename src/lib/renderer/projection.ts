@@ -1,3 +1,5 @@
+import type { ProjectSnapshot } from '../project/project';
+
 export type RendererPoint = Readonly<{
   x: number;
   y: number;
@@ -167,4 +169,65 @@ export function rendererPortsCanConnect(
     (source.direction === 'output' || source.direction === 'bidirectional') &&
     (target.direction === 'input' || target.direction === 'bidirectional')
   );
+}
+
+export function projectSnapshotToRendererProjection(snapshot: ProjectSnapshot): RendererProjection {
+  const nodes: RendererNode[] = snapshot.topology.components.map((component) => ({
+    id: component.id,
+    label: component.label,
+    kind: component.kind,
+    position: { x: Number(component.position.x), y: Number(component.position.y) },
+    width: 176,
+    height: Math.max(96, 64 + component.ports.length * 24),
+    selected: false,
+    ports: component.ports.map((port, index) => ({
+      id: port.id,
+      nodeId: component.id,
+      label: port.label,
+      domain: port.domain,
+      direction: 'bidirectional',
+      side: index % 2 === 0 ? 'left' : 'right',
+      offset: (index + 1) / (component.ports.length + 1),
+      compatibility: 'idle'
+    }))
+  }));
+  const connections: RendererConnection[] = snapshot.topology.connections.map((connection) => {
+    const route = snapshot.topology.routes.find((candidate) => candidate.id === connection.routeId);
+    return {
+      id: connection.id,
+      label: connection.label,
+      sourcePortId: connection.sourcePortId,
+      targetPortId: connection.targetPortId,
+      physical:
+        connection.kind === 'electrical-wire'
+          ? { kind: 'wire', direction: 'unknown' }
+          : {
+              kind: connection.kind.replace('fluid-', '') as 'hose' | 'tube' | 'pipe',
+              ...(connection.mediumId ? { medium: connection.mediumId } : {}),
+              direction: 'unknown'
+            },
+      routePoints:
+        route?.segmentIds.flatMap((segmentId) => {
+          const segment = snapshot.topology.segments.find(
+            (candidate) => candidate.id === segmentId
+          );
+          return segment
+            ? [
+                {
+                  id: `${connection.id}:${segment.id}`,
+                  position: { x: Number(segment.end.x), y: Number(segment.end.y) }
+                }
+              ]
+            : [];
+        }) ?? [],
+      selected: false
+    };
+  });
+
+  return validateRendererProjection({
+    revision: snapshot.revision,
+    nodes,
+    connections,
+    overlayMarks: []
+  });
 }

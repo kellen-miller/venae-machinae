@@ -32,7 +32,7 @@ test('MVP-GATE-003 persists and recovers whole snapshots in a production browser
   await page.addInitScript({
     content: `${browserBundle}\nwindow.VenaePersistenceGate = VenaePersistenceGate;`
   });
-  await page.goto('/');
+  await page.goto('/health');
   const result = await page.evaluate(() =>
     (
       window as unknown as {
