@@ -132,7 +132,25 @@ export const projectDocumentSchema = z.strictObject({
     z.strictObject({ id: identity, name: z.string().min(1), description: z.string() })
   ),
   settings: z.strictObject({ unitSystem: z.enum(['metric', 'imperial']) }),
-  assetHashes: z.array(z.string().regex(/^[a-f0-9]{64}$/))
+  assetHashes: z.array(z.string().regex(/^[a-f0-9]{64}$/)),
+  vehicleBackground: z
+    .strictObject({
+      assetHash: z.string().regex(/^[a-f0-9]{64}$/),
+      mimeType: z.enum(['image/png', 'image/jpeg', 'image/webp']),
+      calibration: z.strictObject({
+        first: pointSchema,
+        second: pointSchema,
+        distance: z.strictObject({
+          decimal: decimalString,
+          unit: z.enum(['mm', 'cm', 'm', 'in', 'ft'])
+        })
+      }),
+      position: pointSchema,
+      opacity: decimalString,
+      visible: z.boolean(),
+      locked: z.boolean()
+    })
+    .nullable()
 });
 
 export type ProjectDocument = z.infer<typeof projectDocumentSchema>;
@@ -152,10 +170,11 @@ export function projectSnapshotToDocument(snapshot: ProjectSnapshot): ProjectDoc
     evidence: snapshot.evidence,
     results: snapshot.results,
     tombstones: snapshot.tombstones,
-    engineeringValues: [],
-    operatingStates: [],
-    settings: { unitSystem: 'metric' },
-    assetHashes: []
+    engineeringValues: snapshot.engineeringValues,
+    operatingStates: snapshot.operatingStates,
+    settings: snapshot.settings,
+    assetHashes: snapshot.assetHashes,
+    vehicleBackground: snapshot.vehicleBackground
   });
 }
 
@@ -171,7 +190,12 @@ export function projectDocumentToSnapshot(document: ProjectDocument): ProjectSna
     partRequirements: parsed.partRequirements,
     evidence: parsed.evidence,
     results: parsed.results,
-    tombstones: parsed.tombstones
+    tombstones: parsed.tombstones,
+    engineeringValues: parsed.engineeringValues,
+    operatingStates: parsed.operatingStates,
+    settings: parsed.settings,
+    assetHashes: parsed.assetHashes,
+    vehicleBackground: parsed.vehicleBackground
   };
   const rejection = validateTopology(snapshot.topology);
   if (rejection) throw new Error(`Persisted Project topology is invalid: ${rejection.message}`);

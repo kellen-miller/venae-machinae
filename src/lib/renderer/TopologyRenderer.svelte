@@ -168,7 +168,12 @@
         </div>
         <ul class="component-list" data-semantic-component-count={semanticNodes.length}>
           {#each semanticNodes as node (node.id)}
-            <li class:selected={node.selected}>
+            <li
+              class:selected={node.selected}
+              class:previewed={node.previewed}
+              data-semantic-node={node.id}
+              data-previewed={node.previewed ? 'true' : 'false'}
+            >
               <button
                 class="select-button"
                 type="button"
@@ -504,6 +509,11 @@
   .connection-list > li:has(.select-button[aria-pressed='true']) {
     border-color: #d1743f;
     box-shadow: inset 3px 0 #d1743f;
+  }
+
+  .component-list > li.previewed {
+    border-color: #279a8c;
+    box-shadow: inset 3px 0 #279a8c;
   }
 
   button {

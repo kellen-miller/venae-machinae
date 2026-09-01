@@ -1,45 +1,324 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
 
-  import TopologyRenderer from '$lib/renderer/TopologyRenderer.svelte';
-  import { projectSnapshotToRendererProjection } from '$lib/renderer/projection';
-  import { setProjectSessionContext } from '$lib/session/project-context';
+  import { projectSnapshotToRendererProjection } from '../../renderer/projection';
+  import { createProjectComponentFromPrimitive, PRIMITIVES } from '../../reference/primitives';
+  import { setProjectSessionContext } from '../../session/project-context';
+  import CanvasWorkspace from './CanvasWorkspace.svelte';
+  import CapabilityNotice from './CapabilityNotice.svelte';
+  import CommandPalette from './CommandPalette.svelte';
+  import Inspector from './Inspector.svelte';
+  import LensStack from './LensStack.svelte';
+  import VehicleBackgroundControls from './VehicleBackgroundControls.svelte';
+  import ViewLauncher from './ViewLauncher.svelte';
+  import WorkspaceStatus from './WorkspaceStatus.svelte';
+  import WorkspaceToolbar from './WorkspaceToolbar.svelte';
+  import { WorkspacePresentation } from './workspace-presentation.svelte';
 
-  import type { RendererIntent } from '$lib/renderer/intent';
-  import type { RendererViewport } from '$lib/renderer/projection';
-  import type { ProjectSession } from '$lib/session/project-session.svelte';
+  import type { RendererIntent } from '../../renderer/intent';
+  import type { RendererPoint } from '../../renderer/projection';
+  import type { ProjectAction } from '../../project/action';
+  import type { VehicleBackground } from '../../project/project';
+  import type { ProjectAsset } from '../../session/session-backing';
+  import type { ProjectSession } from '../../session/project-session.svelte';
+  import type {
+    DenseWorkspaceView,
+    WorkspaceMode,
+    WorkspaceSubject,
+    WorkspaceView
+  } from './workspace-presentation.svelte';
 
   const { session }: { session: ProjectSession } = $props();
   setProjectSessionContext(() => session);
 
-  let viewport = $state<RendererViewport>({ x: 0, y: 0, zoom: 1 });
-  let interactionStatus = $state('Canvas and dense projection share one Project revision.');
-  const projection = $derived(projectSnapshotToRendererProjection(session.view.snapshot));
-  const rendererCapability = $derived(
-    session.view.capability.mode === 'author' ? ('author' as const) : ('review' as const)
+  const presentation = new WorkspacePresentation();
+  let previewSourcePortId = $state<string | null>(null);
+  let interactionStatus = $state('Canvas and dense projections share one Project revision.');
+  const canAuthor = $derived(session.view.capability.mode === 'author');
+  const rendererCapability = $derived(canAuthor ? ('author' as const) : ('review' as const));
+  const backgroundAsset = $derived(
+    session.view.snapshot.vehicleBackground
+      ? (session.view.assets.find(
+          (asset) => asset.sha256 === session.view.snapshot.vehicleBackground?.assetHash
+        ) ?? null)
+      : null
   );
+  const activeDenseView = $derived(
+    presentation.activeView === 'canvas' ? null : (presentation.activeView as DenseWorkspaceView)
+  );
+  const projection = $derived(
+    projectSnapshotToRendererProjection(session.view.snapshot, {
+      selectedSubjectId: presentation.selection?.id ?? null,
+      previewSubjectId: presentation.preview?.id ?? null,
+      previewSourcePortId,
+      domainFilter: presentation.domainFilter,
+      systemFilterId: presentation.systemFilterId
+    })
+  );
+  const canvasViewportIdentity = $derived(
+    `${presentation.canvasViewport.x},${presentation.canvasViewport.y},${presentation.canvasViewport.zoom}`
+  );
+
+  function execute(action: ProjectAction): boolean {
+    const outcome = session.execute(action);
+    interactionStatus = outcome.accepted
+      ? `${action.type} accepted at revision ${outcome.revision}.`
+      : `${action.type} blocked: ${outcome.rejection.code}.`;
+    return outcome.accepted;
+  }
+
+  function select(subject: WorkspaceSubject): void {
+    presentation.select(subject);
+    interactionStatus = `Selected ${subject.id} in every projection.`;
+  }
+
+  function setMode(mode: WorkspaceMode): void {
+    if (!canAuthor && mode !== 'select' && mode !== 'pan') {
+      interactionStatus = `Mode ${mode} is unavailable: ${session.view.capability.reason}.`;
+      return;
+    }
+    presentation.setMode(mode);
+    interactionStatus = `${mode} mode active.`;
+  }
+
+  function componentForPort(portId: string | null): string | null {
+    if (!portId) return null;
+    return (
+      session.view.snapshot.topology.components.find((component) =>
+        component.ports.some((port) => port.id === portId)
+      )?.id ?? null
+    );
+  }
 
   function handleIntent(intent: RendererIntent): void {
     if (intent.type === 'viewport-changed') {
-      viewport = intent.viewport;
+      presentation.updateCanvasViewport(intent.viewport);
+      return;
+    }
+    if (intent.type === 'select') {
+      select({ kind: intent.target === 'node' ? 'component' : intent.target, id: intent.id });
+      return;
+    }
+    if (intent.type === 'preview') {
+      previewSourcePortId = intent.sourcePortId;
+      const componentId = componentForPort(intent.targetPortId ?? intent.sourcePortId);
+      presentation.setPreview(componentId ? { kind: 'component', id: componentId } : null);
+      return;
+    }
+    if (intent.type === 'move-component') {
+      if (presentation.mode !== 'select') {
+        interactionStatus = 'Component movement requires Select mode.';
+        return;
+      }
+      execute({
+        type: 'move-component',
+        causationId: crypto.randomUUID(),
+        componentId: intent.componentId,
+        position: { x: String(intent.position.x), y: String(intent.position.y) }
+      });
+      return;
+    }
+    if (intent.type === 'connect-ports') {
+      if (presentation.mode !== 'connect') {
+        interactionStatus = 'Port connection requires Connect mode.';
+        return;
+      }
+      const ports = session.view.snapshot.topology.components.flatMap(
+        (component) => component.ports
+      );
+      const source = ports.find((port) => port.id === intent.sourcePortId);
+      const target = ports.find((port) => port.id === intent.targetPortId);
+      const system = session.view.snapshot.topology.systems.find(
+        (candidate) =>
+          candidate.domain === source?.domain &&
+          (candidate.domain === 'electrical' || candidate.mediumId === source?.mediumId)
+      );
+      if (!source || !target || !system) {
+        interactionStatus = 'No explicit compatible System owns this Connection.';
+        return;
+      }
+      execute({
+        type: 'add-connection',
+        causationId: crypto.randomUUID(),
+        connection: {
+          id: crypto.randomUUID(),
+          label: `${source.label} to ${target.label}`,
+          systemId: system.id,
+          sourcePortId: source.id,
+          targetPortId: target.id,
+          domain: source.domain,
+          mediumId: source.mediumId,
+          kind: source.domain === 'electrical' ? 'electrical-wire' : 'fluid-hose',
+          interfaceAssessment:
+            source.interfaceKey && target.interfaceKey
+              ? source.interfaceKey === target.interfaceKey
+                ? 'compatible'
+                : 'incompatible'
+              : 'unknown',
+          routeId: null
+        }
+      });
+      return;
+    }
+    if (presentation.mode !== 'route') {
+      interactionStatus = 'Route-point movement requires Route mode.';
+      return;
+    }
+    const connection = session.view.snapshot.topology.connections.find(
+      (candidate) => candidate.id === intent.connectionId
+    );
+    const route = session.view.snapshot.topology.routes.find(
+      (candidate) => candidate.id === connection?.routeId
+    );
+    const segmentId = intent.routePointId.slice(`${intent.connectionId}:`.length);
+    const segment = session.view.snapshot.topology.segments.find(
+      (candidate) => candidate.id === segmentId
+    );
+    if (!connection || !route || !segment) {
+      interactionStatus = 'The selected Route point no longer exists.';
+      return;
+    }
+    execute({
+      type: 'set-connection-route',
+      causationId: crypto.randomUUID(),
+      connectionId: connection.id,
+      route,
+      newSegments: [
+        { ...segment, end: { x: String(intent.position.x), y: String(intent.position.y) } }
+      ]
+    });
+  }
+
+  function selectedPosition(subject: WorkspaceSubject | null): RendererPoint | null {
+    if (!subject) return null;
+    if (subject.kind === 'component') {
+      const component = session.view.snapshot.topology.components.find(
+        (candidate) => candidate.id === subject.id
+      );
+      return component
+        ? { x: Number(component.position.x), y: Number(component.position.y) }
+        : null;
+    }
+    const connection = session.view.snapshot.topology.connections.find(
+      (candidate) => candidate.id === subject.id
+    );
+    const source = session.view.snapshot.topology.components.find((component) =>
+      component.ports.some((port) => port.id === connection?.sourcePortId)
+    );
+    return source ? { x: Number(source.position.x), y: Number(source.position.y) } : null;
+  }
+
+  function revealPreview(): void {
+    const position = selectedPosition(presentation.preview);
+    if (!position) return;
+    presentation.reveal(position);
+  }
+
+  function moveComponent(componentId: string, x: string, y: string): void {
+    execute({
+      type: 'move-component',
+      causationId: crypto.randomUUID(),
+      componentId,
+      position: { x, y }
+    });
+  }
+
+  function addPrimitive(primitiveId: string): void {
+    const primitive = PRIMITIVES.find((candidate) => candidate.id === primitiveId);
+    if (!primitive) {
+      interactionStatus = `Primitive ${primitiveId} is unavailable.`;
       return;
     }
 
-    interactionStatus = `${intent.type} is visible but becomes editable in the topology milestone.`;
+    const componentId = crypto.randomUUID();
+    const index = session.view.snapshot.topology.components.length;
+    const component = createProjectComponentFromPrimitive({
+      primitiveId,
+      componentId,
+      portIds: primitive.ports.map(() => crypto.randomUUID()),
+      position: {
+        x: String(120 + (index % 4) * 208),
+        y: String(120 + Math.floor(index / 4) * 152)
+      }
+    });
+    if (
+      execute({
+        type: 'add-component',
+        causationId: crypto.randomUUID(),
+        component
+      })
+    ) {
+      select({ kind: 'component', id: component.id });
+    }
+  }
+
+  function setBackground(background: VehicleBackground | null, asset: ProjectAsset | null): void {
+    if (asset) {
+      const registration = session.registerAsset(asset);
+      if (!registration.registered) {
+        interactionStatus = `set-vehicle-background blocked: ${registration.rejection.code}.`;
+        return;
+      }
+    }
+
+    execute({
+      type: 'set-vehicle-background',
+      causationId: crypto.randomUUID(),
+      background
+    });
   }
 
   function applyProjectEdit(): void {
     const revision = session.view.snapshot.revision + 1;
-    const outcome = session.execute({
+    execute({
       type: 'rename-project',
       causationId: crypto.randomUUID(),
       name: `Vehicle project r${revision}`
     });
-    interactionStatus = outcome.accepted
-      ? `Project edit accepted at revision ${outcome.revision}.`
-      : `Project edit blocked: ${outcome.rejection.code}.`;
+  }
+
+  function runCommand(command: string): void {
+    const [kind, value] = command.split(':');
+    if (kind === 'mode') setMode(value as WorkspaceMode);
+    if (kind === 'view') presentation.openView(value as WorkspaceView);
+    presentation.commandPaletteOpen = false;
+    presentation.searchQuery = '';
+  }
+
+  function handleGlobalKey(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      presentation.commandPaletteOpen = false;
+      presentation.searchOpen = false;
+      presentation.searchQuery = '';
+      setMode('select');
+      return;
+    }
+    const target = event.target;
+    if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement) return;
+    if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
+      event.preventDefault();
+      presentation.commandPaletteOpen = true;
+      presentation.searchOpen = false;
+      return;
+    }
+    if (event.key === '/') {
+      event.preventDefault();
+      presentation.searchOpen = true;
+      presentation.commandPaletteOpen = false;
+      return;
+    }
+    const mode = {
+      v: 'select',
+      h: 'pan',
+      a: 'add',
+      c: 'connect',
+      r: 'route'
+    }[event.key.toLocaleLowerCase()] as WorkspaceMode | undefined;
+    if (mode) setMode(mode);
   }
 </script>
+
+<svelte:window onkeydown={handleGlobalKey} />
 
 <svelte:head>
   <title>{session.view.snapshot.name} · Venae Machinae</title>
@@ -50,155 +329,197 @@
   data-project-revision={session.view.snapshot.revision}
   data-save-status={session.view.save.status}
   data-evaluation-status={session.view.evaluation.status}
+  data-workspace-mode={presentation.mode}
+  data-active-view={presentation.activeView}
+  data-primary-selection={presentation.selection?.id ?? ''}
+  data-workspace-preview={presentation.preview?.id ?? ''}
+  data-canvas-viewport={canvasViewportIdentity}
 >
   <header class="workspace-header">
     <a href={resolve('/')} aria-label="Back to Project Library">← Library</a>
-    <div>
+    <div class="project-identity">
       <p>Vehicle Project</p>
       <h1>{session.view.snapshot.name}</h1>
     </div>
-    <dl>
-      <div>
-        <dt>Revision</dt>
-        <dd>{session.view.snapshot.revision}</dd>
-      </div>
-      <div>
-        <dt>Save</dt>
-        <dd>{session.view.save.status}</dd>
-      </div>
-      <div>
-        <dt>Evaluation</dt>
-        <dd>{session.view.evaluation.status}</dd>
-      </div>
-    </dl>
-    <button
-      type="button"
-      disabled={session.view.capability.mode !== 'author'}
-      onclick={applyProjectEdit}>Apply project edit</button
+    <WorkspaceStatus view={session.view} />
+    <button class="revision-action" type="button" disabled={!canAuthor} onclick={applyProjectEdit}
+      >Apply project edit</button
     >
   </header>
 
-  {#if session.view.capability.mode === 'review'}
-    <p class="capability-notice" role="status">
-      Review mode: {session.view.capability.reason}. Project mutation is blocked at the session.
-    </p>
-  {/if}
+  <div class="workspace-controls">
+    <CapabilityNotice capability={session.view.capability} />
+    <WorkspaceToolbar
+      snapshot={session.view.snapshot}
+      mode={presentation.mode}
+      domainFilter={presentation.domainFilter}
+      systemFilterId={presentation.systemFilterId}
+      operatingStateId={presentation.operatingStateId}
+      canUndo={session.view.canUndo}
+      canRedo={session.view.canRedo}
+      {canAuthor}
+      onmode={setMode}
+      ondomainfilter={(domain) => (presentation.domainFilter = domain)}
+      onsystemfilter={(systemId) => (presentation.systemFilterId = systemId)}
+      onstate={(stateId) => (presentation.operatingStateId = stateId)}
+      onundo={() => session.undo()}
+      onredo={() => session.redo()}
+      onsearch={() => {
+        presentation.searchOpen = true;
+        presentation.commandPaletteOpen = false;
+      }}
+      oncommand={() => {
+        presentation.commandPaletteOpen = true;
+        presentation.searchOpen = false;
+      }}
+    />
+  </div>
 
-  <section class="projection-grid" aria-label="Synchronized project projections">
-    <div class="canvas-projection" data-canvas-revision={projection.revision}>
-      <TopologyRenderer
+  <section class="workspace-stage" aria-label="Project Workspace">
+    <div data-canvas-revision={projection.revision}>
+      <CanvasWorkspace
         {projection}
-        {viewport}
+        viewport={presentation.canvasViewport}
         capability={rendererCapability}
+        mode={presentation.mode}
+        background={session.view.snapshot.vehicleBackground}
+        {backgroundAsset}
         onintent={handleIntent}
       />
     </div>
+    <span
+      class="revision-bridge"
+      data-dense-revision={session.view.snapshot.revision}
+      aria-hidden="true"
+    ></span>
+    <ViewLauncher
+      activeView={presentation.activeView}
+      onopen={(view) => presentation.openView(view)}
+    />
 
-    <aside class="dense-projection" data-dense-revision={session.view.snapshot.revision}>
-      <p>Dense projection</p>
-      <h2>Project revision {session.view.snapshot.revision}</h2>
-      <dl>
-        <div>
-          <dt>Systems</dt>
-          <dd>{session.view.snapshot.topology.systems.length}</dd>
-        </div>
-        <div>
-          <dt>Components</dt>
-          <dd>{session.view.snapshot.topology.components.length}</dd>
-        </div>
-        <div>
-          <dt>Connections</dt>
-          <dd>{session.view.snapshot.topology.connections.length}</dd>
-        </div>
-        <div>
-          <dt>Evidence</dt>
-          <dd>{session.view.snapshot.evidence.length}</dd>
-        </div>
-      </dl>
-      <p class="interaction-status" aria-live="polite">{interactionStatus}</p>
-    </aside>
+    {#if activeDenseView}
+      <LensStack
+        activeView={activeDenseView}
+        snapshot={session.view.snapshot}
+        selection={presentation.selection}
+        viewport={presentation.lensViewports[activeDenseView]}
+        comparisonViewports={presentation.comparisonViewports}
+        onclose={() => presentation.openView('canvas')}
+        onincreasezoom={() => presentation.increaseLensZoom(activeDenseView)}
+        onincreasecomparison={(side) => presentation.increaseComparisonZoom(side)}
+        onpreview={(componentId) => presentation.setPreview({ kind: 'component', id: componentId })}
+        onselect={(componentId) => select({ kind: 'component', id: componentId })}
+      />
+    {/if}
+
+    <Inspector
+      snapshot={session.view.snapshot}
+      selection={presentation.selection}
+      preview={presentation.preview}
+      mode={presentation.mode}
+      {canAuthor}
+      onmove={moveComponent}
+      onaddprimitive={addPrimitive}
+      onfollow={() => presentation.followPreview()}
+      onreveal={revealPreview}
+    />
+    <VehicleBackgroundControls
+      current={session.view.snapshot.vehicleBackground}
+      {canAuthor}
+      onapply={(background, asset) => setBackground(background, asset)}
+      onremove={() => setBackground(null, null)}
+    />
+
+    {#if presentation.revealFrame}
+      <button
+        class="return-presentation"
+        type="button"
+        onclick={() => presentation.returnFromReveal()}
+      >
+        Return to prior canvas presentation
+      </button>
+    {/if}
   </section>
+
+  <p class="interaction-status" aria-live="polite">{interactionStatus}</p>
+
+  {#if presentation.commandPaletteOpen || presentation.searchOpen}
+    <CommandPalette
+      kind={presentation.commandPaletteOpen ? 'commands' : 'search'}
+      snapshot={session.view.snapshot}
+      query={presentation.searchQuery}
+      onquery={(query) => (presentation.searchQuery = query)}
+      onclose={() => {
+        presentation.commandPaletteOpen = false;
+        presentation.searchOpen = false;
+        presentation.searchQuery = '';
+      }}
+      oncommand={runCommand}
+      onsubject={(subject, view) => {
+        select(subject);
+        presentation.openView(view);
+        presentation.commandPaletteOpen = false;
+        presentation.searchOpen = false;
+        presentation.searchQuery = '';
+      }}
+    />
+  {/if}
 </main>
 
 <style>
   .project-workspace {
-    min-height: 100vh;
-    padding: 0.8rem;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    gap: 0.45rem;
+    height: 100vh;
+    min-height: 40rem;
+    overflow: hidden;
+    padding: 0.55rem;
+    background: #102123;
   }
 
   .workspace-header {
     display: grid;
     grid-template-columns: auto minmax(14rem, 1fr) auto auto;
-    gap: 1rem;
+    gap: 0.9rem;
     align-items: center;
-    min-height: 5.4rem;
-    padding: 0.7rem 1rem;
+    min-height: 4.4rem;
+    padding: 0.55rem 0.75rem;
     border: 1px solid var(--color-line);
     border-radius: var(--radius-medium) var(--radius-small) var(--radius-medium) var(--radius-small);
-    background: rgb(17 29 31 / 94%);
+    background: rgb(17 29 31 / 97%);
   }
 
   .workspace-header > a {
     color: var(--color-accent);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     text-decoration: none;
     text-transform: uppercase;
   }
 
-  .workspace-header p,
-  .dense-projection > p:first-child {
-    margin: 0 0 0.2rem;
-    color: var(--color-copper);
-    font-family: var(--font-mono);
-    font-size: 0.62rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+  .project-identity p,
+  .project-identity h1 {
+    margin: 0;
   }
 
-  h1,
-  h2 {
-    margin: 0;
-    font-family: var(--font-display);
+  .project-identity p {
+    color: var(--color-copper);
+    font-family: var(--font-mono);
+    font-size: 0.56rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
   }
 
   h1 {
-    font-size: clamp(1.4rem, 3vw, 2.4rem);
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 2.1vw, 1.8rem);
     line-height: 1;
   }
 
-  h2 {
-    font-size: 1.35rem;
-  }
-
-  dl {
-    margin: 0;
-  }
-
-  .workspace-header dl {
-    display: flex;
-    gap: 1rem;
-  }
-
-  dl div {
-    display: grid;
-    gap: 0.1rem;
-  }
-
-  dt {
-    color: var(--color-text-muted);
-    font-size: 0.58rem;
-    text-transform: uppercase;
-  }
-
-  dd {
-    margin: 0;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-  }
-
-  button {
-    min-height: 2.75rem;
-    padding: 0.6rem 0.9rem;
+  .revision-action,
+  .return-presentation {
+    min-height: 2.4rem;
+    padding: 0.45rem 0.7rem;
     border: 0;
     border-radius: var(--radius-small);
     background: var(--color-accent);
@@ -207,56 +528,53 @@
     cursor: pointer;
   }
 
-  button:disabled {
+  .revision-action:disabled {
     cursor: not-allowed;
-    opacity: 0.45;
+    opacity: 0.42;
   }
 
-  .capability-notice {
-    margin: 0.65rem 0 0;
-    padding: 0.7rem 0.9rem;
-    color: #ffe7d7;
-    background: rgb(126 66 38 / 48%);
-    border: 1px solid #a76949;
-    border-radius: var(--radius-small);
+  .workspace-stage {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 0.8rem 0.25rem 0.8rem 0.25rem;
+    background: #dfe8e4;
   }
 
-  .projection-grid {
+  .workspace-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 18rem;
-    gap: 0.7rem;
-    min-height: calc(100vh - 7rem);
-    padding-top: 0.7rem;
+    gap: 0.45rem;
   }
 
-  .canvas-projection {
-    min-width: 0;
+  .workspace-stage > div:first-child {
+    position: absolute;
+    inset: 0;
   }
 
-  .dense-projection {
-    padding: 1rem;
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-small) var(--radius-medium) var(--radius-small) var(--radius-medium);
-    background: linear-gradient(160deg, rgb(26 43 45 / 96%), rgb(13 23 24 / 96%));
+  .revision-bridge {
+    position: absolute;
   }
 
-  .dense-projection dl {
-    display: grid;
-    gap: 0.7rem;
-    margin-top: 1.4rem;
-  }
-
-  .dense-projection dl div {
-    grid-template-columns: 1fr auto;
-    padding-bottom: 0.55rem;
-    border-bottom: 1px solid var(--color-line);
+  .return-presentation {
+    position: absolute;
+    z-index: 12;
+    top: 0.8rem;
+    left: 5.4rem;
+    box-shadow: 0 0.8rem 2rem rgb(14 39 39 / 28%);
   }
 
   .interaction-status {
-    margin: 1.4rem 0 0;
+    margin: 0;
     color: var(--color-text-muted);
-    font-size: 0.74rem;
-    line-height: 1.5;
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+  }
+
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
   }
 
   @media (max-width: 70rem) {
@@ -264,35 +582,39 @@
       grid-template-columns: auto 1fr auto;
     }
 
-    .workspace-header dl {
+    .revision-action {
       display: none;
-    }
-
-    .projection-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .dense-projection {
-      order: -1;
     }
   }
 
   @media (max-width: 43.75rem) {
     .project-workspace {
+      gap: 0;
       padding: 0;
     }
 
     .workspace-header {
-      grid-template-columns: auto 1fr;
+      grid-template-columns: auto 1fr auto;
       border-radius: 0;
     }
 
-    .workspace-header button {
-      grid-column: 1 / -1;
+    .project-identity p {
+      display: none;
     }
 
-    .projection-grid {
-      padding: 0.5rem;
+    h1 {
+      overflow: hidden;
+      font-size: 1rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .workspace-stage {
+      border-radius: 0;
+    }
+
+    .interaction-status {
+      display: none;
     }
   }
 </style>

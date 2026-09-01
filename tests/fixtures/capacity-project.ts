@@ -52,7 +52,7 @@ export function generateCapacityProject(scale: CapacityScale): ProjectDocument {
   });
 
   return projectDocumentSchema.parse({
-    schemaVersion: 2,
+    schemaVersion: 3,
     project: {
       id: `capacity-project-${scale}x`,
       name: `Capacity ${scale}x`,
@@ -87,6 +87,7 @@ export function generateCapacityProject(scale: CapacityScale): ProjectDocument {
     results: [],
     tombstones: [],
     settings: { unitSystem: 'metric' },
-    assetHashes: []
+    assetHashes: [],
+    vehicleBackground: null
   });
 }

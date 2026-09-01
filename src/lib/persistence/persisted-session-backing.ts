@@ -17,12 +17,12 @@ export function createWritablePersistedSessionBacking(input: {
     kind: 'persisted',
     access: 'writable',
     durableRevision: input.durableRevision,
-    async save(snapshot, expectedRevision) {
+    async save(snapshot, expectedRevision, newAssets) {
       const outcome = await input.library.saveProject({
         projectId: snapshot.id,
         expectedRevision,
         snapshot: projectSnapshotToDocument(snapshot),
-        newAssets: []
+        newAssets
       });
       if (outcome.saved) return { saved: true, revision: outcome.revision };
       return outcome;

@@ -21,8 +21,25 @@ export default defineConfig({
     timeout: 120_000
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
-    { name: 'webkit', use: { ...devices['Desktop Safari'] } }
+    {
+      name: 'chromium',
+      testIgnore: /tests\/visual\/workspace\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] }
+    },
+    {
+      name: 'firefox',
+      testIgnore: /tests\/visual\/workspace\.spec\.ts/,
+      use: { ...devices['Desktop Firefox'] }
+    },
+    {
+      name: 'webkit',
+      testIgnore: /tests\/visual\/workspace\.spec\.ts/,
+      use: { ...devices['Desktop Safari'] }
+    },
+    {
+      name: 'workspace',
+      testMatch: /tests\/visual\/workspace\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] }
+    }
   ]
 });

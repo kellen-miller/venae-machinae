@@ -94,7 +94,7 @@ describe('MVP-ARCH-003 persisted and live project boundaries', () => {
     const document = projectSnapshotToDocument(snapshot);
     expect(document).not.toBe(snapshot);
     expect(document).toMatchObject({
-      schemaVersion: 2,
+      schemaVersion: 3,
       project: { id: 'project-round-trip', revision: 3 },
       topology: {
         systems: [{ id: 'system-coolant', mediumId: 'medium-coolant' }],
@@ -166,6 +166,7 @@ describe('MVP-ARCH-003 persisted and live project boundaries', () => {
       },
       presentation: 'desktop',
       runtimeCapabilities: { indexedDb: true, webWorker: true, webLocks: true },
+      initialAssets: [],
       undoLimit: 20,
       autosaveDelayMs: 60_000
     });

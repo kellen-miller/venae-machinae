@@ -89,6 +89,7 @@ function createWritableSession(
     evaluation,
     presentation: 'desktop',
     runtimeCapabilities: { indexedDb: true, webWorker: true, webLocks: true },
+    initialAssets: [],
     undoLimit: input.undoLimit ?? 20,
     autosaveDelayMs: 60_000
   });
@@ -297,6 +298,7 @@ describe('MVP-ARCH-004 Project Session authoring capability', () => {
       evaluation: recordingEvaluation().evaluation,
       presentation,
       runtimeCapabilities,
+      initialAssets: [],
       undoLimit: 20,
       autosaveDelayMs: 60_000
     });

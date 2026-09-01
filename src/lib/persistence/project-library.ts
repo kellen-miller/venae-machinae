@@ -106,6 +106,45 @@ export class BrowserProjectLibrary {
     return { created: false, reason: outcome.reason };
   }
 
+  async duplicateProject(input: {
+    sourceProjectId: string;
+    id: string;
+    name: string;
+    createdAt: string;
+  }): Promise<
+    | { duplicated: true; snapshot: ProjectSnapshot }
+    | {
+        duplicated: false;
+        reason: 'missing-project' | 'already-exists' | 'quota-exceeded' | 'storage-error';
+      }
+  > {
+    const source = await this.openProject(input.sourceProjectId);
+    if (!source) return { duplicated: false, reason: 'missing-project' };
+
+    const snapshot: ProjectSnapshot = {
+      ...structuredClone(source),
+      id: input.id,
+      name: input.name,
+      createdAt: input.createdAt,
+      revision: 0,
+      results: source.results.map((result) =>
+        result.status === 'current' ? { ...result, status: 'stale' as const } : result
+      )
+    };
+    const outcome = await this.saveProject({
+      projectId: snapshot.id,
+      expectedRevision: null,
+      snapshot: projectSnapshotToDocument(snapshot),
+      newAssets: []
+    });
+    if (outcome.saved) return { duplicated: true, snapshot };
+    if (outcome.reason === 'revision-conflict') {
+      return { duplicated: false, reason: 'already-exists' };
+    }
+
+    return { duplicated: false, reason: outcome.reason };
+  }
+
   async listProjects(): Promise<
     readonly Readonly<{
       id: string;
@@ -169,6 +208,16 @@ export class BrowserProjectLibrary {
 
   countAssets(): Promise<number> {
     return this.database.count('assets');
+  }
+
+  async loadAssets(assetHashes: readonly string[]): Promise<readonly StoredAsset[]> {
+    const assets: StoredAsset[] = [];
+    for (const assetHash of assetHashes) {
+      const asset = await this.database.get('assets', assetHash);
+      if (asset) assets.push(asset);
+    }
+
+    return assets;
   }
 
   close(): void {

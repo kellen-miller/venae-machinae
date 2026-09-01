@@ -1,5 +1,11 @@
 import type { ProjectSnapshot } from '../project/project';
 
+export type ProjectAsset = Readonly<{
+  sha256: string;
+  mimeType: 'image/png' | 'image/jpeg' | 'image/webp';
+  bytes: Uint8Array;
+}>;
+
 export type SessionBackingSaveOutcome =
   | Readonly<{ saved: true; revision: number }>
   | Readonly<{
@@ -25,7 +31,8 @@ export type PersistedSessionBacking = Readonly<{
   durableRevision: number | null;
   save(
     snapshot: ProjectSnapshot,
-    expectedRevision: number | null
+    expectedRevision: number | null,
+    newAssets: readonly ProjectAsset[]
   ): Promise<SessionBackingSaveOutcome>;
   createCheckpoint(reason: string): Promise<SessionCheckpointOutcome>;
   requestTakeover(): Promise<TakeoverOutcome>;

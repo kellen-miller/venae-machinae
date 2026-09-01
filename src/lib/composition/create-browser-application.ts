@@ -8,6 +8,7 @@ import {
 import { createProjectSession } from '../session/project-session.svelte';
 
 import type { ProjectSnapshot } from '../project/project';
+import type { ProjectAsset } from '../session/session-backing';
 import type { PresentationMode, RuntimeCapabilities } from '../session/authoring-capability';
 import type { ProjectEvaluationScheduler, ProjectSession } from '../session/project-session.svelte';
 
@@ -22,6 +23,18 @@ export type BrowserApplication = Readonly<{
   }): Promise<
     | { created: true; snapshot: ProjectSnapshot }
     | { created: false; reason: 'already-exists' | 'quota-exceeded' | 'storage-error' }
+  >;
+  duplicateProject(input: {
+    sourceProjectId: string;
+    id: string;
+    name: string;
+    createdAt: string;
+  }): Promise<
+    | { duplicated: true; snapshot: ProjectSnapshot }
+    | {
+        duplicated: false;
+        reason: 'missing-project' | 'already-exists' | 'quota-exceeded' | 'storage-error';
+      }
   >;
   openProject(
     projectId: string,
@@ -52,10 +65,26 @@ export async function createBrowserApplication(): Promise<BrowserApplication> {
     createBlankProject(input) {
       return library.createBlankProject(input);
     },
+    duplicateProject(input) {
+      return library.duplicateProject(input);
+    },
     async openProject(projectId, presentation) {
       const snapshot = await library.openProject(projectId);
       if (!snapshot) return { opened: false, reason: 'missing-project' };
       if (openSession) await openSession.close();
+      const initialAssets = (await library.loadAssets(snapshot.assetHashes)).flatMap((asset) =>
+        asset.mimeType === 'image/png' ||
+        asset.mimeType === 'image/jpeg' ||
+        asset.mimeType === 'image/webp'
+          ? [
+              {
+                sha256: asset.sha256,
+                mimeType: asset.mimeType as ProjectAsset['mimeType'],
+                bytes: new Uint8Array(asset.bytes)
+              }
+            ]
+          : []
+      );
 
       const runtimeCapabilities: RuntimeCapabilities = {
         indexedDb: typeof indexedDB !== 'undefined',
@@ -95,6 +124,7 @@ export async function createBrowserApplication(): Promise<BrowserApplication> {
         evaluation,
         presentation,
         runtimeCapabilities,
+        initialAssets,
         undoLimit: 100,
         autosaveDelayMs: 350
       });

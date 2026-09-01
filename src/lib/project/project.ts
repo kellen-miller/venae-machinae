@@ -1,7 +1,7 @@
 import { createEmptyTopology } from '../topology/topology';
 
 import type { EngineeringEvidence } from '../evidence/evidence';
-import type { SubjectId, Topology } from '../topology/topology';
+import type { Point, SubjectId, Topology } from '../topology/topology';
 
 export type ResultId = string;
 
@@ -32,6 +32,33 @@ export type SubjectTombstone = Readonly<{
   successorId: SubjectId;
 }>;
 
+export type EngineeringValue = Readonly<{
+  id: SubjectId;
+  decimal: string;
+  unit: string;
+  provenance: string;
+}>;
+
+export type OperatingState = Readonly<{
+  id: SubjectId;
+  name: string;
+  description: string;
+}>;
+
+export type VehicleBackground = Readonly<{
+  assetHash: string;
+  mimeType: 'image/png' | 'image/jpeg' | 'image/webp';
+  calibration: Readonly<{
+    first: Point;
+    second: Point;
+    distance: Readonly<{ decimal: string; unit: 'mm' | 'cm' | 'm' | 'in' | 'ft' }>;
+  }>;
+  position: Point;
+  opacity: string;
+  visible: boolean;
+  locked: boolean;
+}>;
+
 export type ProjectSnapshot = Readonly<{
   id: SubjectId;
   name: string;
@@ -43,6 +70,11 @@ export type ProjectSnapshot = Readonly<{
   evidence: readonly EngineeringEvidence[];
   results: readonly ProjectResult[];
   tombstones: readonly SubjectTombstone[];
+  engineeringValues: readonly EngineeringValue[];
+  operatingStates: readonly OperatingState[];
+  settings: Readonly<{ unitSystem: 'metric' | 'imperial' }>;
+  assetHashes: readonly string[];
+  vehicleBackground: VehicleBackground | null;
 }>;
 
 export function createBlankProject(input: {
@@ -60,6 +92,11 @@ export function createBlankProject(input: {
     partRequirements: [],
     evidence: [],
     results: [],
-    tombstones: []
+    tombstones: [],
+    engineeringValues: [],
+    operatingStates: [],
+    settings: { unitSystem: 'metric' },
+    assetHashes: [],
+    vehicleBackground: null
   };
 }

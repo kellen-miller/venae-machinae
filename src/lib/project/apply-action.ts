@@ -13,6 +13,8 @@ export type ActionRejectionCode =
   | TopologyRejectionCode
   | 'confirmation-required'
   | 'invalid-confirmation'
+  | 'invalid-background'
+  | 'missing-asset'
   | 'invalid-result'
   | 'stale-system-action';
 
@@ -155,6 +157,30 @@ export function applyProjectAction(
       break;
     }
 
+    case 'move-component': {
+      const component = snapshot.topology.components.find(
+        (candidate) => candidate.id === action.componentId
+      );
+      if (!component) {
+        return reject('missing-subject', `Component ${action.componentId} does not exist`);
+      }
+      next = {
+        ...snapshot,
+        topology: {
+          ...snapshot.topology,
+          components: snapshot.topology.components.map((candidate) =>
+            candidate.id === action.componentId
+              ? { ...candidate, position: action.position }
+              : candidate
+          )
+        },
+        results: staleResults
+      };
+      changedSubjects = [action.componentId];
+      undoLabel = `Move ${component.label}`;
+      break;
+    }
+
     case 'add-connection':
       if (projectIdentityExists(snapshot, action.connection.id)) {
         return reject(
@@ -267,6 +293,41 @@ export function applyProjectAction(
       changedSubjects = [action.evidence.id];
       undoLabel = `Record ${action.evidence.label}`;
       break;
+
+    case 'set-vehicle-background': {
+      const background = action.background;
+      if (background) {
+        const opacity = Number(background.opacity);
+        const sameCalibrationPoint =
+          background.calibration.first.x === background.calibration.second.x &&
+          background.calibration.first.y === background.calibration.second.y;
+        if (
+          !/^[a-f0-9]{64}$/.test(background.assetHash) ||
+          !Number.isFinite(opacity) ||
+          opacity < 0 ||
+          opacity > 1 ||
+          sameCalibrationPoint ||
+          !(Number(background.calibration.distance.decimal) > 0)
+        ) {
+          return reject(
+            'invalid-background',
+            'Vehicle background requires a hash, two calibration points, positive distance, and opacity from zero through one'
+          );
+        }
+      }
+      next = {
+        ...snapshot,
+        vehicleBackground: background,
+        assetHashes:
+          background && !snapshot.assetHashes.includes(background.assetHash)
+            ? [...snapshot.assetHashes, background.assetHash]
+            : snapshot.assetHashes,
+        results: staleResults
+      };
+      changedSubjects = [snapshot.id];
+      undoLabel = background ? 'Set vehicle background' : 'Remove vehicle background';
+      break;
+    }
 
     case 'replace-component': {
       const existing = snapshot.topology.components.find(
@@ -386,6 +447,8 @@ function projectIdentityExists(snapshot: ProjectSnapshot, subjectId: SubjectId):
     snapshot.partDefinitions.some((subject) => subject.id === subjectId) ||
     snapshot.partRequirements.some((subject) => subject.id === subjectId) ||
     snapshot.evidence.some((subject) => subject.id === subjectId) ||
+    snapshot.engineeringValues.some((subject) => subject.id === subjectId) ||
+    snapshot.operatingStates.some((subject) => subject.id === subjectId) ||
     snapshot.results.some((subject) => subject.id === subjectId) ||
     snapshot.tombstones.some(
       (subject) => subject.subjectId === subjectId || subject.successorId === subjectId

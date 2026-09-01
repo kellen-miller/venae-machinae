@@ -11,7 +11,12 @@ import type {
   PresentationMode,
   RuntimeCapabilities
 } from './authoring-capability';
-import type { SessionBacking, SessionBackingSaveOutcome, TakeoverOutcome } from './session-backing';
+import type {
+  ProjectAsset,
+  SessionBacking,
+  SessionBackingSaveOutcome,
+  TakeoverOutcome
+} from './session-backing';
 
 export type EvaluationScope =
   | Readonly<{ kind: 'all' }>
@@ -53,6 +58,8 @@ export type ExecuteResult =
         | ActionRejection;
     }>;
 
+type ExecuteRejection = Extract<ExecuteResult, { accepted: false }>;
+
 export type OutputRequest = Readonly<{ allowUnsavedWorkingState: boolean }>;
 
 export type OutputRevisionOutcome =
@@ -65,8 +72,18 @@ export type OutputRevisionOutcome =
 
 export type CloseOutcome = Readonly<{ closed: true; save: SaveOutcome | null }>;
 
+export type RegisterAssetOutcome =
+  | Readonly<{ registered: true }>
+  | Readonly<{
+      registered: false;
+      rejection:
+        | Readonly<{ code: 'capability-denied'; reason: AuthoringBlockReason }>
+        | Readonly<{ code: 'invalid-asset' | 'session-closed' }>;
+    }>;
+
 export type ProjectSessionView = Readonly<{
   snapshot: ProjectSnapshot;
+  assets: readonly ProjectAsset[];
   capability: AuthoringCapability;
   save: Readonly<{
     status: 'saved' | 'queued' | 'saving' | 'failed' | 'not-durable';
@@ -83,6 +100,7 @@ export type ProjectSessionView = Readonly<{
 
 export interface ProjectSession {
   readonly view: ProjectSessionView;
+  registerAsset(asset: ProjectAsset): RegisterAssetOutcome;
   execute(action: ProjectAction): ExecuteResult;
   previewImpact(action: DestructiveProjectAction): ImpactPreview;
   undo(): ExecuteResult;
@@ -107,6 +125,7 @@ export function createProjectSession(dependencies: {
   evaluation: ProjectEvaluationScheduler;
   presentation: PresentationMode;
   runtimeCapabilities: RuntimeCapabilities;
+  initialAssets: readonly ProjectAsset[];
   undoLimit: number;
   autosaveDelayMs: number;
 }): ProjectSession {
@@ -119,6 +138,7 @@ export function createProjectSession(dependencies: {
 
   const capability = resolveAuthoringCapability(dependencies);
   let snapshot = $state.raw(dependencies.initialSnapshot);
+  let assets = $state.raw<readonly ProjectAsset[]>(dependencies.initialAssets);
   let save = $state.raw<ProjectSessionView['save']>(
     dependencies.backing.kind === 'transient-review'
       ? { status: 'not-durable', durableRevision: null, message: 'transient-review' }
@@ -137,10 +157,14 @@ export function createProjectSession(dependencies: {
   let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
   let savePromise: Promise<SaveOutcome> | null = null;
   let closed = false;
+  let pendingAssets: readonly ProjectAsset[] = [];
 
   const view: ProjectSessionView = {
     get snapshot() {
       return snapshot;
+    },
+    get assets() {
+      return assets;
     },
     capability,
     get save() {
@@ -157,7 +181,7 @@ export function createProjectSession(dependencies: {
     }
   };
 
-  function capabilityRejection(): ExecuteResult | null {
+  function capabilityRejection(): ExecuteRejection | null {
     if (closed) return { accepted: false, rejection: { code: 'session-closed' } };
     if (capability.mode === 'review') {
       return {
@@ -242,6 +266,19 @@ export function createProjectSession(dependencies: {
   function execute(action: ProjectAction): ExecuteResult {
     const rejected = capabilityRejection();
     if (rejected) return rejected;
+    if (
+      action.type === 'set-vehicle-background' &&
+      action.background &&
+      !assets.some((asset) => asset.sha256 === action.background?.assetHash)
+    ) {
+      return {
+        accepted: false,
+        rejection: {
+          code: 'missing-asset',
+          message: 'Vehicle background must reference a registered raster asset'
+        }
+      };
+    }
 
     const before = snapshot;
     const outcome = applyProjectAction(before, action);
@@ -310,7 +347,10 @@ export function createProjectSession(dependencies: {
     while (save.durableRevision !== snapshot.revision) {
       const savingSnapshot = snapshot;
       save = { status: 'saving', durableRevision: save.durableRevision, message: null };
-      const outcome = await backing.save(savingSnapshot, save.durableRevision);
+      const savingAssets = pendingAssets.filter((asset) =>
+        savingSnapshot.assetHashes.includes(asset.sha256)
+      );
+      const outcome = await backing.save(savingSnapshot, save.durableRevision, savingAssets);
       if (!outcome.saved) {
         save = {
           status: 'failed',
@@ -328,6 +368,9 @@ export function createProjectSession(dependencies: {
         return { saved: false, reason: 'storage-error' };
       }
 
+      pendingAssets = pendingAssets.filter(
+        (asset) => !savingAssets.some((savedAsset) => savedAsset.sha256 === asset.sha256)
+      );
       save = { status: 'saved', durableRevision: outcome.revision, message: null };
     }
 
@@ -396,6 +439,45 @@ export function createProjectSession(dependencies: {
 
   return {
     view,
+    registerAsset(asset) {
+      const rejected = capabilityRejection();
+      if (rejected) {
+        return rejected.rejection.code === 'capability-denied'
+          ? {
+              registered: false,
+              rejection: { code: 'capability-denied', reason: rejected.rejection.reason }
+            }
+          : { registered: false, rejection: { code: 'session-closed' } };
+      }
+      if (
+        !/^[a-f0-9]{64}$/.test(asset.sha256) ||
+        !['image/png', 'image/jpeg', 'image/webp'].includes(asset.mimeType) ||
+        asset.bytes.byteLength === 0
+      ) {
+        return { registered: false, rejection: { code: 'invalid-asset' } };
+      }
+
+      const registeredAsset: ProjectAsset = {
+        sha256: asset.sha256,
+        mimeType: asset.mimeType,
+        bytes: new Uint8Array(asset.bytes)
+      };
+      const existing = assets.find((candidate) => candidate.sha256 === asset.sha256);
+      if (
+        existing &&
+        (existing.mimeType !== registeredAsset.mimeType ||
+          existing.bytes.byteLength !== registeredAsset.bytes.byteLength ||
+          existing.bytes.some((byte, index) => byte !== registeredAsset.bytes[index]))
+      ) {
+        return { registered: false, rejection: { code: 'invalid-asset' } };
+      }
+      if (!existing) assets = [...assets, registeredAsset];
+      pendingAssets = [
+        ...pendingAssets.filter((asset) => asset.sha256 !== registeredAsset.sha256),
+        registeredAsset
+      ];
+      return { registered: true };
+    },
     execute,
     previewImpact(action) {
       return previewProjectActionImpact(snapshot, action);

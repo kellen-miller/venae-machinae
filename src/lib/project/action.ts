@@ -1,5 +1,5 @@
 import type { EngineeringEvidence } from '../evidence/evidence';
-import type { PartDefinition, PartRequirement, ProjectResult } from './project';
+import type { PartDefinition, PartRequirement, ProjectResult, VehicleBackground } from './project';
 import type {
   Component,
   Connection,
@@ -15,6 +15,12 @@ export type ProjectAction =
   | (Causation & Readonly<{ type: 'rename-project'; name: string }>)
   | (Causation & Readonly<{ type: 'add-system'; system: System }>)
   | (Causation & Readonly<{ type: 'add-component'; component: Component }>)
+  | (Causation &
+      Readonly<{
+        type: 'move-component';
+        componentId: SubjectId;
+        position: Readonly<{ x: string; y: string }>;
+      }>)
   | (Causation & Readonly<{ type: 'add-connection'; connection: Connection }>)
   | (Causation &
       Readonly<{
@@ -26,6 +32,7 @@ export type ProjectAction =
   | (Causation & Readonly<{ type: 'add-part-definition'; definition: PartDefinition }>)
   | (Causation & Readonly<{ type: 'add-part-requirement'; requirement: PartRequirement }>)
   | (Causation & Readonly<{ type: 'record-evidence'; evidence: EngineeringEvidence }>)
+  | (Causation & Readonly<{ type: 'set-vehicle-background'; background: VehicleBackground | null }>)
   | (Causation &
       Readonly<{
         type: 'replace-component';

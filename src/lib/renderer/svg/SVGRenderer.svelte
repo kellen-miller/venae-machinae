@@ -75,6 +75,7 @@
   function startNodeDrag(event: PointerEvent, node: RendererNode): void {
     if (capability !== 'author' || event.button !== 0) return;
     event.stopPropagation();
+    onintent({ type: 'select', target: 'node', id: node.id });
     svgElement.setPointerCapture(event.pointerId);
     drag = {
       componentId: node.id,
@@ -120,11 +121,13 @@
 
   function finishPointerInteraction(event: PointerEvent): void {
     if (drag?.pointerId === event.pointerId) {
-      onintent({
-        type: 'move-component',
-        componentId: drag.componentId,
-        position: drag.position
-      });
+      if (drag.position.x !== drag.startPosition.x || drag.position.y !== drag.startPosition.y) {
+        onintent({
+          type: 'move-component',
+          componentId: drag.componentId,
+          position: drag.position
+        });
+      }
       drag = null;
     }
 
@@ -233,6 +236,7 @@
             class:selected={mapped.connection.selected}
             data-renderer-connection={mapped.connection.id}
             data-physical-kind={physical.kind}
+            data-direction={physical.direction ?? 'unknown'}
             data-source-port={mapped.source.port.id}
             data-target-port={mapped.target.port.id}
             role="button"
@@ -292,10 +296,12 @@
           <g
             class="system-node"
             class:selected={mapped.node.selected}
+            class:previewed={mapped.node.previewed}
             class:dragging={drag?.componentId === mapped.node.id}
             transform={`translate(${position.x} ${position.y})`}
             data-renderer-node={mapped.node.id}
             data-selected={mapped.node.selected}
+            data-previewed={mapped.node.previewed ? 'true' : 'false'}
           >
             <rect
               class="node-shadow"
@@ -456,6 +462,19 @@
     opacity: 0.96;
   }
 
+  [data-physical-kind='hose'] .physical-inner {
+    stroke-dasharray: 2 3;
+  }
+
+  [data-physical-kind='tube'] .physical-inner {
+    stroke-linecap: butt;
+  }
+
+  [data-physical-kind='pipe'] .physical-inner {
+    stroke-dasharray: 18 3;
+    stroke-linecap: square;
+  }
+
   .conductor-stripe {
     stroke-dasharray: 10 7;
   }
@@ -507,6 +526,24 @@
     opacity: 0.45;
   }
 
+  .overlay--provenance {
+    stroke: #215c58;
+    stroke-dasharray: 3 12;
+    stroke-width: 3;
+  }
+
+  .overlay--unknown {
+    stroke: #424d50;
+    stroke-dasharray: 1 7;
+    stroke-width: 7;
+  }
+
+  .overlay--conflict {
+    stroke: #8f3d75;
+    stroke-dasharray: 5 5 1 5;
+    stroke-width: 7;
+  }
+
   .hit-area {
     pointer-events: stroke;
     stroke: transparent;
@@ -525,6 +562,12 @@
     fill: rgb(18 37 40 / 18%);
   }
 
+  .node-shadow,
+  .node-heading,
+  .node-accent {
+    pointer-events: none;
+  }
+
   .node-shell {
     fill: #f4f7f3;
     stroke: #24494d;
@@ -534,6 +577,12 @@
   .system-node.selected .node-shell {
     stroke: #d16b38;
     stroke-width: 4;
+  }
+
+  .system-node.previewed .node-shell {
+    stroke: #279a8c;
+    stroke-dasharray: 7 4;
+    stroke-width: 3;
   }
 
   .system-node.dragging {
