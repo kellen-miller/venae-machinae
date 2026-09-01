@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-004",
+  "fixtureSchemaVersion": 1,
+  "memoryMethod": "Instrumented high-water bound over simultaneously retained encoded envelope bytes, UTF-16 source bytes, canonical payload bytes, validated and cloned representations, decoded original asset bytes, and IndexedDB commit inputs. This portable bound is not a browser heap-profiler reading.",
+  "limits": {
+    "maxEnvelopeBytes": 20971520,
+    "maxIndividualAssetBytes": 6291456,
+    "maxCombinedAssetBytes": 12582912,
+    "maxAssets": 64,
+    "maxNestingDepth": 32,
+    "maxCollectionEntries": 50000,
+    "maxEstimatedPeakBytes": 134217728
+  },
+  "results": [
+    {
+      "browser": "chromium",
+      "version": "151.0.7922.34",
+      "scales": [
+        {
+          "scale": 1,
+          "envelopeBytes": 368142,
+          "originalAssetBytes": 65536,
+          "encodeMs": 12.1,
+          "parseMs": 1.1,
+          "validationMs": 2.7,
+          "hashingMs": 3,
+          "cloneMs": 1.3,
+          "commitMs": 4.6,
+          "estimatedPeakBytes": 1472568
+        },
+        {
+          "scale": 2,
+          "envelopeBytes": 1265512,
+          "originalAssetBytes": 524288,
+          "encodeMs": 22,
+          "parseMs": 1.7,
+          "validationMs": 4.5,
+          "hashingMs": 5,
+          "cloneMs": 3.1,
+          "commitMs": 7.1,
+          "estimatedPeakBytes": 5062048
+        },
+        {
+          "scale": 5,
+          "envelopeBytes": 18202080,
+          "originalAssetBytes": 12582912,
+          "encodeMs": 265.6,
+          "parseMs": 16.8,
+          "validationMs": 44.8,
+          "hashingMs": 37.6,
+          "cloneMs": 16.3,
+          "commitMs": 21.9,
+          "estimatedPeakBytes": 72808320
+        }
+      ],
+      "exactRecovery": true,
+      "assetWrites": [1, 1, 2],
+      "verdict": "Pass"
+    },
+    {
+      "browser": "firefox",
+      "version": "153.0",
+      "scales": [
+        {
+          "scale": 1,
+          "envelopeBytes": 368142,
+          "originalAssetBytes": 65536,
+          "encodeMs": 13,
+          "parseMs": 1,
+          "validationMs": 2,
+          "hashingMs": 4,
+          "cloneMs": 2,
+          "commitMs": 7,
+          "estimatedPeakBytes": 1472568
+        },
+        {
+          "scale": 2,
+          "envelopeBytes": 1265512,
+          "originalAssetBytes": 524288,
+          "encodeMs": 24,
+          "parseMs": 3,
+          "validationMs": 7,
+          "hashingMs": 11,
+          "cloneMs": 3,
+          "commitMs": 16,
+          "estimatedPeakBytes": 5062048
+        },
+        {
+          "scale": 5,
+          "envelopeBytes": 18202080,
+          "originalAssetBytes": 12582912,
+          "encodeMs": 478,
+          "parseMs": 17,
+          "validationMs": 42,
+          "hashingMs": 48,
+          "cloneMs": 9,
+          "commitMs": 62,
+          "estimatedPeakBytes": 72808320
+        }
+      ],
+      "exactRecovery": true,
+      "assetWrites": [1, 1, 2],
+      "verdict": "Pass"
+    },
+    {
+      "browser": "webkit",
+      "version": "26.5",
+      "scales": [
+        {
+          "scale": 1,
+          "envelopeBytes": 368142,
+          "originalAssetBytes": 65536,
+          "encodeMs": 15,
+          "parseMs": 4,
+          "validationMs": 3,
+          "hashingMs": 3,
+          "cloneMs": 2,
+          "commitMs": 7,
+          "estimatedPeakBytes": 1472568
+        },
+        {
+          "scale": 2,
+          "envelopeBytes": 1265512,
+          "originalAssetBytes": 524288,
+          "encodeMs": 22,
+          "parseMs": 3,
+          "validationMs": 3,
+          "hashingMs": 7,
+          "cloneMs": 5,
+          "commitMs": 10,
+          "estimatedPeakBytes": 5062048
+        },
+        {
+          "scale": 5,
+          "envelopeBytes": 18202080,
+          "originalAssetBytes": 12582912,
+          "encodeMs": 183,
+          "parseMs": 18,
+          "validationMs": 27,
+          "hashingMs": 39,
+          "cloneMs": 14,
+          "commitMs": 27,
+          "estimatedPeakBytes": 72808320
+        }
+      ],
+      "exactRecovery": true,
+      "assetWrites": [1, 1, 2],
+      "verdict": "Pass"
+    }
+  ],
+  "structure": {
+    "largestNestingDepth": 7,
+    "largestCollectionEntries": 21006,
+    "unitBoundaryCases": 8
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-002",
+  "recordId": "MVP-GATE-002-unculled-svg-failure",
+  "recordedAt": "2026-09-01T19:12:10Z",
+  "evidenceScope": "non-authoritative modern-host failure",
+  "environment": {
+    "hardware": "2024 MacBook Pro, Apple M4 Pro 14-core, 48 GB",
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "browser": "Chromium 151.0.7922.34",
+    "viewport": "1280x900"
+  },
+  "command": "PLAYWRIGHT_PORT=4174 pnpm exec playwright test tests/gates/graph-capacity-browser.spec.ts --project=chromium --reporter=list",
+  "thresholds": {
+    "pointerFeedbackMsExclusive": 100,
+    "oneAndTwoTimesFpsMinimum": 55,
+    "fiveTimesFpsExclusiveMinimum": 30,
+    "oneAndTwoTimesSnapshotToInteractiveMsExclusive": 2000
+  },
+  "measurements": [
+    {
+      "scale": 1,
+      "domElements": 34373,
+      "snapshotToInteractiveMs": 289.89999997615814,
+      "pointerFeedbackMs": 73.39999997615814,
+      "dragFeedbackMs": 419,
+      "routeEditFeedbackMs": 431,
+      "panAverageFps": 26.319311237007632,
+      "zoomAverageFps": 27.024551117625503,
+      "structuralIntegrityPreserved": true
+    },
+    {
+      "scale": 2,
+      "domElements": 68693,
+      "snapshotToInteractiveMs": 517.4000000953674,
+      "pointerFeedbackMs": 206.90000009536743,
+      "dragFeedbackMs": 915,
+      "routeEditFeedbackMs": 943,
+      "panAverageFps": 21.32495178392258,
+      "zoomAverageFps": 14.537748866548394,
+      "structuralIntegrityPreserved": true
+    },
+    {
+      "scale": 5,
+      "domElements": 171653,
+      "snapshotToInteractiveMs": 1512.6999999284744,
+      "pointerFeedbackMs": 900.5,
+      "dragFeedbackMs": 4206,
+      "routeEditFeedbackMs": 4284,
+      "panAverageFps": 6.519409054243692,
+      "zoomAverageFps": 5.259967192069038,
+      "structuralIntegrityPreserved": true
+    }
+  ],
+  "verdict": "Fail",
+  "boundedDecision": "Keep the raw-SVG adapter and unchanged app-owned projection/intent boundary, but cull SVG geometry to the live viewport and paginate the synchronized semantic lens before rerunning capacity."
+}

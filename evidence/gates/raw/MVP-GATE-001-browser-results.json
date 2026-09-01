@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-001",
+  "fixture": "tests/fixtures/renderer-projection.ts",
+  "candidateA": {
+    "adapter": "@xyflow/svelte 1.6.6",
+    "browser": "chromium",
+    "browserVersion": "151.0.7922.34",
+    "productionCspInlineStyleViolations": 1,
+    "sourceSnapErrorPx": 9,
+    "verdict": "Fail",
+    "record": "evidence/gates/raw/MVP-GATE-001-xyflow-failure.md"
+  },
+  "candidateB": {
+    "adapter": "app-owned raw SVG",
+    "results": [
+      {
+        "browser": "chromium",
+        "browserVersion": "151.0.7922.34",
+        "sourceSnapErrorPx": 0,
+        "targetSnapErrorPx": 0.0000152587890625,
+        "productionCspViolations": 0,
+        "seriousAccessibilityViolations": 0,
+        "verdict": "Pass"
+      },
+      {
+        "browser": "firefox",
+        "browserVersion": "153.0",
+        "sourceSnapErrorPx": 0.0020436526333658354,
+        "targetSnapErrorPx": 0.0041657122932131875,
+        "productionCspViolations": 0,
+        "seriousAccessibilityViolations": 0,
+        "verdict": "Pass"
+      },
+      {
+        "browser": "webkit",
+        "browserVersion": "26.5",
+        "sourceSnapErrorPx": 0,
+        "targetSnapErrorPx": 0,
+        "productionCspViolations": 0,
+        "seriousAccessibilityViolations": 0,
+        "verdict": "Pass"
+      }
+    ],
+    "routePointCount": 3,
+    "physicalKinds": ["wire", "hose"],
+    "overlayChannels": ["direction", "temperature", "potential", "selection"],
+    "synchronizedLensCount": 2,
+    "keyboardIntentCount": 5,
+    "logicalLayouts": ["1280x900", "820x1000", "390x844"],
+    "horizontalOverflowFailures": 0,
+    "verdict": "Pass"
+  },
+  "visualArtifacts": [
+    "evidence/frontend/MVP-GATE-001-chromium-desktop.png",
+    "evidence/frontend/MVP-GATE-001-chromium-tablet.png",
+    "evidence/frontend/MVP-GATE-001-chromium-mobile.png",
+    "evidence/frontend/MVP-GATE-001-firefox-desktop.png",
+    "evidence/frontend/MVP-GATE-001-firefox-tablet.png",
+    "evidence/frontend/MVP-GATE-001-firefox-mobile.png",
+    "evidence/frontend/MVP-GATE-001-webkit-desktop.png",
+    "evidence/frontend/MVP-GATE-001-webkit-tablet.png",
+    "evidence/frontend/MVP-GATE-001-webkit-mobile.png"
+  ]
+}

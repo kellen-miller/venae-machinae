@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-006",
+  "automatedVerdict": "Pass",
+  "results": [
+    {
+      "browser": "chromium",
+      "version": "151.0.7922.34",
+      "persistence": "denied",
+      "usage": 0,
+      "quota": 9663676416,
+      "pressure": "reported-capacity",
+      "leaseExclusion": "Pass",
+      "takeoverAfterExplicitRelease": "Pass",
+      "libraryThenProjectLockOrder": "Pass",
+      "upgradeBlockedThenCompleted": "Pass",
+      "closeReopenRecovery": "Pass",
+      "headlessBackgroundVisibility": "visible"
+    },
+    {
+      "browser": "firefox",
+      "version": "153.0",
+      "persistence": "failed",
+      "persistenceRequestLimitMs": 2000,
+      "usage": 0,
+      "quota": 10737418240,
+      "pressure": "reported-capacity",
+      "leaseExclusion": "Pass",
+      "takeoverAfterExplicitRelease": "Pass",
+      "libraryThenProjectLockOrder": "Pass",
+      "upgradeBlockedThenCompleted": "Pass",
+      "closeReopenRecovery": "Pass",
+      "headlessBackgroundVisibility": "visible"
+    },
+    {
+      "browser": "webkit",
+      "version": "26.5",
+      "persistence": "denied",
+      "usage": 0,
+      "quota": 1048576000,
+      "pressure": "reported-capacity",
+      "leaseExclusion": "Pass",
+      "takeoverAfterExplicitRelease": "Pass",
+      "libraryThenProjectLockOrder": "Pass",
+      "upgradeBlockedThenCompleted": "Pass",
+      "closeReopenRecovery": "Pass",
+      "headlessBackgroundVisibility": "visible"
+    }
+  ],
+  "statusFixtureCases": {
+    "granted": "Pass",
+    "denied": "Pass",
+    "unsupported": "Pass",
+    "nearQuota": "Pass",
+    "neverSettles": "Pass"
+  },
+  "manualSubgate": "Unavailable"
+}

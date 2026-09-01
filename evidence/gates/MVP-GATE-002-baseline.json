@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-002",
+  "recordId": "MVP-GATE-002-baseline",
+  "recordedAt": "2026-09-01T19:21:54Z",
+  "supersedes": null,
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "localSmokeHardware": "2024 MacBook Pro, Apple M4 Pro 14-core, 48 GB",
+    "recorded2020EraHardware": null,
+    "browser": "Chromium 151.0.7922.34"
+  },
+  "versions": {
+    "svelte": "5.57.0",
+    "vite": "8.2.2",
+    "playwright": "1.62.1",
+    "selectedAdapter": "app-owned raw SVG"
+  },
+  "fixtures": [
+    "tests/fixtures/renderer-capacity.ts",
+    "tests/gates/graph-capacity.spec.ts",
+    "tests/gates/graph-capacity-browser.spec.ts"
+  ],
+  "command": "PLAYWRIGHT_PORT=4174 pnpm gate:capacity:local",
+  "rawArtifacts": [
+    "evidence/gates/raw/MVP-GATE-002-unculled-svg-failure.json",
+    "evidence/gates/raw/MVP-GATE-002-unculled-svg-failure.md",
+    "evidence/gates/raw/MVP-GATE-002-shadow-filter-failure.json",
+    "evidence/gates/raw/MVP-GATE-002-shadow-filter-failure.md",
+    "evidence/gates/raw/MVP-GATE-002-local-smoke.json",
+    "evidence/gates/raw/MVP-GATE-002-local-smoke.md",
+    "evidence/gates/MVP-GATE-002-recorded-hardware.md"
+  ],
+  "measurements": {
+    "unitAssertions": 4,
+    "browserEngines": 1,
+    "localSmokeScales": 3,
+    "localSmokeMeetsLockedThresholds": true,
+    "localSmokeMaxPointerFeedbackMs": 50.89999997615814,
+    "localSmokeMinimumPanFps": 60,
+    "localSmokeMinimumZoomFps": 60,
+    "localSmokeMaxOneAndTwoTimesSnapshotToInteractiveMs": 48.89999997615814,
+    "localSmokeFiveTimesRetainedJSHeapBytes": 54248652,
+    "structuralIntegrityFailures": 0,
+    "authoritativeHardwareRecords": 0
+  },
+  "verdict": "Unavailable",
+  "boundedDecision": "Keep the raw-SVG adapter with viewport culling, accessible semantic pagination, exact physical layers without per-path drop shadows, and the unchanged app-owned projection/intent interface. Gate 2 cannot pass until the locked harness passes on recorded 2020-era laptop hardware."
+}

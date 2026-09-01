@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-007",
+  "fixture": "tests/fixtures/numeric-goldens.ts",
+  "results": [
+    {
+      "browser": "chromium",
+      "version": "151.0.7922.34",
+      "conversion": "1",
+      "formulaDecimal": "0.4",
+      "formulaUnit": "volt",
+      "rendered": "12.35",
+      "verdict": "Pass"
+    },
+    {
+      "browser": "firefox",
+      "version": "153.0",
+      "conversion": "1",
+      "formulaDecimal": "0.4",
+      "formulaUnit": "volt",
+      "rendered": "12.35",
+      "verdict": "Pass"
+    },
+    {
+      "browser": "webkit",
+      "version": "26.5",
+      "conversion": "1",
+      "formulaDecimal": "0.4",
+      "formulaUnit": "volt",
+      "rendered": "12.35",
+      "verdict": "Pass"
+    }
+  ]
+}

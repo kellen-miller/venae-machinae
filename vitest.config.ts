@@ -1,5 +1,5 @@
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [sveltekit()],
@@ -9,6 +9,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.spec.ts'],
+    exclude: [...configDefaults.exclude, 'tests/**/*-browser.spec.ts'],
     setupFiles: ['./vitest.setup.ts']
   }
 });

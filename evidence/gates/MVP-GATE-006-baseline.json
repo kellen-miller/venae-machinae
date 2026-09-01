@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-006",
+  "recordId": "MVP-GATE-006-baseline",
+  "recordedAt": "2026-09-01T18:02:00Z",
+  "supersedes": null,
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "origin": "http://localhost:4174",
+    "browsers": {
+      "chromium": "151.0.7922.34",
+      "firefox": "153.0",
+      "webkit": "26.5",
+      "realSafariOnIPadOS": null
+    }
+  },
+  "versions": {
+    "idb": "8.0.3",
+    "playwright": "1.62.1",
+    "indexedDbStructure": 1
+  },
+  "fixtures": ["tests/fixtures/capacity-project.ts"],
+  "command": "PLAYWRIGHT_PORT=4174 pnpm gate:storage-lifecycle",
+  "rawArtifacts": [
+    "evidence/gates/raw/MVP-GATE-006-automated-results.json",
+    "evidence/gates/MVP-GATE-006-real-device-safari.md",
+    "evidence/gates/manual-evidence.json"
+  ],
+  "measurements": {
+    "automatedBrowserEngines": 3,
+    "automatedCases": 5,
+    "automatedVerdict": "Pass",
+    "realSafariArtifacts": 0,
+    "trustedHttpsOrigins": 0
+  },
+  "verdict": "Unavailable",
+  "boundedDecision": "Retain Web Locks with shared-library then exclusive-project ordering, BroadcastChannel takeover requests, bounded storage-status reporting, and IndexedDB blocked-upgrade handling. Gate 6 cannot pass until a user-controlled trusted HTTPS origin and real Safari/iPadOS lifecycle artifact are recorded."
+}
