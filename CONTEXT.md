@@ -161,6 +161,12 @@ _Avoid_: Connection, whole route
 The length of a Route obtained from its traversed Segments.
 _Avoid_: Cut Length
 
+**Hydraulic Length**:
+The evidenced wetted axial length of a Fluid Line used by an identified flow
+or pressure-loss calculation. It remains distinct from Route Length and Cut
+Length even when either provides applicable evidence.
+_Avoid_: Route Length, Cut Length, nominal length
+
 **Cut Length**:
 The material length required for a routed Connection after its termination,
 service, bend, twist, or lay allowances are applied.
@@ -191,6 +197,12 @@ A named static scenario of explicit commands, conditions, measurements, and
 assumptions used to evaluate Component Behaviors and calculations.
 _Avoid_: State machine, timeline, simulation
 
+**Boundary Condition**:
+An Engineering Value or explicit assumption that constrains a Port or
+Component Behavior for one Operating State, such as pressure, flow,
+temperature, level, command, or operating point.
+_Avoid_: Hidden solver input, simulated state
+
 **Overlay**:
 A derived, read-only visual projection of project topology, one Operating
 State, Component Behaviors, and bounded calculations.
@@ -203,6 +215,12 @@ A semantic quantity retaining its original unit, applicability,
 uncertainty or bounds, origin, and provenance, attached to its most specific
 subject and context. Conflicting values coexist.
 _Avoid_: Unqualified number, overwritten value
+
+**Component Characteristic**:
+A sourced curve, table, equation, or bounded relationship describing a
+Component Behavior under stated conditions. It is reusable evidence, not an
+actual operating point.
+_Avoid_: Operating State, Boundary Condition, Calculation Result
 
 **Calculation Result**:
 An Engineering Value produced by an identified formula from referenced inputs
