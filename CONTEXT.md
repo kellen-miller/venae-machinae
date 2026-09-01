@@ -203,10 +203,21 @@ Component Behavior for one Operating State, such as pressure, flow,
 temperature, level, command, or operating point.
 _Avoid_: Hidden solver input, simulated state
 
+**State Binding**:
+An explicit selection of an Engineering Value, command, condition, or
+assumption for one subject in one Operating State. It may deliberately retain
+unknown or conflicting applicability.
+_Avoid_: Implicit precedence, global default, latest value
+
 **Overlay**:
 A derived, read-only visual projection of project topology, one Operating
 State, Component Behaviors, and bounded calculations.
 _Avoid_: Design data, editable simulation result
+
+**Overlay Channel**:
+An independently selectable derived perspective within an Overlay, such as
+electrical potential, current, signal, fluid direction, or temperature.
+_Avoid_: Diagram layer, editable state, authoritative data
 
 ## Engineering evidence
 
