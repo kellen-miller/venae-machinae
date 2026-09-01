@@ -2,6 +2,7 @@
   "name": "venae-machinae-prototypes",
   "private": true,
   "scripts": {
-    "prototype": "python3 -m http.server 4173 --directory prototypes/core-2d-interaction"
+    "prototype": "python3 -m http.server 4173 --directory prototypes/dense-project-views",
+    "prototype:core": "python3 -m http.server 4174 --directory prototypes/core-2d-interaction"
   }
 }
