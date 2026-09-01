@@ -36,7 +36,7 @@ The accepted delivery choices are `adapter-node`, default hybrid SSR/CSR, one
 stable loopback origin, and no service worker for the MVP. The static-host and
 service-worker material below remains evidence for an evaluated alternative;
 it is not the final decision. The complete accepted shape is recorded in
-[`docs/adr/0001-local-first-sveltekit-architecture.md`](../docs/adr/0001-local-first-sveltekit-architecture.md).
+[`docs/adr/0001-local-first-sveltekit-architecture.md`](../adr/0001-local-first-sveltekit-architecture.md).
 
 ## Pre-grilling research recommendation
 
