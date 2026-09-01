@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-09-01
 - Decision ticket: [Choose the application architecture and delivery stack](https://github.com/kellen-miller/venae-machinae/issues/11)
-- Research: [Application architecture and delivery options](../../research/application-architecture-options.md)
+- Research: [Application architecture and delivery options](../research/application-architecture-options.md)
 
 ## Context
 
