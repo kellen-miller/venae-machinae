@@ -10,6 +10,51 @@ The design context for one concrete vehicle build across its planned and
 as-built evolution.
 _Avoid_: Vehicle family, fleet, product variant
 
+**Project Library**:
+The browser-profile-local collection of independent Vehicle Projects and
+reusable Part Definition Templates.
+_Avoid_: Account, cloud workspace, fleet
+
+**Library Backup**:
+A self-contained, versioned capture of active Vehicle Projects, Named
+Snapshots, Part Definition Templates, Project Assets, and library settings.
+_Avoid_: Project Snapshot, cloud sync, Recovery Checkpoint
+
+**Project Snapshot**:
+An immutable, self-contained capture of one Vehicle Project at a specific
+point in its evolution, retained locally or exchanged with another browser.
+_Avoid_: Live project, linked file, report
+
+**Project Copy**:
+An independent Vehicle Project derived from another while retaining origin
+provenance and assigning new identities to all project-owned subjects.
+_Avoid_: Project Snapshot, shared project, live branch
+
+**Recovery Checkpoint**:
+An automatically retained Project Snapshot used to restore recent work after
+failed persistence, corruption, or migration.
+_Avoid_: Named snapshot, authoritative project
+
+**Named Snapshot**:
+A user-created Project Snapshot whose contents remain immutable until the user
+explicitly deletes it; its name and note may change.
+_Avoid_: Recovery Checkpoint, live project, save command
+
+**Quarantined Project**:
+A retained Vehicle Project whose stored representation failed validation or
+migration and is unavailable for normal editing while recovery remains possible.
+_Avoid_: Deleted project, repaired project
+
+**Import Record**:
+The provenance of an accepted project, template, or library import, including
+its content identity, source format, migration path, and collision decision.
+_Avoid_: Filesystem path, imported payload, audit log
+
+**Project Asset**:
+An original binary file owned by a Vehicle Project as design context or
+evidence, retained with its media metadata and integrity identity.
+_Avoid_: External link, generated preview, render cache
+
 **System**:
 A flat, domain-homogeneous functional grouping of topology within a Vehicle
 Project. A Component may participate in more than one System.
@@ -35,6 +80,21 @@ _Avoid_: Fluid type
 A reusable specification and evidence record for a manufactured, fabricated,
 or project-local item.
 _Avoid_: Component type, catalog part
+
+**Part Definition Template**:
+A reusable local source copied into a Vehicle Project as an independent Part
+Definition with origin provenance but no continuing authority over the copy.
+_Avoid_: Shared Part Definition, live catalog dependency
+
+**Template Revision**:
+An immutable version of a Part Definition Template that identifies the exact
+origin of later project-local copies.
+_Avoid_: Live template, project Part Definition, update channel
+
+**Template Bundle**:
+A self-contained, versioned exchange of selected Part Definition Templates and
+their provenance, independent of any Vehicle Project.
+_Avoid_: Project Snapshot, live library, catalog sync
 
 **Component**:
 One project-specific occurrence of a Part Definition, whether planned or
