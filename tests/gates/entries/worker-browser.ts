@@ -25,7 +25,7 @@ function createInitialization(
     inputFingerprint: fingerprint,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 4,
+    schemaVersion: 5,
     project
   };
 }
@@ -38,7 +38,7 @@ function createIncrementalChange(requestId: string): EvaluateChangeSet {
     inputFingerprint: fingerprintTwo,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 4,
+    schemaVersion: 5,
     changeSet: {
       baseRevision: 1,
       upsertComponents: [],

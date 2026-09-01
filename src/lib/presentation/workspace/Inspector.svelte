@@ -21,7 +21,7 @@
     mode: WorkspaceMode;
     canAuthor: boolean;
     onmove: (componentId: string, x: string, y: string) => void;
-    onaddprimitive: (primitiveId: string) => void;
+    onaddprimitive: (primitiveId: string, fluidSystemId?: string) => void;
     onfollow: () => void;
     onreveal: () => void;
   } = $props();
@@ -46,6 +46,7 @@
   });
   let positionX = $derived(selectedComponent?.position.x ?? '0');
   let positionY = $derived(selectedComponent?.position.y ?? '0');
+  let fluidSystemId = $state('');
 </script>
 
 <aside class="inspector" aria-label="Inspector">
@@ -61,13 +62,23 @@
       <p class="primitive-boundary">
         Primitives supply identity shape only. They add no manufacturer data, ratings, or evidence.
       </p>
+      <label class="fluid-system-choice">
+        <span>Fluid System for new fluid primitive</span>
+        <select bind:value={fluidSystemId} disabled={!canAuthor}>
+          <option value="">Choose Fluid System</option>
+          {#each snapshot.topology.systems.filter((system) => system.domain === 'fluid') as system (system.id)}
+            <option value={system.id}>{system.label}</option>
+          {/each}
+        </select>
+      </label>
       <ul>
         {#each PRIMITIVES as primitive (primitive.id)}
+          {@const fluidPrimitive = primitive.ports.some((port) => port.domain === 'fluid')}
           <li>
             <button
               type="button"
-              disabled={!canAuthor}
-              onclick={() => onaddprimitive(primitive.id)}
+              disabled={!canAuthor || (fluidPrimitive && !fluidSystemId)}
+              onclick={() => onaddprimitive(primitive.id, fluidSystemId || undefined)}
             >
               <strong>Add {primitive.label.toLocaleLowerCase()}</strong>
               <span>{primitive.description}</span>
@@ -210,6 +221,24 @@
     color: #5d716f;
     font-size: 0.66rem;
     line-height: 1.4;
+  }
+
+  .fluid-system-choice {
+    display: grid;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+    color: #5d716f;
+    font: 0.62rem var(--font-mono);
+    text-transform: uppercase;
+  }
+
+  .fluid-system-choice select {
+    min-height: 2.5rem;
+    padding: 0.35rem 0.45rem;
+    border: 1px solid #9bb3ac;
+    border-radius: 0.3rem;
+    background: #fff;
+    color: #203e40;
   }
 
   .primitive-library ul {

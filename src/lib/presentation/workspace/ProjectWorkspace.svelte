@@ -18,6 +18,7 @@
   import type { RendererIntent } from '../../renderer/intent';
   import type { RendererPoint } from '../../renderer/projection';
   import type { ElectricalComponentRole } from '../../electrical/electrical';
+  import type { FluidComponentRole } from '../../fluid/fluid';
   import type { ImpactPreview, ProjectAction } from '../../project/action';
   import type { VehicleBackground } from '../../project/project';
   import type { ProjectAsset } from '../../session/session-backing';
@@ -229,7 +230,7 @@
     });
   }
 
-  function addPrimitive(primitiveId: string): void {
+  function addPrimitive(primitiveId: string, fluidSystemId?: string): void {
     const primitive = PRIMITIVES.find((candidate) => candidate.id === primitiveId);
     if (!primitive) {
       interactionStatus = `Primitive ${primitiveId} is unavailable.`;
@@ -238,10 +239,21 @@
 
     const componentId = crypto.randomUUID();
     const index = session.view.snapshot.topology.components.length;
+    const fluidSystem = fluidSystemId
+      ? session.view.snapshot.topology.systems.find(
+          (system) => system.id === fluidSystemId && system.domain === 'fluid'
+        )
+      : undefined;
+    if (primitive.ports.some((port) => port.domain === 'fluid') && !fluidSystem?.mediumId) {
+      interactionStatus = 'Choose a Fluid System before adding a fluid primitive.';
+      return;
+    }
+
     const component = createProjectComponentFromPrimitive({
       primitiveId,
       componentId,
       portIds: primitive.ports.map(() => crypto.randomUUID()),
+      ...(fluidSystem?.mediumId ? { mediumId: fluidSystem.mediumId } : {}),
       position: {
         x: String(120 + (index % 4) * 208),
         y: String(120 + Math.floor(index / 4) * 152)
@@ -259,20 +271,38 @@
       splice: 'splice',
       bus: 'bus'
     };
-    const role = roleByPrimitive[primitiveId];
-    if (!role) {
+    const fluidRoleByPrimitive: Readonly<Record<string, FluidComponentRole>> = {
+      'fluid-endpoint': 'endpoint',
+      'fluid-pump': 'pump',
+      'fluid-valve': 'valve',
+      'fluid-fitting': 'fitting',
+      'fluid-union': 'union',
+      'fluid-tee': 'tee',
+      'fluid-volume': 'volume'
+    };
+    const electricalRole = roleByPrimitive[primitiveId];
+    const fluidRole = fluidRoleByPrimitive[primitiveId];
+    let accepted: boolean;
+    if (electricalRole) {
+      accepted = execute({
+        type: 'add-electrical-component',
+        causationId: crypto.randomUUID(),
+        component,
+        role: electricalRole
+      });
+    } else if (fluidRole) {
+      accepted = execute({
+        type: 'add-fluid-component',
+        causationId: crypto.randomUUID(),
+        component,
+        role: fluidRole
+      });
+    } else {
       interactionStatus = `Primitive ${primitiveId} has no authoring role.`;
       return;
     }
 
-    if (
-      execute({
-        type: 'add-electrical-component',
-        causationId: crypto.randomUUID(),
-        component,
-        role
-      })
-    ) {
+    if (accepted) {
       select({ kind: 'component', id: component.id });
     }
   }

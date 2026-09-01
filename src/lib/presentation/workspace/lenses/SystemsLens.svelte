@@ -19,6 +19,10 @@
   } = $props();
 
   let systemLabel = $state('Auxiliary cooling power');
+  let fluidSystemLabel = $state('Engine coolant');
+  let fluidMediumLabel = $state('50/50 coolant');
+  let fluidComposition = $state('ethylene glycol and water, 50/50 by volume');
+  let fluidPurpose = $state('engine heat transport');
 
   function addElectricalSystem(): void {
     if (
@@ -36,6 +40,43 @@
       systemLabel = '';
     }
   }
+
+  function addFluidSystem(): void {
+    if (
+      !fluidSystemLabel.trim() ||
+      !fluidMediumLabel.trim() ||
+      !fluidComposition.trim() ||
+      !fluidPurpose.trim()
+    ) {
+      return;
+    }
+
+    const mediumId = crypto.randomUUID();
+    if (
+      onaction({
+        type: 'add-fluid-system',
+        causationId: crypto.randomUUID(),
+        system: {
+          id: crypto.randomUUID(),
+          label: fluidSystemLabel.trim(),
+          domain: 'fluid',
+          mediumId
+        },
+        medium: {
+          id: mediumId,
+          label: fluidMediumLabel.trim(),
+          composition: fluidComposition.trim(),
+          provenance: 'user-entered Fluid Medium'
+        },
+        purpose: fluidPurpose.trim()
+      })
+    ) {
+      fluidSystemLabel = '';
+      fluidMediumLabel = '';
+      fluidComposition = '';
+      fluidPurpose = '';
+    }
+  }
 </script>
 
 <section class="systems-lens">
@@ -49,12 +90,19 @@
 
   <div class="system-grid">
     {#each snapshot.topology.systems as system (system.id)}
+      {@const fluidRecord = snapshot.fluid.systems.find((record) => record.systemId === system.id)}
+      {@const medium = snapshot.fluid.media.find(
+        (candidate) => candidate.id === fluidRecord?.mediumId
+      )}
       <article>
         <div>
           <span class={`domain-key domain-key--${system.domain}`} aria-hidden="true"></span>
           <div>
             <h3>{system.label}</h3>
-            <p>{system.domain}{system.mediumId ? ` · ${system.mediumId}` : ''}</p>
+            <p>
+              {system.domain}{medium ? ` · ${medium.label}` : ''}
+              {fluidRecord ? ` · ${fluidRecord.purpose}` : ''}
+            </p>
           </div>
         </div>
         <strong
@@ -76,6 +124,36 @@
       onclick={addElectricalSystem}
     >
       Add electrical System
+    </button>
+  </form>
+
+  <form class="system-authoring fluid-authoring" onsubmit={(event) => event.preventDefault()}>
+    <label>
+      <span>Fluid System label</span>
+      <input bind:value={fluidSystemLabel} disabled={!canAuthor} />
+    </label>
+    <label>
+      <span>Fluid Medium</span>
+      <input bind:value={fluidMediumLabel} disabled={!canAuthor} />
+    </label>
+    <label>
+      <span>Medium composition</span>
+      <input bind:value={fluidComposition} disabled={!canAuthor} />
+    </label>
+    <label>
+      <span>System purpose</span>
+      <input bind:value={fluidPurpose} disabled={!canAuthor} />
+    </label>
+    <button
+      type="button"
+      disabled={!canAuthor ||
+        !fluidSystemLabel.trim() ||
+        !fluidMediumLabel.trim() ||
+        !fluidComposition.trim() ||
+        !fluidPurpose.trim()}
+      onclick={addFluidSystem}
+    >
+      Add Fluid System
     </button>
   </form>
 
@@ -162,6 +240,14 @@
     padding: 0.75rem;
     border: 1px solid #cbd8d3;
     background: #edf4f0;
+  }
+
+  .fluid-authoring {
+    grid-template-columns: repeat(2, minmax(12rem, 1fr));
+  }
+
+  .fluid-authoring button {
+    grid-column: span 2;
   }
 
   .system-authoring label {
@@ -305,6 +391,10 @@
   @media (max-width: 43.75rem) {
     .system-authoring {
       grid-template-columns: 1fr;
+    }
+
+    .fluid-authoring button {
+      grid-column: auto;
     }
   }
 </style>

@@ -44,14 +44,21 @@ describe('MVP-ARCH-003 persisted and live project boundaries', () => {
       createdAt: '2026-09-01T00:00:00Z'
     });
     snapshot = accept(snapshot, {
-      type: 'add-system',
+      type: 'add-fluid-system',
       causationId: 'cause-system',
       system: {
         id: 'system-coolant',
         label: 'Coolant',
         domain: 'fluid',
         mediumId: 'medium-coolant'
-      }
+      },
+      medium: {
+        id: 'medium-coolant',
+        label: 'Coolant',
+        composition: 'coolant fixture medium',
+        provenance: 'independent persistence fixture'
+      },
+      purpose: 'round-trip coolant'
     });
     snapshot = accept(snapshot, {
       type: 'add-component',
@@ -94,7 +101,7 @@ describe('MVP-ARCH-003 persisted and live project boundaries', () => {
     const document = projectSnapshotToDocument(snapshot);
     expect(document).not.toBe(snapshot);
     expect(document).toMatchObject({
-      schemaVersion: 4,
+      schemaVersion: 5,
       project: { id: 'project-round-trip', revision: 3 },
       topology: {
         systems: [{ id: 'system-coolant', mediumId: 'medium-coolant' }],

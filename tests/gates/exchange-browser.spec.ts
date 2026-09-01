@@ -104,7 +104,7 @@ test('MVP-GATE-004 stages measured exchange limits in production browsers', asyn
       originalAssetBytes: 65_536,
       assetCount: 1,
       maxNestingDepth: 7,
-      collectionEntries: 3_005
+      collectionEntries: 3_007
     },
     {
       scale: 2,
@@ -114,7 +114,7 @@ test('MVP-GATE-004 stages measured exchange limits in production browsers', asyn
       originalAssetBytes: 524_288,
       assetCount: 1,
       maxNestingDepth: 7,
-      collectionEntries: 6_005
+      collectionEntries: 6_007
     },
     {
       scale: 5,
@@ -124,7 +124,7 @@ test('MVP-GATE-004 stages measured exchange limits in production browsers', asyn
       originalAssetBytes: 12_582_912,
       assetCount: 2,
       maxNestingDepth: 7,
-      collectionEntries: 15_008
+      collectionEntries: 15_010
     }
   ]);
   for (const measurement of result.results) {

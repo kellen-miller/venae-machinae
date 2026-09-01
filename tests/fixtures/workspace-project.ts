@@ -29,7 +29,7 @@ export async function seedWorkspaceProject(page: Page): Promise<void> {
     {
       projectId: WORKSPACE_PROJECT_ID,
       snapshot: {
-        schemaVersion: 4,
+        schemaVersion: 5,
         project: {
           id: WORKSPACE_PROJECT_ID,
           name: 'RX-7 workshop study',
@@ -281,6 +281,38 @@ export async function seedWorkspaceProject(page: Page): Promise<void> {
           harnesses: [],
           bundles: [],
           cableSpecifications: []
+        },
+        fluid: {
+          media: [
+            {
+              id: 'coolant',
+              label: 'Engine coolant',
+              composition: 'fixture coolant',
+              provenance: 'independent workspace fixture'
+            },
+            {
+              id: 'oil',
+              label: 'Engine oil',
+              composition: 'fixture engine oil',
+              provenance: 'independent workspace fixture'
+            }
+          ],
+          systems: [
+            {
+              systemId: 'system-coolant',
+              mediumId: 'coolant',
+              purpose: 'engine cooling'
+            },
+            {
+              systemId: 'system-oil',
+              mediumId: 'oil',
+              purpose: 'engine lubrication'
+            }
+          ],
+          components: [],
+          lines: [],
+          behaviors: [],
+          boundaryConditions: []
         },
         partDefinitions: [],
         partRequirements: [],

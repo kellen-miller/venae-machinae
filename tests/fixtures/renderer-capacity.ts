@@ -118,7 +118,7 @@ export function generateRendererCapacityProject(scale: CapacityScale): ProjectDo
   const connections = routedConnections.map((entry) => entry.connection);
 
   return projectDocumentSchema.parse({
-    schemaVersion: 4,
+    schemaVersion: 5,
     project: {
       id: `renderer-capacity-project-${scale}x`,
       name: `Renderer capacity ${scale}x`,
@@ -153,6 +153,27 @@ export function generateRendererCapacityProject(scale: CapacityScale): ProjectDo
       harnesses: [],
       bundles: [],
       cableSpecifications: []
+    },
+    fluid: {
+      media: [
+        {
+          id: 'medium-renderer-fluid',
+          label: 'Renderer fixture fluid',
+          composition: 'synthetic renderer fixture composition',
+          provenance: 'independent renderer fixture'
+        }
+      ],
+      systems: [
+        {
+          systemId: 'system-renderer-fluid',
+          mediumId: 'medium-renderer-fluid',
+          purpose: 'renderer-boundary topology'
+        }
+      ],
+      components: [],
+      lines: [],
+      behaviors: [],
+      boundaryConditions: []
     },
     partDefinitions: [],
     partRequirements: [],

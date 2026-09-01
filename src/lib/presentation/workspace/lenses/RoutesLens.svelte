@@ -12,8 +12,8 @@
     onaction: (action: ProjectAction) => boolean;
   } = $props();
 
-  const wires = $derived(
-    snapshot.topology.connections.filter((connection) => connection.kind === 'electrical-wire')
+  const routableConnections = $derived(
+    snapshot.topology.connections.filter((connection) => connection.kind !== 'electrical-mate')
   );
   let connectionId = $state('');
   let segmentLabel = $state('Engine-bay trunk');
@@ -50,10 +50,12 @@
 
   <div class="authoring-grid">
     <label>
-      <span>Electrical Wire</span>
+      <span>Routed Connection</span>
       <select bind:value={connectionId} disabled={!canAuthor}>
-        <option value="">Choose Wire</option>
-        {#each wires as wire (wire.id)}<option value={wire.id}>{wire.label}</option>{/each}
+        <option value="">Choose Connection</option>
+        {#each routableConnections as connection (connection.id)}<option value={connection.id}
+            >{connection.label} · {connection.kind}</option
+          >{/each}
       </select>
     </label>
     <label
@@ -100,7 +102,7 @@
       /></label
     >
     <button type="button" disabled={!canAuthor || !connectionId} onclick={setRoute}
-      >Set independent Wire Route</button
+      >Set independent Route</button
     >
   </div>
 
@@ -112,13 +114,19 @@
       {@const wire = snapshot.electrical.wires.find(
         (candidate) => candidate.connectionId === connection?.id
       )}
+      {@const line = snapshot.fluid.lines.find(
+        (candidate) => candidate.connectionId === connection?.id
+      )}
       <li>
         <strong>{connection?.label ?? route.id}</strong>
         <span>{route.segmentIds.length} ordered Segments</span>
         <span
-          >{wire?.routeLength?.decimal ?? 'Unknown'}
-          {wire?.routeLength?.unit ?? ''} Route · {wire?.cutLength?.decimal ?? 'Unknown'}
-          {wire?.cutLength?.unit ?? ''} Cut</span
+          >{wire?.routeLength?.decimal ?? line?.routeLength?.decimal ?? 'Unknown'}
+          {wire?.routeLength?.unit ?? line?.routeLength?.unit ?? ''} Route ·
+          {line
+            ? `${line.hydraulicLength?.decimal ?? 'Unknown'} ${line.hydraulicLength?.unit ?? ''} Hydraulic · `
+            : ''}{wire?.cutLength?.decimal ?? line?.cutLength?.decimal ?? 'Unknown'}
+          {wire?.cutLength?.unit ?? line?.cutLength?.unit ?? ''} Cut</span
         >
       </li>
     {:else}

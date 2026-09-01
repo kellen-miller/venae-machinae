@@ -8,7 +8,20 @@ import type {
   ElectricalHarness,
   ElectricalWire
 } from '../electrical/electrical';
-import type { PartDefinition, PartRequirement, ProjectResult, VehicleBackground } from './project';
+import type {
+  FluidBoundaryCondition,
+  FluidComponentBehavior,
+  FluidComponentRole,
+  FluidLine,
+  FluidMedium
+} from '../fluid/fluid';
+import type {
+  OperatingState,
+  PartDefinition,
+  PartRequirement,
+  ProjectResult,
+  VehicleBackground
+} from './project';
 import type {
   Component,
   Connection,
@@ -23,12 +36,25 @@ type Causation = Readonly<{ causationId: string }>;
 export type ProjectAction =
   | (Causation & Readonly<{ type: 'rename-project'; name: string }>)
   | (Causation & Readonly<{ type: 'add-system'; system: System }>)
+  | (Causation &
+      Readonly<{
+        type: 'add-fluid-system';
+        system: System;
+        medium: FluidMedium;
+        purpose: string;
+      }>)
   | (Causation & Readonly<{ type: 'add-component'; component: Component }>)
   | (Causation &
       Readonly<{
         type: 'add-electrical-component';
         component: Component;
         role: ElectricalComponentRole;
+      }>)
+  | (Causation &
+      Readonly<{
+        type: 'add-fluid-component';
+        component: Component;
+        role: FluidComponentRole;
       }>)
   | (Causation &
       Readonly<{
@@ -59,6 +85,14 @@ export type ProjectAction =
         type: 'record-electrical-cable-specification';
         specification: ElectricalCableSpecification;
       }>)
+  | (Causation & Readonly<{ type: 'configure-fluid-line'; line: FluidLine }>)
+  | (Causation & Readonly<{ type: 'configure-fluid-behavior'; behavior: FluidComponentBehavior }>)
+  | (Causation &
+      Readonly<{
+        type: 'record-fluid-boundary-condition';
+        boundary: FluidBoundaryCondition;
+      }>)
+  | (Causation & Readonly<{ type: 'add-operating-state'; state: OperatingState }>)
   | (Causation &
       Readonly<{
         type: 'set-connection-route';

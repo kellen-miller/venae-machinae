@@ -82,7 +82,7 @@ describe('MVP-GATE-004 exchange limits', () => {
     });
     expect(outcome.measurements.envelopeBytes).toBeGreaterThan(250_000);
     expect(outcome.measurements.maxNestingDepth).toBe(7);
-    expect(outcome.measurements.collectionEntries).toBe(3_005);
+    expect(outcome.measurements.collectionEntries).toBe(3_007);
   });
 
   it('rejects payload mutation even when export metadata is unchanged', async () => {

@@ -71,9 +71,16 @@ describe('MVP-MODEL-001 MVP-MODEL-002 MVP-MODEL-008 topology invariants', () => 
       }
     ]) {
       snapshot = accept(snapshot, {
-        type: 'add-system',
+        type: 'add-fluid-system',
         causationId: `cause-${system.id}`,
-        system
+        system,
+        medium: {
+          id: system.mediumId,
+          label: system.label,
+          composition: `${system.label} fixture medium`,
+          provenance: 'independent topology fixture'
+        },
+        purpose: `${system.label} topology`
       });
     }
     for (const value of [
@@ -206,14 +213,21 @@ describe('MVP-MODEL-001 MVP-MODEL-002 MVP-MODEL-008 topology invariants', () => 
       }
     });
     snapshot = accept(snapshot, {
-      type: 'add-system',
+      type: 'add-fluid-system',
       causationId: 'cause-system-coolant',
       system: {
         id: 'system-coolant',
         label: 'Coolant',
         domain: 'fluid',
         mediumId: 'medium-coolant'
-      }
+      },
+      medium: {
+        id: 'medium-coolant',
+        label: 'Coolant',
+        composition: 'coolant fixture medium',
+        provenance: 'independent topology fixture'
+      },
+      purpose: 'coolant topology'
     });
     snapshot = accept(snapshot, {
       type: 'add-component',

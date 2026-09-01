@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { validateElectricalModel } from '../electrical/electrical';
+import { validateFluidModel } from '../fluid/fluid';
 import { validateTopology } from '../topology/topology';
 import { APPLICATION_VERSIONS } from '../version/version-registry';
 
@@ -248,6 +249,120 @@ const electricalModelSchema = z.strictObject({
   )
 });
 
+const fluidLengthSchema = z.strictObject({
+  decimal: decimalString,
+  unit: z.enum(['mm', 'cm', 'm', 'in', 'ft']),
+  source: z.enum(['estimated', 'measured', 'entered', 'sourced']),
+  provenance: z.string().min(1)
+});
+
+const fluidModelSchema = z.strictObject({
+  media: z.array(
+    z.strictObject({
+      id: identity,
+      label: z.string().min(1).max(160),
+      composition: z.string().min(1),
+      provenance: z.string().min(1)
+    })
+  ),
+  systems: z.array(
+    z.strictObject({
+      systemId: identity,
+      mediumId: identity,
+      purpose: z.string().min(1)
+    })
+  ),
+  components: z.array(
+    z.strictObject({
+      componentId: identity,
+      role: z.enum([
+        'endpoint',
+        'fitting',
+        'union',
+        'tee',
+        'manifold',
+        'pump',
+        'restriction',
+        'valve',
+        'heat-source',
+        'heat-sink',
+        'volume',
+        'heat-exchanger'
+      ])
+    })
+  ),
+  lines: z.array(
+    z.strictObject({
+      connectionId: identity,
+      partDefinitionId: identity.nullable(),
+      construction: z.discriminatedUnion('kind', [
+        z.strictObject({
+          kind: z.literal('hose'),
+          reinforcement: z.string(),
+          minimumBendRadius: fluidLengthSchema.nullable()
+        }),
+        z.strictObject({
+          kind: z.literal('tube'),
+          material: z.string(),
+          wallThickness: fluidLengthSchema.nullable()
+        }),
+        z.strictObject({
+          kind: z.literal('pipe'),
+          material: z.string(),
+          schedule: z.string()
+        })
+      ]),
+      routeLength: fluidLengthSchema.nullable(),
+      hydraulicLength: fluidLengthSchema.nullable(),
+      cutLength: fluidLengthSchema.nullable(),
+      elevation: z
+        .strictObject({
+          start: decimalString,
+          end: decimalString,
+          unit: z.enum(['mm', 'cm', 'm', 'in', 'ft']),
+          source: z.enum(['estimated', 'measured', 'entered', 'sourced']),
+          provenance: z.string().min(1)
+        })
+        .nullable(),
+      environment: z.string().min(1),
+      provenance: z.string().min(1)
+    })
+  ),
+  behaviors: z.array(
+    z.strictObject({
+      id: identity,
+      componentId: identity,
+      role: z.enum([
+        'passage',
+        'pump',
+        'restriction',
+        'valve',
+        'heat-source',
+        'heat-sink',
+        'volume',
+        'heat-exchanger'
+      ]),
+      portIds: z.array(identity),
+      mediumIds: z.array(identity),
+      description: z.string().min(1),
+      provenance: z.string().min(1)
+    })
+  ),
+  boundaryConditions: z.array(
+    z.strictObject({
+      id: identity,
+      behaviorId: identity,
+      subjectId: identity,
+      operatingStateId: identity,
+      quantity: z.enum(['pressure', 'flow', 'temperature', 'level', 'command', 'operating-point']),
+      value: z.string().min(1),
+      unit: z.string().min(1).nullable(),
+      source: z.enum(['measured', 'entered', 'sourced', 'assumed']),
+      provenance: z.string().min(1)
+    })
+  )
+});
+
 export const projectDocumentSchema = z.strictObject({
   schemaVersion: z.literal(APPLICATION_VERSIONS.projectDocumentSchema),
   project: z.strictObject({
@@ -264,6 +379,7 @@ export const projectDocumentSchema = z.strictObject({
     segments: z.array(routeSegmentSchema)
   }),
   electrical: electricalModelSchema,
+  fluid: fluidModelSchema,
   partDefinitions: z.array(partDefinitionSchema),
   partRequirements: z.array(partRequirementSchema),
   evidence: z.array(evidenceSchema),
@@ -315,6 +431,7 @@ export function projectSnapshotToDocument(snapshot: ProjectSnapshot): ProjectDoc
     },
     topology: snapshot.topology,
     electrical: snapshot.electrical,
+    fluid: snapshot.fluid,
     partDefinitions: snapshot.partDefinitions,
     partRequirements: snapshot.partRequirements,
     evidence: snapshot.evidence,
@@ -337,6 +454,7 @@ export function projectDocumentToSnapshot(document: ProjectDocument): ProjectSna
     createdAt: parsed.project.createdAt,
     topology: parsed.topology,
     electrical: parsed.electrical,
+    fluid: parsed.fluid,
     partDefinitions: parsed.partDefinitions,
     partRequirements: parsed.partRequirements,
     evidence: parsed.evidence,
@@ -359,6 +477,15 @@ export function projectDocumentToSnapshot(document: ProjectDocument): ProjectSna
     throw new Error(
       `Persisted Project electrical model is invalid: ${electricalRejection.message}`
     );
+  }
+  const fluidRejection = validateFluidModel(
+    snapshot.topology,
+    snapshot.partDefinitions,
+    snapshot.operatingStates,
+    snapshot.fluid
+  );
+  if (fluidRejection) {
+    throw new Error(`Persisted Project fluid model is invalid: ${fluidRejection.message}`);
   }
   return snapshot;
 }

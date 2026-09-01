@@ -1,5 +1,6 @@
 <script lang="ts">
   import { deriveCircuitNetIds, deriveElectricalNets } from '../../../electrical/electrical';
+  import FluidLinesPanel from './FluidLinesPanel.svelte';
 
   import type { ElectricalConductorRole } from '../../../electrical/electrical';
   import type { ImpactPreview, ProjectAction } from '../../../project/action';
@@ -485,6 +486,8 @@
       </ul>
     </section>
   </div>
+
+  <FluidLinesPanel {snapshot} {canAuthor} {onaction} />
 </section>
 
 <style>

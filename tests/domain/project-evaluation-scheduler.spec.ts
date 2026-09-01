@@ -69,11 +69,11 @@ describe('MVP-ARCH-004 Project evaluation adapter', () => {
     expect(request).toMatchObject({
       type: 'initialize-evaluation',
       projectRevision: 1,
-      schemaVersion: 4,
+      schemaVersion: 5,
       formulaCatalogVersion: 1,
       validationRuleCatalogVersion: 1,
       project: {
-        schemaVersion: 4,
+        schemaVersion: 5,
         projectRevision: 1,
         components: [{ id: 'component-load', ports: [] }]
       }

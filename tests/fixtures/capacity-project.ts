@@ -52,7 +52,7 @@ export function generateCapacityProject(scale: CapacityScale): ProjectDocument {
   });
 
   return projectDocumentSchema.parse({
-    schemaVersion: 4,
+    schemaVersion: 5,
     project: {
       id: `capacity-project-${scale}x`,
       name: `Capacity ${scale}x`,
@@ -87,6 +87,27 @@ export function generateCapacityProject(scale: CapacityScale): ProjectDocument {
       harnesses: [],
       bundles: [],
       cableSpecifications: []
+    },
+    fluid: {
+      media: [
+        {
+          id: 'medium-capacity-fluid',
+          label: 'Capacity fixture fluid',
+          composition: 'synthetic capacity fixture composition',
+          provenance: 'independent capacity fixture'
+        }
+      ],
+      systems: [
+        {
+          systemId: 'system-capacity-fluid',
+          mediumId: 'medium-capacity-fluid',
+          purpose: 'capacity-boundary topology'
+        }
+      ],
+      components: [],
+      lines: [],
+      behaviors: [],
+      boundaryConditions: []
     },
     partDefinitions: [],
     partRequirements: [],

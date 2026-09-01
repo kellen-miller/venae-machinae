@@ -58,12 +58,18 @@ async function setRoute(
   lens: Locator,
   input: { wireLabel: string; segmentLabel: string; sharedSegmentLabel?: string }
 ): Promise<void> {
-  await lens.getByLabel('Electrical Wire').selectOption({ label: input.wireLabel });
+  const routeSelect = lens.getByLabel('Routed Connection');
+  const optionValue = await routeSelect
+    .locator('option')
+    .filter({ hasText: `${input.wireLabel} ·` })
+    .getAttribute('value');
+  expect(optionValue).not.toBeNull();
+  await routeSelect.selectOption(optionValue!);
   await lens.getByLabel('New Segment label').fill(input.segmentLabel);
   await lens
     .getByLabel('Prepend shared Segment')
     .selectOption(input.sharedSegmentLabel ? { label: input.sharedSegmentLabel } : '');
-  await lens.getByRole('button', { name: 'Set independent Wire Route' }).click();
+  await lens.getByRole('button', { name: 'Set independent Route' }).click();
   await expect(lens.locator('ol li').filter({ hasText: input.wireLabel })).toBeVisible();
 }
 

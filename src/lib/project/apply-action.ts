@@ -1,5 +1,6 @@
 import { validateTopology } from '../topology/topology';
 import { validateElectricalModel } from '../electrical/electrical';
+import { validateFluidModel } from '../fluid/fluid';
 
 import type {
   DestructiveProjectAction,
@@ -17,6 +18,8 @@ export type ActionRejectionCode =
   | 'invalid-background'
   | 'invalid-electrical-record'
   | 'invalid-electrical-reference'
+  | 'invalid-fluid-record'
+  | 'invalid-fluid-reference'
   | 'missing-asset'
   | 'invalid-result'
   | 'stale-system-action';
@@ -166,8 +169,41 @@ export function applyProjectAction(
       undoLabel = `Add ${action.system.label}`;
       break;
 
+    case 'add-fluid-system':
+      if (
+        projectIdentityExists(snapshot, action.system.id) ||
+        projectIdentityExists(snapshot, action.medium.id) ||
+        action.system.id === action.medium.id
+      ) {
+        return reject('duplicate-identity', 'Fluid System or Medium identity is already in use');
+      }
+      next = {
+        ...snapshot,
+        topology: {
+          ...snapshot.topology,
+          systems: [...snapshot.topology.systems, action.system]
+        },
+        fluid: {
+          ...snapshot.fluid,
+          media: [...snapshot.fluid.media, action.medium],
+          systems: [
+            ...snapshot.fluid.systems,
+            {
+              systemId: action.system.id,
+              mediumId: action.medium.id,
+              purpose: action.purpose
+            }
+          ]
+        },
+        results: staleResults
+      };
+      changedSubjects = [action.system.id, action.medium.id];
+      undoLabel = `Add ${action.system.label}`;
+      break;
+
     case 'add-component':
-    case 'add-electrical-component': {
+    case 'add-electrical-component':
+    case 'add-fluid-component': {
       const componentIdentities = [
         action.component.id,
         ...action.component.ports.map((port) => port.id)
@@ -205,6 +241,16 @@ export function applyProjectAction(
                 ]
               }
             : snapshot.electrical,
+        fluid:
+          action.type === 'add-fluid-component'
+            ? {
+                ...snapshot.fluid,
+                components: [
+                  ...snapshot.fluid.components,
+                  { componentId: action.component.id, role: action.role }
+                ]
+              }
+            : snapshot.fluid,
         results: staleResults
       };
       changedSubjects = [action.component.id];
@@ -591,6 +637,85 @@ export function applyProjectAction(
       undoLabel = `Record cable evidence for ${action.specification.partDefinitionId}`;
       break;
 
+    case 'configure-fluid-line':
+      next = {
+        ...snapshot,
+        fluid: {
+          ...snapshot.fluid,
+          lines: [
+            ...snapshot.fluid.lines.filter(
+              (line) => line.connectionId !== action.line.connectionId
+            ),
+            action.line
+          ]
+        },
+        results: staleResults
+      };
+      changedSubjects = [action.line.connectionId];
+      undoLabel = `Configure ${action.line.connectionId}`;
+      break;
+
+    case 'configure-fluid-behavior': {
+      const existing = snapshot.fluid.behaviors.find(
+        (behavior) => behavior.id === action.behavior.id
+      );
+      if (!existing && projectIdentityExists(snapshot, action.behavior.id)) {
+        return reject(
+          'duplicate-identity',
+          `Subject identity ${action.behavior.id} is already in use`
+        );
+      }
+      next = {
+        ...snapshot,
+        fluid: {
+          ...snapshot.fluid,
+          behaviors: [
+            ...snapshot.fluid.behaviors.filter((behavior) => behavior.id !== action.behavior.id),
+            action.behavior
+          ]
+        },
+        results: staleResults
+      };
+      changedSubjects = [action.behavior.id, action.behavior.componentId];
+      undoLabel = `${existing ? 'Update' : 'Add'} ${action.behavior.role} behavior`;
+      break;
+    }
+
+    case 'record-fluid-boundary-condition':
+      if (projectIdentityExists(snapshot, action.boundary.id)) {
+        return reject(
+          'duplicate-identity',
+          `Subject identity ${action.boundary.id} is already in use`
+        );
+      }
+      next = {
+        ...snapshot,
+        fluid: {
+          ...snapshot.fluid,
+          boundaryConditions: [...snapshot.fluid.boundaryConditions, action.boundary]
+        },
+        results: staleResults
+      };
+      changedSubjects = [action.boundary.id, action.boundary.subjectId];
+      undoLabel = `Record ${action.boundary.quantity} boundary`;
+      break;
+
+    case 'add-operating-state':
+      if (projectIdentityExists(snapshot, action.state.id)) {
+        return reject(
+          'duplicate-identity',
+          `Subject identity ${action.state.id} is already in use`
+        );
+      }
+      next = {
+        ...snapshot,
+        operatingStates: [...snapshot.operatingStates, action.state],
+        results: staleResults
+      };
+      changedSubjects = [action.state.id];
+      undoLabel = `Add ${action.state.name}`;
+      break;
+
     case 'set-connection-route': {
       if (
         !snapshot.topology.connections.some((connection) => connection.id === action.connectionId)
@@ -821,6 +946,13 @@ export function applyProjectAction(
     next.electrical
   );
   if (electricalRejection) return { accepted: false, rejection: electricalRejection };
+  const fluidRejection = validateFluidModel(
+    next.topology,
+    next.partDefinitions,
+    next.operatingStates,
+    next.fluid
+  );
+  if (fluidRejection) return { accepted: false, rejection: fluidRejection };
 
   return {
     accepted: true,
@@ -847,6 +979,9 @@ function projectIdentityExists(snapshot: ProjectSnapshot, subjectId: SubjectId):
       (subject) =>
         subject.id === subjectId || subject.twistedPairs.some((pair) => pair.id === subjectId)
     ) ||
+    snapshot.fluid.media.some((subject) => subject.id === subjectId) ||
+    snapshot.fluid.behaviors.some((subject) => subject.id === subjectId) ||
+    snapshot.fluid.boundaryConditions.some((subject) => subject.id === subjectId) ||
     snapshot.partDefinitions.some((subject) => subject.id === subjectId) ||
     snapshot.partRequirements.some((subject) => subject.id === subjectId) ||
     snapshot.evidence.some((subject) => subject.id === subjectId) ||
