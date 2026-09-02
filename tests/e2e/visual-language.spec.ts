@@ -89,7 +89,7 @@ test('MVP-UX-007 persists and renders one calibrated inert raster by content has
   await expect(page.locator('[data-save-status="saved"]')).toBeVisible();
 
   const storedAsset = await page.evaluate(async (hash) => {
-    const request = indexedDB.open('venae-machinae', 1);
+    const request = indexedDB.open('venae-machinae');
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);

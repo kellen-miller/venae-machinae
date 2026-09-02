@@ -1,7 +1,15 @@
 <script lang="ts">
   import type { ProjectSessionView } from '../../session/project-session.svelte';
 
-  let { view }: { view: ProjectSessionView } = $props();
+  let {
+    view,
+    onretry,
+    onemergencyexport
+  }: {
+    view: ProjectSessionView;
+    onretry: () => void;
+    onemergencyexport: () => void;
+  } = $props();
 </script>
 
 <div class="workspace-status" aria-label="Project status">
@@ -15,7 +23,13 @@
 {#if view.save.status === 'failed'}
   <aside class="save-failed" role="alert">
     <strong>Save failed.</strong>
-    <span>Your working revision remains open. Resolve storage before closing.</span>
+    <span>
+      Unsaved changes remain in memory and are not durable. Resolve storage before closing.
+    </span>
+    <div>
+      <button type="button" onclick={onretry}>Retry save</button>
+      <button type="button" onclick={onemergencyexport}>Export unsaved working state</button>
+    </div>
   </aside>
 {:else if view.evaluation.status === 'stale'}
   <aside class="evaluation-stale" role="status">
@@ -64,6 +78,21 @@
     background: #422721;
     color: #fff0e9;
     box-shadow: 0 1rem 3rem rgb(0 0 0 / 32%);
+  }
+
+  .save-failed div {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .save-failed button {
+    min-height: 2rem;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
   }
 
   .evaluation-stale {

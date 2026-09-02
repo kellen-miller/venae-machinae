@@ -1,8 +1,8 @@
 # MVP-GATE-005 — Worker boundary
 
-- Current record: `evidence/gates/MVP-GATE-005-baseline.md`
-- Machine record: `evidence/gates/MVP-GATE-005-baseline.json`
+- Current record: `evidence/gates/MVP-GATE-005-milestone-5.md`
+- Machine record: `evidence/gates/MVP-GATE-005-milestone-5.json`
 - Verdict: Pass
-- Supersedes: none
+- Supersedes: `MVP-GATE-005-baseline`
 
-The current guarded baseline covers 1×/2×/5× evaluation-only initialization and incremental clone cost, one-active scheduling, cooperative and forced cancellation, stale publication rejection, crash/restart, explicit retry, and server-loss retention across Chromium, Firefox, and WebKit. It must be superseded after the complete production schema is promoted.
+The current record covers the production schema-8 evaluation DTO, bounded initialization and incremental split, identity-gated publication, cancellation, forced restart, crash recovery, explicit retry, and server-loss guard at 1×/2×/5× in Chromium, Firefox, and WebKit.

@@ -1,15 +1,19 @@
 <script lang="ts">
   import type { ProjectAction } from '../../../project/action';
-  import type { ProjectSnapshot } from '../../../project/project';
+  import type { PartDefinition, ProjectSnapshot } from '../../../project/project';
 
   let {
     snapshot,
     canAuthor,
-    onaction
+    onaction,
+    onpromotetemplate
   }: {
     snapshot: ProjectSnapshot;
     canAuthor: boolean;
     onaction: (action: ProjectAction) => boolean;
+    onpromotetemplate: (
+      definition: PartDefinition
+    ) => Promise<{ promoted: true } | { promoted: false; reason: string }>;
   } = $props();
 
   const ports = $derived(snapshot.topology.components.flatMap((component) => component.ports));
@@ -34,6 +38,8 @@
   let unusedRequirement = $state<'cavity-plug-required' | 'seal-required' | 'open-allowed'>(
     'open-allowed'
   );
+  let promotingDefinitionId = $state<string | null>(null);
+  let templateStatus = $state<string | null>(null);
 
   function addPartDefinition(): void {
     if (!definitionLabel.trim() || !definitionProvenance.trim()) return;
@@ -51,6 +57,16 @@
     ) {
       definitionLabel = '';
     }
+  }
+
+  async function promotePartDefinition(definition: PartDefinition): Promise<void> {
+    promotingDefinitionId = definition.id;
+    templateStatus = null;
+    const outcome = await onpromotetemplate(definition);
+    templateStatus = outcome.promoted
+      ? `Promoted ${definition.label} revision ${definition.revision} as an immutable Template.`
+      : `Template promotion failed: ${outcome.reason}.`;
+    promotingDefinitionId = null;
   }
 
   function configureConnector(): void {
@@ -117,11 +133,21 @@
         onclick={addPartDefinition}>Add Part Definition</button
       >
     </div>
+    {#if templateStatus}<p class="template-status" role="status">{templateStatus}</p>{/if}
     <ul class="part-register">
       {#each snapshot.partDefinitions as definition (definition.id)}
         <li>
-          <strong>{definition.label}</strong><span
-            >r{definition.revision} · {definition.provenance}</span
+          <span class="definition-identity">
+            <strong>{definition.label}</strong><small
+              >r{definition.revision} · {definition.provenance}</small
+            >
+          </span>
+          <button
+            class="template-action"
+            type="button"
+            disabled={!canAuthor || promotingDefinitionId !== null}
+            onclick={() => promotePartDefinition(definition)}
+            >Promote {definition.label} revision {definition.revision} as Template</button
           >
         </li>
       {:else}
@@ -333,9 +359,22 @@
     padding: 0.45rem;
     border-top: 1px solid #d5dfdb;
   }
-  .part-register span {
+  .definition-identity {
+    display: grid;
+    gap: 0.15rem;
+  }
+  .definition-identity small {
     color: #6b7c7a;
     font: 0.6rem var(--font-mono);
+  }
+  .template-action {
+    min-height: 2rem;
+    font-size: 0.64rem;
+  }
+  .template-status {
+    margin: 0 0.7rem 0.7rem;
+    color: #28504f;
+    font: 0.68rem var(--font-mono);
   }
   table {
     width: 100%;

@@ -2,6 +2,8 @@
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
 
+  import { createProjectExchange } from '../../exchange/project-exchange';
+  import { projectSnapshotToDocument } from '../../persistence/project-document';
   import { projectSnapshotToRendererProjection } from '../../renderer/projection';
   import { createProjectComponentFromPrimitive, PRIMITIVES } from '../../reference/primitives';
   import { setProjectSessionContext } from '../../session/project-context';
@@ -21,7 +23,7 @@
   import type { ElectricalComponentRole } from '../../electrical/electrical';
   import type { FluidComponentRole } from '../../fluid/fluid';
   import type { ImpactPreview, ProjectAction } from '../../project/action';
-  import type { VehicleBackground } from '../../project/project';
+  import type { PartDefinition, VehicleBackground } from '../../project/project';
   import type { ProjectAsset } from '../../session/session-backing';
   import type { ProjectSession } from '../../session/project-session.svelte';
   import type {
@@ -31,7 +33,15 @@
     WorkspaceView
   } from './workspace-presentation.svelte';
 
-  const { session }: { session: ProjectSession } = $props();
+  const {
+    session,
+    onpromotetemplate
+  }: {
+    session: ProjectSession;
+    onpromotetemplate: (
+      definition: PartDefinition
+    ) => Promise<{ promoted: true } | { promoted: false; reason: string }>;
+  } = $props();
   setProjectSessionContext(() => session);
 
   const presentation = new WorkspacePresentation();
@@ -92,9 +102,18 @@
   onMount(() => {
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const update = () => (prefersReducedMotion = preference.matches);
+    const warnAboutUnsavedChanges = (event: BeforeUnloadEvent) => {
+      if (session.view.save.status !== 'failed') return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
     update();
     preference.addEventListener('change', update);
-    return () => preference.removeEventListener('change', update);
+    window.addEventListener('beforeunload', warnAboutUnsavedChanges);
+    return () => {
+      preference.removeEventListener('change', update);
+      window.removeEventListener('beforeunload', warnAboutUnsavedChanges);
+    };
   });
 
   function execute(action: ProjectAction): boolean {
@@ -103,6 +122,55 @@
       ? `${action.type} accepted at revision ${outcome.revision}.`
       : `${action.type} blocked: ${outcome.rejection.code}.`;
     return outcome.accepted;
+  }
+
+  async function requestAuthoringTakeover(): Promise<void> {
+    const outcome = await session.requestTakeover();
+    interactionStatus = outcome.requested
+      ? 'Authoring takeover requested; retrying after the current writer flushes.'
+      : `Authoring takeover unavailable: ${outcome.reason}.`;
+    if (outcome.requested) window.setTimeout(() => window.location.reload(), 600);
+  }
+
+  async function retrySave(): Promise<void> {
+    const outcome = await session.flush('explicit');
+    interactionStatus = outcome.saved
+      ? `Retry saved durable revision ${outcome.revision}.`
+      : `Retry failed: ${outcome.reason}. Unsaved changes remain in memory.`;
+  }
+
+  async function exportUnsavedWorkingState(): Promise<void> {
+    if (
+      !window.confirm(
+        'Export the current unsaved working state? The file will explicitly remain marked as non-durable.'
+      )
+    ) {
+      return;
+    }
+    const output = await session.acquireOutputRevision({ allowUnsavedWorkingState: true });
+    if (!output.acquired) {
+      interactionStatus = 'Emergency export failed to acquire one immutable working revision.';
+      return;
+    }
+    const envelope = await createProjectExchange({
+      project: projectSnapshotToDocument(output.snapshot),
+      assets: session.view.assets.map((asset) => ({
+        mimeType: asset.mimeType,
+        bytes: new Uint8Array(asset.bytes)
+      })),
+      exportedAt: new Date().toISOString(),
+      revisionState:
+        output.source === 'unsaved-working-state' ? 'Unsaved working state' : 'Durable revision'
+    });
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(envelope, null, 2)], { type: 'application/json' })
+    );
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${output.snapshot.id}.unsaved.venae.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    interactionStatus = `Exported revision ${output.snapshot.revision} as ${envelope.exportMetadata.revisionState}.`;
   }
 
   function select(subject: WorkspaceSubject): void {
@@ -468,14 +536,21 @@
       <p>Vehicle Project</p>
       <h1>{session.view.snapshot.name}</h1>
     </div>
-    <WorkspaceStatus view={session.view} />
+    <WorkspaceStatus
+      view={session.view}
+      onretry={retrySave}
+      onemergencyexport={exportUnsavedWorkingState}
+    />
     <button class="revision-action" type="button" disabled={!canAuthor} onclick={applyProjectEdit}
       >Apply project edit</button
     >
   </header>
 
   <div class="workspace-controls">
-    <CapabilityNotice capability={session.view.capability} />
+    <CapabilityNotice
+      capability={session.view.capability}
+      onrequesttakeover={requestAuthoringTakeover}
+    />
     <WorkspaceToolbar
       snapshot={session.view.snapshot}
       mode={presentation.mode}
@@ -540,6 +615,7 @@
         {motionPaused}
         {canAuthor}
         {branchPreview}
+        {onpromotetemplate}
         onaction={execute}
         onvalidate={(scope) => {
           session.requestEvaluation(scope);

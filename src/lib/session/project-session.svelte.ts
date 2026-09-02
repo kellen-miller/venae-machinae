@@ -84,6 +84,9 @@ export type RegisterAssetOutcome =
         | Readonly<{ code: 'invalid-asset' | 'session-closed' }>;
     }>;
 
+const RECOVERY_CHECKPOINT_ACTION_COUNT = 50;
+const RECOVERY_CHECKPOINT_ACTIVE_MS = 5 * 60 * 1_000;
+
 export type ProjectSessionView = Readonly<{
   snapshot: ProjectSnapshot;
   assets: readonly ProjectAsset[];
@@ -158,6 +161,9 @@ export function createProjectSession(dependencies: {
   let undoFrames = $state.raw<readonly UndoFrame[]>([]);
   let redoFrames = $state.raw<readonly UndoFrame[]>([]);
   let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+  let checkpointTimer: ReturnType<typeof setTimeout> | null = null;
+  let acceptedActionsSinceCheckpoint = 0;
+  let checkpointPromise = Promise.resolve();
   let savePromise: Promise<SaveOutcome> | null = null;
   let closed = false;
   let pendingAssets: readonly ProjectAsset[] = [];
@@ -208,6 +214,36 @@ export function createProjectSession(dependencies: {
       void flush('autosave');
     }, dependencies.autosaveDelayMs);
     if (typeof autosaveTimer === 'object') autosaveTimer.unref?.();
+  }
+
+  function requestRecoveryCheckpoint(reason: string): void {
+    const writableBacking = dependencies.backing;
+    if (writableBacking.kind !== 'persisted' || writableBacking.access !== 'writable') {
+      return;
+    }
+    const saveOutcome = flush('explicit');
+    checkpointPromise = checkpointPromise.then(async () => {
+      const saved = await saveOutcome;
+      if (saved.saved) await writableBacking.createCheckpoint(reason);
+    });
+  }
+
+  function recordAcceptedAction(): void {
+    acceptedActionsSinceCheckpoint += 1;
+    if (acceptedActionsSinceCheckpoint >= RECOVERY_CHECKPOINT_ACTION_COUNT) {
+      acceptedActionsSinceCheckpoint = 0;
+      if (checkpointTimer !== null) clearTimeout(checkpointTimer);
+      checkpointTimer = null;
+      requestRecoveryCheckpoint('50-accepted-actions');
+      return;
+    }
+    if (checkpointTimer !== null) return;
+    checkpointTimer = setTimeout(() => {
+      checkpointTimer = null;
+      acceptedActionsSinceCheckpoint = 0;
+      requestRecoveryCheckpoint('five-active-minutes');
+    }, RECOVERY_CHECKPOINT_ACTIVE_MS);
+    if (typeof checkpointTimer === 'object') checkpointTimer.unref?.();
   }
 
   function publishEvaluation(
@@ -287,6 +323,9 @@ export function createProjectSession(dependencies: {
     const before = snapshot;
     const outcome = applyProjectAction(before, action);
     if (!outcome.accepted) return outcome;
+    if (action.type === 'replace-component' || action.type === 'insert-electrical-branch') {
+      requestRecoveryCheckpoint('before-destructive-operation');
+    }
 
     snapshot = outcome.snapshot;
     const previousFrame = undoFrames.at(-1);
@@ -312,6 +351,7 @@ export function createProjectSession(dependencies: {
       { kind: 'changed-subjects', subjectIds: outcome.changedSubjects },
       action.causationId
     );
+    recordAcceptedAction();
     return {
       accepted: true,
       revision: snapshot.revision,
@@ -432,10 +472,22 @@ export function createProjectSession(dependencies: {
       clearTimeout(autosaveTimer);
       autosaveTimer = null;
     }
+    if (checkpointTimer !== null) {
+      clearTimeout(checkpointTimer);
+      checkpointTimer = null;
+    }
     const closeSave =
       dependencies.backing.kind === 'persisted' && dependencies.backing.access === 'writable'
         ? await flush('close')
         : null;
+    await checkpointPromise;
+    if (
+      closeSave?.saved &&
+      dependencies.backing.kind === 'persisted' &&
+      dependencies.backing.access === 'writable'
+    ) {
+      await dependencies.backing.createCheckpoint('session-close');
+    }
     dependencies.evaluation.close();
     await dependencies.backing.close();
     return { closed: true, save: closeSave };

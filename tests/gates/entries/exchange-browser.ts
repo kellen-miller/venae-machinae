@@ -17,11 +17,16 @@ function deleteProjectLibrary(): Promise<void> {
   });
 }
 
-function deterministicAssetBytes(byteLength: number, seed: number): Uint8Array {
+function deterministicAssetBytes(
+  byteLength: number,
+  seed: number,
+  mimeType: 'image/png' | 'image/jpeg'
+): Uint8Array {
   const bytes = new Uint8Array(byteLength);
   for (let index = 0; index < bytes.length; index += 1) {
     bytes[index] = (index * 31 + seed * 17) % 251;
   }
+  bytes.set(mimeType === 'image/png' ? [137, 80, 78, 71] : [255, 216, 255]);
 
   return bytes;
 }
@@ -37,10 +42,13 @@ export async function runExchangeGate() {
 
   for (const scale of [1, 2, 5] as const satisfies readonly CapacityScale[]) {
     const project = generateCapacityProject(scale);
-    const assets = assetSizes[scale].map((byteLength, index) => ({
-      mimeType: index % 2 === 0 ? ('image/png' as const) : ('image/jpeg' as const),
-      bytes: deterministicAssetBytes(byteLength, scale + index)
-    }));
+    const assets = assetSizes[scale].map((byteLength, index) => {
+      const mimeType = index % 2 === 0 ? ('image/png' as const) : ('image/jpeg' as const);
+      return {
+        mimeType,
+        bytes: deterministicAssetBytes(byteLength, scale + index, mimeType)
+      };
+    });
     const encodeStartedAt = performance.now();
     const envelope = await createProjectExchange({
       project,

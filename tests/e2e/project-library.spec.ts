@@ -20,11 +20,9 @@ test('MVP-UX-008 exposes loading, empty guidance, and honest creation affordance
 
   await expect(page.getByRole('button', { name: 'Blank project' })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Duplicate project' })).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Import .venae.json' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: /Import \.venae\.json/ })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Copy illustrative example' })).toBeDisabled();
-  await expect(
-    page.getByText('Import becomes available after local validation and staging are ready.')
-  ).toBeVisible();
+  await expect(page.getByText('Strictly validate and stage before confirmation')).toBeVisible();
 });
 
 test('MVP-UX-008 duplicates a whole browser-local project without a wizard', async ({ page }) => {

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-004",
+  "recordId": "MVP-GATE-004-milestone-5",
+  "recordedAt": "2026-09-02T03:28:06Z",
+  "supersedes": "MVP-GATE-004-baseline",
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "origin": "http://localhost:4174",
+    "browsers": {
+      "chromium": "151.0.7922.34",
+      "firefox": "153.0",
+      "webkit": "26.5"
+    }
+  },
+  "versions": {
+    "zod": "4.5.4",
+    "idb": "8.0.3",
+    "vite": "8.2.2",
+    "playwright": "1.62.1",
+    "projectDocumentSchema": 8,
+    "exchangeFormat": 1
+  },
+  "fixtures": ["tests/fixtures/capacity-project.ts"],
+  "command": "PLAYWRIGHT_PORT=4174 pnpm gate:exchange -- --record milestone-5",
+  "rawArtifacts": ["evidence/gates/raw/MVP-GATE-004-milestone-5-browser-measurements.json"],
+  "measurements": {
+    "fixtureScales": [1, 2, 5],
+    "largestEnvelopeBytes": 19621465,
+    "largestOriginalAssetBytes": 12582912,
+    "largestIndividualAssetBytes": 6291456,
+    "largestNestingDepth": 7,
+    "largestCollectionEntries": 15010,
+    "largestEncodeMs": 479,
+    "largestStageTotalMs": 171,
+    "largestParseMs": 17,
+    "largestValidationMs": 43,
+    "largestHashingMs": 61,
+    "largestCloneMs": 14,
+    "largestCommitMs": 86,
+    "largestEstimatedPeakBytes": 78485860,
+    "maxEnvelopeBytes": 20971520,
+    "maxIndividualAssetBytes": 6291456,
+    "maxCombinedAssetBytes": 12582912,
+    "maxAssets": 64,
+    "maxNestingDepth": 32,
+    "maxCollectionEntries": 50000,
+    "maxEstimatedPeakBytes": 134217728,
+    "browserEngines": 3,
+    "unitCases": 10,
+    "failures": 0
+  },
+  "verdict": "Pass",
+  "boundedDecision": "Strict monolithic JSON remains viable for production schema-8 project exchange with the frozen 20 MiB envelope, 6 MiB individual asset, 12 MiB combined assets, 64 assets, depth 32, 50000 collection entries, and 128 MiB retained-representation bounds."
+}

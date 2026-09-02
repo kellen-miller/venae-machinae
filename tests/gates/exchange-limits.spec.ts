@@ -2,14 +2,30 @@ import 'fake-indexeddb/auto';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { commitStagedExchange } from '../../src/lib/exchange/commit-exchange';
 import {
+  commitStagedExchange,
+  commitStagedLibraryBackupExchange,
+  commitStagedTemplateExchange
+} from '../../src/lib/exchange/commit-exchange';
+import {
+  createLibraryBackupExchange,
   createProjectExchange,
-  projectExchangeEnvelopeSchema
+  createTemplateExchange,
+  libraryBackupExchangeEnvelopeSchema,
+  projectExchangeEnvelopeSchema,
+  templateExchangeEnvelopeSchema
 } from '../../src/lib/exchange/project-exchange';
 import { MEASURED_EXCHANGE_LIMITS } from '../../src/lib/exchange/measured-limits';
-import { stageExchange } from '../../src/lib/exchange/stage-exchange';
+import {
+  stageExchange,
+  stageLibraryBackupExchange,
+  stageTemplateExchange
+} from '../../src/lib/exchange/stage-exchange';
 import { canonicalJson, sha256Hex } from '../../src/lib/exchange/canonical-json';
+import {
+  migrateProjectDocument,
+  RELEASED_PROJECT_DOCUMENT_MIGRATIONS
+} from '../../src/lib/exchange/project-document-migration';
 import { PROJECT_LIBRARY_DATABASE_NAME } from '../../src/lib/persistence/database-schema';
 import { openProjectLibrary } from '../../src/lib/persistence/project-library';
 import { generateCapacityProject } from '../fixtures/capacity-project';
@@ -178,12 +194,200 @@ describe('MVP-GATE-004 exchange limits', () => {
 
   it('imports a copy by rekeying every provisional project-owned identity', async () => {
     const project = generateCapacityProject(1);
+    project.partDefinitions.push({
+      id: 'definition-original',
+      label: 'Original definition',
+      revision: 1,
+      provenance: 'Entered source'
+    });
+    project.topology.components[0]!.definitionId = 'definition-original';
+    project.evidence.push({
+      id: 'evidence-original',
+      subjectId: 'component-1x-0',
+      label: 'Observed current',
+      state: 'known',
+      value: '8.2',
+      unit: 'A',
+      provenance: 'Bench measurement',
+      conflictValues: []
+    });
+    project.operatingStates.push({
+      id: 'state-original',
+      name: 'Run',
+      description: 'Copy identity fixture',
+      commands: [
+        {
+          id: 'statement-original',
+          subjectId: 'component-1x-0',
+          label: 'Command',
+          value: 'on',
+          unit: null,
+          provenance: 'Entered command'
+        }
+      ],
+      conditions: [],
+      measurements: [],
+      assumptions: [],
+      applicableEvidenceIds: ['evidence-original'],
+      bindings: [
+        {
+          id: 'binding-original',
+          subjectId: 'connection-1x-0',
+          systemId: 'system-capacity-power',
+          channel: 'current',
+          evidenceState: 'known',
+          value: '8.2',
+          unit: 'A',
+          direction: 'source-to-load',
+          referenceSubjectId: 'component-1x-0',
+          pathConnectionIds: ['connection-1x-0'],
+          behavior: {
+            id: 'binding-behavior-original',
+            componentId: 'component-1x-0',
+            description: 'Closed path',
+            provenance: 'Entered behavior'
+          },
+          calculationResultId: 'result-original',
+          evidenceIds: ['evidence-original'],
+          assumptions: ['steady DC'],
+          omissions: [],
+          applicability: 'Run',
+          uncertainty: null,
+          conflictValues: [],
+          provenance: ['Bench measurement']
+        }
+      ]
+    });
+    project.calculations.push({
+      id: 'calculation-original',
+      subjectId: 'connection-1x-0',
+      operatingStateId: 'state-original',
+      formulaId: 'electrical.voltage-drop.v1',
+      pathId: null,
+      inputs: [
+        {
+          name: 'current',
+          quantity: {
+            id: 'quantity-original',
+            semantic: 'electric-current',
+            decimal: '8.2',
+            unit: 'ampere',
+            applicability: 'Run',
+            uncertainty: null,
+            bounds: null,
+            origin: 'measured',
+            provenance: 'Bench measurement'
+          }
+        }
+      ],
+      assumptions: ['steady DC'],
+      conditions: {},
+      omissions: [],
+      desiredOutputUnit: 'volt'
+    });
+    project.electrical.circuits.push({
+      id: 'circuit-original',
+      label: 'Feed',
+      systemId: 'system-capacity-power',
+      connectionIds: ['connection-1x-0'],
+      componentIds: ['component-1x-0'],
+      protectionComponentIds: []
+    });
+    project.fluid.behaviors.push({
+      id: 'fluid-behavior-original',
+      componentId: 'component-1x-1',
+      role: 'passage',
+      portIds: ['port-1x-5'],
+      mediumIds: ['medium-capacity-fluid'],
+      description: 'Fluid passage',
+      provenance: 'Entered behavior'
+    });
     project.results.push({
       id: 'result-original',
       sourceRevision: 1,
       status: 'current',
-      kind: 'evaluation-summary',
-      detail: null
+      kind: 'validation',
+      detail: {
+        type: 'validation',
+        history: {
+          findings: [
+            {
+              id: 'finding-original',
+              ruleId: 'topology.interface-conflict',
+              ruleRevision: 1,
+              subjectId: 'connection-1x-0',
+              scopeKey: 'incremental',
+              claim: 'Review the connection',
+              severity: 'warning',
+              severityRationale: 'Connection evidence is incomplete.',
+              evaluation: 'current',
+              lifecycle: 'active',
+              unknownReason: null,
+              knownEvidence: ['Known connection'],
+              unknownEvidence: [],
+              affectedOperation: 'topology review',
+              inputIds: ['evidence-original'],
+              assumptions: [],
+              trace: {
+                ruleId: 'topology.interface-conflict',
+                ruleRevision: 1,
+                subjectId: 'connection-1x-0',
+                scopeKey: 'incremental',
+                inputIds: ['evidence-original'],
+                evidenceIds: ['evidence-original'],
+                resultIds: [],
+                assumptions: [],
+                tombstone: null
+              },
+              disposition: {
+                kind: 'suppressed',
+                ruleId: 'topology.interface-conflict',
+                ruleRevision: 1,
+                subjectId: 'connection-1x-0',
+                scopeKey: 'incremental',
+                occurrenceNumber: 1,
+                recordedAtRevision: 1,
+                rationale: 'Reviewed before copy',
+                invalidationKey: '0123456789abcdef'
+              },
+              occurrences: [
+                {
+                  number: 1,
+                  openedAtRevision: 1,
+                  resolvedAtRevision: null,
+                  resolutionReason: null
+                }
+              ],
+              correctiveActions: ['Review connector evidence.'],
+              invalidationKey: '0123456789abcdef'
+            }
+          ],
+          runs: [
+            {
+              id: 'validation-run-original',
+              projectRevision: 1,
+              scope: { kind: 'incremental', subjectIds: ['connection-1x-0'] },
+              scopeKey: 'incremental',
+              profileId: null,
+              status: 'current',
+              evaluatedAt: '2026-09-01T00:00:00Z',
+              ruleIds: ['topology.interface-conflict'],
+              findingIds: ['finding-original'],
+              coverage: null
+            }
+          ],
+          currentRunIds: ['validation-run-original']
+        }
+      }
+    });
+    project.validationApplicabilityDecisions.push({
+      ruleId: 'build.route-defined',
+      subjectId: 'connection-1x-0',
+      scopeKey: 'profile:build-preparation',
+      classification: 'excluded',
+      rationale: 'Reviewed before copy',
+      evidenceIds: ['evidence-original'],
+      recordedAtRevision: 1
     });
     const envelope = await createProjectExchange({
       project,
@@ -208,13 +412,251 @@ describe('MVP-GATE-004 exchange limits', () => {
     expect(copied?.topology.connections[0]?.sourcePortId).toBe(
       copied?.topology.components[0]?.ports[0]?.id
     );
-    expect(copied?.results).toEqual([
-      expect.objectContaining({
-        id: expect.not.stringMatching(/^result-original$/),
-        status: 'stale'
-      })
-    ]);
+    expect(copied?.electrical.circuits[0]).toMatchObject({
+      id: expect.not.stringMatching(/^circuit-original$/),
+      systemId: copied?.topology.systems[0]?.id,
+      connectionIds: [copied?.topology.connections[0]?.id],
+      componentIds: [copied?.topology.components[0]?.id]
+    });
+    expect(copied?.fluid.behaviors[0]).toMatchObject({
+      id: expect.not.stringMatching(/^fluid-behavior-original$/),
+      componentId: copied?.topology.components[1]?.id,
+      portIds: [copied?.topology.components[1]?.ports[0]?.id],
+      mediumIds: [copied?.fluid.media[0]?.id]
+    });
+    expect(copied?.calculations[0]).toMatchObject({
+      id: expect.not.stringMatching(/^calculation-original$/),
+      subjectId: copied?.topology.connections[0]?.id,
+      operatingStateId: copied?.operatingStates[0]?.id,
+      inputs: [
+        {
+          quantity: {
+            id: expect.not.stringMatching(/^quantity-original$/),
+            provenance: expect.stringContaining('capacity-project-1x')
+          }
+        }
+      ]
+    });
+    expect(copied?.operatingStates[0]?.bindings[0]).toMatchObject({
+      id: expect.not.stringMatching(/^binding-original$/),
+      subjectId: copied?.topology.connections[0]?.id,
+      calculationResultId: copied?.results[0]?.id,
+      evidenceIds: [copied?.evidence[0]?.id]
+    });
+    const validation = copied?.results[0]?.detail;
+    expect(copied?.results[0]).toMatchObject({
+      id: expect.not.stringMatching(/^result-original$/),
+      status: 'stale',
+      sourceRevision: 1
+    });
+    expect(validation?.type === 'validation' ? validation.history : null).toMatchObject({
+      findings: [
+        {
+          id: expect.not.stringMatching(/^finding-original$/),
+          subjectId: copied?.topology.connections[0]?.id,
+          evaluation: 'stale',
+          disposition: { kind: 'unreviewed' }
+        }
+      ],
+      runs: [{ id: expect.not.stringMatching(/^validation-run-original$/), status: 'stale' }],
+      currentRunIds: []
+    });
+    expect(copied?.validationApplicabilityDecisions).toEqual([]);
+    expect(copied?.partDefinitions[0]?.provenance).toContain('capacity-project-1x');
+    expect(copied?.evidence[0]?.provenance).toContain('capacity-project-1x');
     expect(await library.loadProject('capacity-project-1x')).toBeUndefined();
     library.close();
+  });
+
+  it('MVP-DATA-011 stages strict self-contained template and Library Backup envelopes', async () => {
+    const library = await openProjectLibrary();
+    await library.createTemplateRevision({
+      templateId: 'template-fuse',
+      revision: 1,
+      label: 'Fuse',
+      createdAt: '2026-09-01T00:00:00Z',
+      definition: {
+        id: 'definition-fuse',
+        label: 'Fuse',
+        revision: 1,
+        provenance: 'Entered from manufacturer data'
+      }
+    });
+    const templateRevisions = await library.listTemplateRevisions('template-fuse');
+    const templateEnvelope = await createTemplateExchange({
+      templateRevisions,
+      assets: [
+        {
+          mimeType: 'image/webp',
+          bytes: new Uint8Array([82, 73, 70, 70, 4, 0, 0, 0, 87, 69, 66, 80])
+        }
+      ],
+      exportedAt: '2026-09-01T01:00:00Z'
+    });
+
+    expect(templateExchangeEnvelopeSchema.parse(structuredClone(templateEnvelope))).toMatchObject({
+      format: 'venae-templates',
+      exchangeVersion: 1,
+      identity: { templateIds: ['template-fuse'], latestRevision: 1 },
+      payload: { schemaVersion: 1, templateRevisions }
+    });
+    const stagedTemplates = await stageTemplateExchange(
+      asBlob(templateEnvelope),
+      MEASURED_EXCHANGE_LIMITS
+    );
+    expect(stagedTemplates).toMatchObject({
+      staged: true,
+      summary: {
+        format: 'venae-templates',
+        templateCount: 1,
+        revisionCount: 1,
+        assetCount: 1
+      }
+    });
+    if (!stagedTemplates.staged) throw new Error(stagedTemplates.reason);
+    await expect(
+      commitStagedTemplateExchange(stagedTemplates, undefined, library)
+    ).resolves.toEqual({ committed: false, reason: 'canceled' });
+    const copiedTemplates = await commitStagedTemplateExchange(
+      stagedTemplates,
+      'import-copy',
+      library
+    );
+    expect(copiedTemplates).toMatchObject({
+      committed: true,
+      decision: 'import-copy',
+      templateIds: [expect.not.stringMatching(/^template-fuse$/)]
+    });
+    if (!copiedTemplates.committed) throw new Error(copiedTemplates.reason);
+    const copiedTemplate = await library.listTemplateRevisions(copiedTemplates.templateIds[0]!);
+    expect(copiedTemplate[0]?.definition).toMatchObject({
+      id: expect.not.stringMatching(/^definition-fuse$/),
+      provenance: expect.stringContaining('template-fuse revision 1')
+    });
+
+    const project = generateCapacityProject(1);
+    const assetBytes = new Uint8Array([137, 80, 78, 71]);
+    const assetHash = await sha256Hex(assetBytes);
+    project.assetHashes = [assetHash];
+    await library.saveProject({
+      projectId: project.project.id,
+      expectedRevision: null,
+      snapshot: project,
+      newAssets: [{ sha256: assetHash, mimeType: 'image/png', bytes: assetBytes }]
+    });
+    const backup = await library.createLibraryBackup({ createdAt: '2026-09-01T02:00:00Z' });
+    const backupEnvelope = await createLibraryBackupExchange({
+      backup: backup.payload,
+      exportedAt: '2026-09-01T02:00:00Z'
+    });
+
+    expect(
+      libraryBackupExchangeEnvelopeSchema.parse(structuredClone(backupEnvelope))
+    ).toMatchObject({
+      format: 'venae-backup',
+      exchangeVersion: 1,
+      identity: {
+        generationId: backup.payload.settings.activeGenerationId,
+        libraryRevision: 1
+      },
+      payload: {
+        schemaVersion: 1,
+        projects: expect.any(Array),
+        namedSnapshots: [],
+        templates: expect.arrayContaining([...templateRevisions]),
+        settings: expect.any(Object),
+        assetHashes: expect.arrayContaining([assetHash])
+      },
+      assets: expect.arrayContaining([
+        expect.objectContaining({ sha256: assetHash, mimeType: 'image/png' })
+      ])
+    });
+    expect(backupEnvelope.payload).not.toHaveProperty('assets');
+    const stagedBackup = await stageLibraryBackupExchange(
+      asBlob(backupEnvelope),
+      MEASURED_EXCHANGE_LIMITS
+    );
+    expect(stagedBackup).toMatchObject({
+      staged: true,
+      summary: {
+        format: 'venae-backup',
+        projectCount: 1,
+        templateRevisionCount: 2,
+        assetCount: 2
+      }
+    });
+    if (!stagedBackup.staged) throw new Error(stagedBackup.reason);
+    await library.createBlankProject({
+      id: 'project-after-backup',
+      name: 'Created after backup',
+      createdAt: '2026-09-01T02:30:00Z'
+    });
+    await expect(
+      commitStagedLibraryBackupExchange(stagedBackup, undefined, library)
+    ).resolves.toEqual({ committed: false, reason: 'canceled' });
+    expect(await library.loadProject('project-after-backup')).toBeDefined();
+    await expect(
+      commitStagedLibraryBackupExchange(stagedBackup, 'replace', library)
+    ).resolves.toMatchObject({ committed: true, projectCount: 1 });
+    expect(await library.loadProject('project-after-backup')).toBeUndefined();
+    expect(await library.loadProject(project.project.id)).toEqual(project);
+    expect(await library.listRollbackGenerations()).toHaveLength(1);
+    library.close();
+  });
+
+  it('MVP-DATA-014 MVP-DATA-016 blocks unknown schemas and MIME-spoofed active content', async () => {
+    expect(RELEASED_PROJECT_DOCUMENT_MIGRATIONS).toEqual([]);
+    expect(migrateProjectDocument(generateCapacityProject(1))).toMatchObject({
+      migrated: true,
+      appliedVersions: [],
+      document: { schemaVersion: 8 }
+    });
+
+    const newerExchange = structuredClone(await createEnvelope()) as unknown as Record<
+      string,
+      unknown
+    >;
+    newerExchange.exchangeVersion = 2;
+    await expect(stageExchange(asBlob(newerExchange), MEASURED_EXCHANGE_LIMITS)).resolves.toEqual(
+      expect.objectContaining({ staged: false, reason: 'newer-schema' })
+    );
+
+    const newerProject = structuredClone(await createEnvelope()) as unknown as {
+      payload: { schemaVersion: number };
+    };
+    newerProject.payload.schemaVersion = 9;
+    await expect(stageExchange(asBlob(newerProject), MEASURED_EXCHANGE_LIMITS)).resolves.toEqual(
+      expect.objectContaining({ staged: false, reason: 'newer-schema' })
+    );
+
+    const unreleasedProject = structuredClone(await createEnvelope()) as unknown as {
+      payload: { schemaVersion: number };
+    };
+    unreleasedProject.payload.schemaVersion = 7;
+    await expect(
+      stageExchange(asBlob(unreleasedProject), MEASURED_EXCHANGE_LIMITS)
+    ).resolves.toEqual(expect.objectContaining({ staged: false, reason: 'unsupported-schema' }));
+
+    const disguisedHtml = await createProjectExchange({
+      project: generateCapacityProject(1),
+      assets: [
+        {
+          mimeType: 'image/png',
+          bytes: new TextEncoder().encode('<html><script>alert(1)</script></html>')
+        }
+      ],
+      exportedAt: '2026-09-01T03:00:00Z'
+    });
+    await expect(stageExchange(asBlob(disguisedHtml), MEASURED_EXCHANGE_LIMITS)).resolves.toEqual(
+      expect.objectContaining({ staged: false, reason: 'asset-content' })
+    );
+
+    const pathBearingAsset = structuredClone(await createEnvelope()) as unknown as {
+      assets: Array<Record<string, unknown>>;
+    };
+    pathBearingAsset.assets[0]!.path = '../../startup.html';
+    await expect(
+      stageExchange(asBlob(pathBearingAsset), MEASURED_EXCHANGE_LIMITS)
+    ).resolves.toEqual(expect.objectContaining({ staged: false, reason: 'structure' }));
   });
 });

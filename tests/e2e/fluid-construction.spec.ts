@@ -278,7 +278,7 @@ test('MVP-FLUID-001..005 builds coolant, oil, and fuel construction', async ({ p
 
   const stored = await page.evaluate(async (id) => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open('venae-machinae', 1);
+      const request = indexedDB.open('venae-machinae');
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });

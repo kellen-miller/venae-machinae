@@ -47,6 +47,7 @@ function writableBacking(
   } = {}
 ) {
   const saved: Readonly<{ snapshot: ProjectSnapshot; expectedRevision: number | null }>[] = [];
+  const checkpoints: string[] = [];
   let closed = false;
   const backing: PersistedSessionBacking = {
     kind: 'persisted',
@@ -59,7 +60,8 @@ function writableBacking(
         Promise.resolve({ saved: true, revision: snapshot.revision })
       );
     },
-    async createCheckpoint() {
+    async createCheckpoint(reason) {
+      checkpoints.push(reason);
       return { created: true };
     },
     async requestTakeover() {
@@ -70,7 +72,7 @@ function writableBacking(
     }
   };
 
-  return { backing, saved, isClosed: () => closed };
+  return { backing, saved, checkpoints, isClosed: () => closed };
 }
 
 function createWritableSession(
@@ -234,6 +236,40 @@ describe('MVP-ARCH-003 Project Session durability', () => {
     await expect(flushing).resolves.toEqual({ saved: true, revision: 2 });
     expect(records.saved.map((record) => record.snapshot.revision)).toEqual([1, 2]);
     expect(records.saved.map((record) => record.expectedRevision)).toEqual([null, 1]);
+  });
+
+  it('MVP-DATA-007 checkpoints after 50 actions, five active minutes, and session close', async () => {
+    vi.useFakeTimers();
+    const records = writableBacking({ durableRevision: 0 });
+    const session = createWritableSession({ backing: records.backing });
+    try {
+      for (let revision = 1; revision <= 50; revision += 1) {
+        session.execute({
+          type: 'rename-project',
+          causationId: `checkpoint-action-${revision}`,
+          name: `Checkpoint revision ${revision}`
+        });
+      }
+      await vi.runAllTicks();
+      await session.flush('explicit');
+      await vi.runAllTicks();
+      expect(records.checkpoints).toContain('50-accepted-actions');
+
+      session.execute({
+        type: 'rename-project',
+        causationId: 'checkpoint-active-time',
+        name: 'Active timer checkpoint'
+      });
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1_000);
+      await session.flush('explicit');
+      await vi.runAllTicks();
+      expect(records.checkpoints).toContain('five-active-minutes');
+
+      await session.close();
+      expect(records.checkpoints).toContain('session-close');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

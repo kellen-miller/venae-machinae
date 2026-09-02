@@ -64,7 +64,7 @@ test('MVP-UX-009/011 creates project-owned primitives and exposes keyboard-visib
   await expect(page.locator('[data-save-status="saved"]')).toBeVisible();
 
   const storedPrimitive = await page.evaluate(async (projectId) => {
-    const request = indexedDB.open('venae-machinae', 1);
+    const request = indexedDB.open('venae-machinae');
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);

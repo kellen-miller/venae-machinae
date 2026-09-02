@@ -2,7 +2,9 @@ import { PROJECT_LIBRARY_DATABASE_NAME } from '../../../src/lib/persistence/data
 import { openProjectLibrary } from '../../../src/lib/persistence/project-library';
 import {
   acquireProjectLease,
-  requestProjectTakeover
+  requestProjectTakeover,
+  tryRunLibraryMaintenance,
+  withExclusiveLibraryLock
 } from '../../../src/lib/persistence/project-lease';
 import { readBrowserStorageStatus } from '../../../src/lib/persistence/storage-lifecycle';
 import { generateCapacityProject } from '../../fixtures/capacity-project';
@@ -48,6 +50,14 @@ export async function releaseProjectLease() {
 export async function heldLockModes() {
   const snapshot = await navigator.locks.query();
   return snapshot.held?.map((lock) => ({ name: lock.name, mode: lock.mode })) ?? [];
+}
+
+export function tryMaintenance() {
+  return tryRunLibraryMaintenance(async () => 'maintenance-ran');
+}
+
+export function runExclusiveLibraryChange() {
+  return withExclusiveLibraryLock(async () => heldLockModes());
 }
 
 export function openUpgradeBlocker(): Promise<void> {

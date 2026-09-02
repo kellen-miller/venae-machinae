@@ -1,0 +1,143 @@
+import { readFile } from 'node:fs/promises';
+
+import { expect, test } from '@playwright/test';
+
+import { seedWorkspaceProject, WORKSPACE_PROJECT_ID } from '../fixtures/workspace-project';
+
+test('MVP-DATA-001 through MVP-DATA-010 exposes recovery, Trash, and Library Backup lifecycle', async ({
+  page
+}, testInfo) => {
+  await seedWorkspaceProject(page);
+  await page.goto('/');
+  await expect(page.locator('[data-library-state="ready"]')).toBeVisible();
+  await expect(page.locator('[data-storage-status]')).toContainText(/storage|quota/i);
+  await expect(page.getByText(/Autosave.*profile or device loss/i)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Create Named Snapshot for RX-7 workshop study' }).click();
+  await expect(page.getByText('RX-7 workshop study snapshot', { exact: true })).toBeVisible();
+  await expect(page.getByText('Revision 7 · user-retained')).toBeVisible();
+  await page.getByRole('button', { name: 'Restore RX-7 workshop study snapshot' }).click();
+  await expect(page.getByRole('link', { name: /Revision 8/ })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Move RX-7 workshop study to Trash' }).click();
+  await expect(page.getByRole('heading', { name: 'Trash' })).toBeVisible();
+  await expect(page.getByText('RX-7 workshop study', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Restore RX-7 workshop study' }).click();
+  await expect(page.getByRole('link', { name: /RX-7 workshop study/ })).toBeVisible();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download Library Backup' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/\.venae-backup\.json$/);
+  const backupPath = testInfo.outputPath(download.suggestedFilename());
+  await download.saveAs(backupPath);
+  const backup = JSON.parse(await readFile(backupPath, 'utf8')) as { format: string };
+  expect(backup.format).toBe('venae-backup');
+  await expect(page.getByRole('heading', { name: /Last Library Backup: just now/i })).toBeVisible();
+});
+
+test('MVP-DATA-007 checkpoints session open and yields a held authoring lease', async ({
+  page,
+  context
+}) => {
+  await seedWorkspaceProject(page);
+  await page.goto(`/projects/${WORKSPACE_PROJECT_ID}`);
+  await expect(page.getByRole('heading', { name: 'RX-7 workshop study' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Apply project edit' })).toBeEnabled();
+  const checkpointReasons = await page.evaluate(async () => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('venae-machinae', 2);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const transaction = database.transaction('checkpoints', 'readonly');
+    const request = transaction.objectStore('checkpoints').getAll();
+    const checkpoints = await new Promise<Array<{ reason: string }>>((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    database.close();
+    return checkpoints.map((checkpoint) => checkpoint.reason);
+  });
+  expect(checkpointReasons).toContain('session-open');
+
+  const contender = await context.newPage();
+  await contender.goto(`/projects/${WORKSPACE_PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
+  await expect(contender.getByRole('button', { name: 'Apply project edit' })).toBeDisabled();
+  await contender.getByRole('button', { name: 'Request authoring takeover' }).click();
+  await expect(contender.getByRole('button', { name: 'Apply project edit' })).toBeEnabled({
+    timeout: 10_000
+  });
+});
+
+test('MVP-DATA-004 retains unsaved work for emergency export and safe retry', async ({
+  page
+}, testInfo) => {
+  await seedWorkspaceProject(page);
+  await page.goto(`/projects/${WORKSPACE_PROJECT_ID}`);
+  await page.evaluate(() => {
+    const originalPut = IDBObjectStore.prototype.put;
+    Object.defineProperty(window, '__restoreProjectPut', {
+      value: () => {
+        IDBObjectStore.prototype.put = originalPut;
+      },
+      configurable: true
+    });
+    IDBObjectStore.prototype.put = function (...args) {
+      if (this.name === 'projects') {
+        throw new DOMException('Simulated quota limit', 'QuotaExceededError');
+      }
+      return originalPut.apply(this, args as Parameters<IDBObjectStore['put']>);
+    };
+  });
+
+  await page.getByRole('button', { name: 'Apply project edit' }).click();
+  const failure = page.getByRole('alert');
+  await expect(failure).toContainText('Unsaved changes remain in memory and are not durable');
+  await expect(failure.getByRole('button', { name: 'Retry save' })).toBeVisible();
+  const workingRevision = Number(
+    await page.locator('[data-project-revision]').getAttribute('data-project-revision')
+  );
+
+  page.once('dialog', (dialog) => dialog.accept());
+  const downloadPromise = page.waitForEvent('download');
+  await failure.getByRole('button', { name: 'Export unsaved working state' }).click();
+  const download = await downloadPromise;
+  const emergencyPath = testInfo.outputPath(download.suggestedFilename());
+  await download.saveAs(emergencyPath);
+  const emergency = JSON.parse(await readFile(emergencyPath, 'utf8')) as {
+    identity: { projectRevision: number };
+    exportMetadata: { revisionState: string };
+  };
+  expect(download.suggestedFilename()).toMatch(/\.unsaved\.venae\.json$/);
+  expect(emergency.identity.projectRevision).toBe(workingRevision);
+  expect(workingRevision).toBeGreaterThan(7);
+  expect(emergency.exportMetadata.revisionState).toBe('Unsaved working state');
+
+  await page.evaluate(() => {
+    const restore = (window as Window & { __restoreProjectPut?: () => void }).__restoreProjectPut;
+    restore?.();
+  });
+  await failure.getByRole('button', { name: 'Retry save' }).click();
+  await expect(page.locator('[data-save-status="saved"]')).toBeVisible();
+});
+
+test('MVP-DATA-017 promotes a Project Part Definition as an immutable Template revision', async ({
+  page
+}) => {
+  await seedWorkspaceProject(page);
+  await page.goto(`/projects/${WORKSPACE_PROJECT_ID}`);
+  await page.getByRole('button', { name: 'Interfaces view' }).click();
+
+  const lens = page.getByRole('dialog', { name: 'Lens Stack' });
+  await lens.getByLabel('Part label').fill('Workshop pump');
+  await lens.getByRole('button', { name: 'Add Part Definition' }).click();
+  await lens.getByRole('button', { name: 'Promote Workshop pump revision 1 as Template' }).click();
+  await expect(lens.getByRole('status')).toHaveText(
+    'Promoted Workshop pump revision 1 as an immutable Template.'
+  );
+
+  await page.getByRole('link', { name: 'Back to Project Library' }).click();
+  await expect(page.locator('[data-library-state="ready"]')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '1 immutable revisions' })).toBeVisible();
+});

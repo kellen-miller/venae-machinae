@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ProjectSnapshot } from '../../project/project';
+  import type { PartDefinition, ProjectSnapshot } from '../../project/project';
   import type { ImpactPreview, ProjectAction } from '../../project/action';
   import type { RendererViewport } from '../../renderer/projection';
   import type { OverlayChannel } from '../../operating-state/operating-state';
@@ -28,6 +28,7 @@
     motionPaused,
     canAuthor,
     branchPreview,
+    onpromotetemplate,
     onaction,
     onvalidate,
     onpreviewbranch,
@@ -51,6 +52,9 @@
     motionPaused: boolean;
     canAuthor: boolean;
     branchPreview: ImpactPreview | null;
+    onpromotetemplate: (
+      definition: PartDefinition
+    ) => Promise<{ promoted: true } | { promoted: false; reason: string }>;
     onaction: (action: ProjectAction) => boolean;
     onvalidate: (scope: EvaluationScope) => void;
     onpreviewbranch: (action: Extract<ProjectAction, { type: 'insert-electrical-branch' }>) => void;
@@ -114,7 +118,7 @@
         {oncancelbranch}
       />
     {:else if activeView === 'interfaces'}
-      <InterfacesLens {snapshot} {canAuthor} {onaction} />
+      <InterfacesLens {snapshot} {canAuthor} {onaction} {onpromotetemplate} />
     {:else if activeView === 'routes'}
       <RoutesLens {snapshot} {canAuthor} {onaction} />
     {:else if activeView === 'harnesses-bundles'}

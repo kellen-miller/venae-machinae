@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-005",
+  "recordId": "MVP-GATE-005-milestone-5",
+  "recordedAt": "2026-09-02T03:28:06Z",
+  "supersedes": "MVP-GATE-005-baseline",
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "origin": "http://localhost:4174",
+    "browsers": {
+      "chromium": "151.0.7922.34",
+      "firefox": "153.0",
+      "webkit": "26.5"
+    }
+  },
+  "versions": {
+    "zod": "4.5.4",
+    "vite": "8.2.2",
+    "playwright": "1.62.1",
+    "projectDocumentSchema": 8,
+    "formulaCatalog": 1,
+    "validationRuleCatalog": 1
+  },
+  "fixtures": ["tests/fixtures/capacity-project.ts"],
+  "command": "PLAYWRIGHT_PORT=4174 pnpm gate:worker -- --record milestone-5",
+  "rawArtifacts": ["evidence/gates/raw/MVP-GATE-005-milestone-5-browser-measurements.json"],
+  "measurements": {
+    "fixtureScales": [1, 2, 5],
+    "largestInitializationBytes": 1955399,
+    "incrementalBytes": 960,
+    "largestInitializationDispatchMs": 23,
+    "largestIncrementalDispatchMs": 15,
+    "initializationDispatchLimitMs": 2000,
+    "incrementalDispatchLimitMs": 100,
+    "browserEngines": 3,
+    "unitCases": 10,
+    "failures": 0
+  },
+  "verdict": "Pass",
+  "boundedDecision": "The production schema-8 evaluation DTO remains viable with one long-lived native worker, bounded full initialization, small revisioned changes, identity-gated publication, cancellation, restart, and server-loss guards."
+}

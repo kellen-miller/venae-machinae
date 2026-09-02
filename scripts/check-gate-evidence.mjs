@@ -18,7 +18,20 @@ const gateRecordSchema = z.strictObject({
   boundedDecision: z.string().min(1)
 });
 
-const requestedGateIds = process.argv.slice(2);
+const argumentsAfterScript = process.argv.slice(2);
+const requestedGateIds = [];
+let requestedRecord = null;
+for (let index = 0; index < argumentsAfterScript.length; index += 1) {
+  const argument = argumentsAfterScript[index];
+  if (argument === '--') continue;
+  if (argument === '--record') {
+    requestedRecord = argumentsAfterScript[index + 1] ?? null;
+    if (!requestedRecord) throw new Error('--record requires a record suffix');
+    index += 1;
+    continue;
+  }
+  requestedGateIds.push(argument);
+}
 if (requestedGateIds.length === 0) {
   throw new Error('Provide at least one gate ID to verify');
 }
@@ -35,6 +48,9 @@ for (const gateId of requestedGateIds) {
     throw new Error(`Missing machine record ${machineRecordPath}`);
   const record = gateRecordSchema.parse(JSON.parse(readFileSync(machineRecordPath, 'utf8')));
   if (record.gateId !== gateId) throw new Error(`${machineRecordPath} belongs to ${record.gateId}`);
+  if (requestedRecord && record.recordId !== `${gateId}-${requestedRecord}`) {
+    throw new Error(`${machineRecordPath} is not the requested ${requestedRecord} record`);
+  }
   if (!index.includes(`- Verdict: ${record.verdict}`)) {
     throw new Error(`${indexPath} verdict does not match ${machineRecordPath}`);
   }

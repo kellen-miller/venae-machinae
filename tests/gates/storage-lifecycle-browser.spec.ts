@@ -61,6 +61,9 @@ test('MVP-GATE-006 automates storage, lease, upgrade, and restore lifecycle', as
   expect(
     await contender.evaluate(() => window.VenaeStorageLifecycleGate.holdProjectLease('gate'))
   ).toEqual({ acquired: false, reason: 'held' });
+  expect(await contender.evaluate(() => window.VenaeStorageLifecycleGate.tryMaintenance())).toEqual(
+    { acquired: false, reason: 'held' }
+  );
   expect(
     await contender.evaluate(() => window.VenaeStorageLifecycleGate.sendTakeoverRequest('gate'))
   ).toBe(true);
@@ -76,6 +79,12 @@ test('MVP-GATE-006 automates storage, lease, upgrade, and restore lifecycle', as
   expect(
     await contender.evaluate(() => window.VenaeStorageLifecycleGate.releaseProjectLease())
   ).toBe(true);
+  expect(
+    await contender.evaluate(() => window.VenaeStorageLifecycleGate.runExclusiveLibraryChange())
+  ).toEqual({
+    acquired: true,
+    value: [{ name: 'venae-machinae:library', mode: 'exclusive' }]
+  });
 
   await page.evaluate(() => window.VenaeStorageLifecycleGate.openUpgradeBlocker());
   await page.evaluate(() => window.VenaeStorageLifecycleGate.beginBlockedUpgrade());
@@ -123,6 +132,13 @@ declare global {
       }>;
       holdProjectLease(projectId: string): Promise<{ acquired: boolean; reason: string | null }>;
       heldLockModes(): Promise<Array<{ name: string; mode: string }>>;
+      tryMaintenance(): Promise<
+        { acquired: true; value: string } | { acquired: false; reason: string }
+      >;
+      runExclusiveLibraryChange(): Promise<
+        | { acquired: true; value: Array<{ name: string; mode: string }> }
+        | { acquired: false; reason: string }
+      >;
       sendTakeoverRequest(projectId: string): boolean;
       takeoverRequestCount(): number;
       releaseProjectLease(): Promise<boolean>;

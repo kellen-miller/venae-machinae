@@ -224,18 +224,20 @@ test('builds and revises a complete auxiliary-cooling electrical construction', 
     connectionRegister.filter({ hasText: 'Connector B to main load · splice to branch' })
   ).not.toBeVisible();
 
-  const canvasRevision = await page
-    .locator('[data-canvas-revision]')
-    .getAttribute('data-canvas-revision');
-  await expect(page.locator('[data-dense-revision]')).toHaveAttribute(
-    'data-dense-revision',
-    canvasRevision!
-  );
+  await expect
+    .poll(async () => {
+      const [canvasRevision, denseRevision] = await Promise.all([
+        page.locator('[data-canvas-revision]').getAttribute('data-canvas-revision'),
+        page.locator('[data-dense-revision]').getAttribute('data-dense-revision')
+      ]);
+      return canvasRevision !== null && canvasRevision === denseRevision;
+    })
+    .toBe(true);
   await expect(page.locator('[data-save-status="saved"]')).toBeVisible();
 
   const stored = await page.evaluate(async (id) => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open('venae-machinae', 1);
+      const request = indexedDB.open('venae-machinae');
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });

@@ -1,8 +1,14 @@
+import { libraryBackupPayloadSchema } from '../persistence/database-schema';
 import { projectDocumentSchema } from '../persistence/project-document';
+import { retainStaleProjectResult } from '../project/project';
 
 import type { BrowserProjectLibrary } from '../persistence/project-library';
 import type { ProjectDocument } from '../persistence/project-document';
-import type { StagedExchange } from './stage-exchange';
+import type {
+  StagedExchange,
+  StagedLibraryBackupExchange,
+  StagedTemplateExchange
+} from './stage-exchange';
 
 export type ExchangeCommitDecision = 'replace' | 'import-copy' | 'cancel';
 export const DEFAULT_EXCHANGE_COMMIT_DECISION: ExchangeCommitDecision = 'cancel';
@@ -19,160 +25,156 @@ export type ExchangeCommitOutcome =
       reason: 'canceled' | 'revision-conflict' | 'quota-exceeded' | 'storage-error';
     }>;
 
-function rekeyProjectCopy(project: ProjectDocument): ProjectDocument {
-  const projectId = crypto.randomUUID();
-  const systemIds = new Map(
-    project.topology.systems.map((system) => [system.id, crypto.randomUUID()])
+const EXTERNAL_ID_KEYS = new Set(['formulaId', 'formulaIds', 'profileId', 'ruleId', 'ruleIds']);
+
+function collectProjectOwnedIds(project: ProjectDocument): ReadonlySet<string> {
+  const identities = new Set<string>([
+    project.project.id,
+    ...project.topology.systems.map((subject) => subject.id),
+    ...project.topology.components.flatMap((subject) => [
+      subject.id,
+      ...subject.ports.map((port) => port.id)
+    ]),
+    ...project.topology.connections.map((subject) => subject.id),
+    ...project.topology.routes.map((subject) => subject.id),
+    ...project.topology.segments.map((subject) => subject.id),
+    ...project.electrical.circuits.map((subject) => subject.id),
+    ...project.electrical.harnesses.map((subject) => subject.id),
+    ...project.electrical.bundles.flatMap((subject) => [
+      subject.id,
+      ...subject.twistedPairs.map((pair) => pair.id)
+    ]),
+    ...project.fluid.media.map((subject) => subject.id),
+    ...project.fluid.behaviors.map((subject) => subject.id),
+    ...project.fluid.boundaryConditions.map((subject) => subject.id),
+    ...project.calculations.flatMap((subject) => [
+      subject.id,
+      ...subject.inputs.map((input) => input.quantity.id)
+    ]),
+    ...project.screenings.flatMap((subject) => [
+      subject.id,
+      ...subject.criteria.map((criterion) => criterion.id),
+      ...subject.selectedCandidates.map((candidate) => candidate.id)
+    ]),
+    ...project.partDefinitions.map((subject) => subject.id),
+    ...project.partRequirements.map((subject) => subject.id),
+    ...project.evidence.map((subject) => subject.id),
+    ...project.results.flatMap((result) => {
+      if (result.detail?.type === 'overlay') {
+        return [
+          result.id,
+          result.detail.overlay.id,
+          ...result.detail.overlay.marks.map((mark) => mark.id)
+        ];
+      }
+      if (result.detail?.type === 'validation') {
+        return [
+          result.id,
+          ...result.detail.history.findings.map((finding) => finding.id),
+          ...result.detail.history.runs.map((run) => run.id)
+        ];
+      }
+
+      return [result.id];
+    }),
+    ...project.engineeringValues.map((subject) => subject.id),
+    ...project.operatingStates.flatMap((state) => [
+      state.id,
+      ...state.commands.map((statement) => statement.id),
+      ...state.conditions.map((statement) => statement.id),
+      ...state.measurements.map((statement) => statement.id),
+      ...state.assumptions.map((statement) => statement.id),
+      ...state.bindings.flatMap((binding) => [
+        binding.id,
+        ...(binding.behavior ? [binding.behavior.id] : [])
+      ])
+    ]),
+    ...project.tombstones.flatMap((tombstone) => [tombstone.subjectId, tombstone.successorId])
+  ]);
+  for (const mediumId of [
+    ...project.topology.systems.map((system) => system.mediumId),
+    ...project.topology.components.flatMap((component) =>
+      component.ports.map((port) => port.mediumId)
+    ),
+    ...project.topology.connections.map((connection) => connection.mediumId)
+  ]) {
+    if (mediumId !== null) identities.add(mediumId);
+  }
+
+  return identities;
+}
+
+function rekeyProjectOwnedValue(
+  value: unknown,
+  key: string,
+  identities: ReadonlyMap<string, string>,
+  provenanceMarker: string
+): unknown {
+  if (typeof value === 'string') {
+    const isIdentityReference =
+      !EXTERNAL_ID_KEYS.has(key) && (key === 'id' || key.endsWith('Id') || key.endsWith('Ids'));
+    return isIdentityReference ? (identities.get(value) ?? value) : value;
+  }
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) {
+    return value.map((entry) => rekeyProjectOwnedValue(entry, key, identities, provenanceMarker));
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([entryKey, entryValue]) => {
+      if (entryKey === 'provenance') {
+        if (entryValue === null) return [entryKey, provenanceMarker];
+        if (typeof entryValue === 'string') {
+          return [entryKey, `${provenanceMarker}; ${entryValue}`];
+        }
+        if (Array.isArray(entryValue)) return [entryKey, [provenanceMarker, ...entryValue]];
+      }
+
+      return [entryKey, rekeyProjectOwnedValue(entryValue, entryKey, identities, provenanceMarker)];
+    })
   );
-  const mediumIds = new Map(
-    [
-      ...project.topology.systems.map((system) => system.mediumId),
-      ...project.topology.components.flatMap((component) =>
-        component.ports.map((port) => port.mediumId)
-      ),
-      ...project.topology.connections.map((connection) => connection.mediumId)
-    ]
-      .filter((mediumId): mediumId is string => mediumId !== null)
-      .map((mediumId) => [mediumId, crypto.randomUUID()])
+}
+
+export function rekeyProjectCopy(project: ProjectDocument): ProjectDocument {
+  const sourceProject = projectDocumentSchema.parse(project);
+  const identities = new Map(
+    [...collectProjectOwnedIds(sourceProject)].map((identity) => [identity, crypto.randomUUID()])
   );
-  const componentIds = new Map(
-    project.topology.components.map((component) => [component.id, crypto.randomUUID()])
-  );
-  const portIds = new Map(
-    project.topology.components.flatMap((component) =>
-      component.ports.map((port) => [port.id, crypto.randomUUID()] as const)
-    )
-  );
-  const connectionIds = new Map(
-    project.topology.connections.map((connection) => [connection.id, crypto.randomUUID()])
-  );
-  const routeIds = new Map(project.topology.routes.map((route) => [route.id, crypto.randomUUID()]));
-  const segmentIds = new Map(
-    project.topology.segments.map((segment) => [segment.id, crypto.randomUUID()])
-  );
-  const definitionIds = new Map(
-    project.partDefinitions.map((definition) => [definition.id, crypto.randomUUID()])
-  );
-  const requirementIds = new Map(
-    project.partRequirements.map((requirement) => [requirement.id, crypto.randomUUID()])
-  );
-  const evidenceIds = new Map(
-    project.evidence.map((evidence) => [evidence.id, crypto.randomUUID()])
-  );
-  const tombstoneIds = new Map(
-    project.tombstones.flatMap((tombstone) => [
-      [tombstone.subjectId, crypto.randomUUID()] as const,
-      [tombstone.successorId, crypto.randomUUID()] as const
-    ])
-  );
-  const subjectId = (id: string): string =>
-    (id === project.project.id ? projectId : undefined) ??
-    systemIds.get(id) ??
-    componentIds.get(id) ??
-    portIds.get(id) ??
-    connectionIds.get(id) ??
-    routeIds.get(id) ??
-    segmentIds.get(id) ??
-    definitionIds.get(id) ??
-    requirementIds.get(id) ??
-    evidenceIds.get(id) ??
-    tombstoneIds.get(id) ??
-    id;
+  const provenanceMarker = `Imported as copy from ${sourceProject.project.id}`;
+  const rekeyed = rekeyProjectOwnedValue(
+    sourceProject,
+    '',
+    identities,
+    provenanceMarker
+  ) as ProjectDocument;
+  const copiedResults = rekeyed.results.map((result) => {
+    const stale = retainStaleProjectResult({ ...result, sourceRevision: 1, status: 'current' });
+    if (stale.detail?.type !== 'validation') return stale;
+    return {
+      ...stale,
+      detail: {
+        type: 'validation' as const,
+        history: {
+          ...stale.detail.history,
+          findings: stale.detail.history.findings.map((finding) => ({
+            ...finding,
+            disposition: { kind: 'unreviewed' as const }
+          }))
+        }
+      }
+    };
+  });
 
   return projectDocumentSchema.parse({
-    ...project,
+    ...rekeyed,
     project: {
-      ...project.project,
-      id: projectId,
-      name: `${project.project.name} copy`,
+      ...rekeyed.project,
+      name: `${sourceProject.project.name} copy`,
       revision: 1,
       createdAt: new Date().toISOString()
     },
-    topology: {
-      systems: project.topology.systems.map((system) => ({
-        ...system,
-        id: systemIds.get(system.id),
-        mediumId: system.mediumId === null ? null : mediumIds.get(system.mediumId)
-      })),
-      components: project.topology.components.map((component) => ({
-        ...component,
-        id: componentIds.get(component.id),
-        definitionId: component.definitionId === null ? null : subjectId(component.definitionId),
-        predecessorId: component.predecessorId === null ? null : subjectId(component.predecessorId),
-        successorId: component.successorId === null ? null : subjectId(component.successorId),
-        ports: component.ports.map((port) => ({
-          ...port,
-          id: portIds.get(port.id),
-          componentId: componentIds.get(component.id),
-          mediumId: port.mediumId === null ? null : mediumIds.get(port.mediumId)
-        }))
-      })),
-      connections: project.topology.connections.map((connection) => {
-        const sourcePortId = portIds.get(connection.sourcePortId);
-        const targetPortId = portIds.get(connection.targetPortId);
-        if (!sourcePortId || !targetPortId) {
-          throw new Error('Imported connection references a Port outside the project payload');
-        }
-
-        return {
-          ...connection,
-          id: connectionIds.get(connection.id),
-          systemId: systemIds.get(connection.systemId),
-          sourcePortId,
-          targetPortId,
-          mediumId: connection.mediumId === null ? null : mediumIds.get(connection.mediumId),
-          routeId: connection.routeId === null ? null : routeIds.get(connection.routeId)
-        };
-      }),
-      routes: project.topology.routes.map((route) => ({
-        ...route,
-        id: routeIds.get(route.id),
-        segmentIds: route.segmentIds.map((segmentId) => segmentIds.get(segmentId))
-      })),
-      segments: project.topology.segments.map((segment) => ({
-        ...segment,
-        id: segmentIds.get(segment.id)
-      }))
-    },
-    partDefinitions: project.partDefinitions.map((definition) => ({
-      ...definition,
-      id: definitionIds.get(definition.id),
-      provenance: `Imported as copy from ${project.project.id}; ${definition.provenance}`
-    })),
-    partRequirements: project.partRequirements.map((requirement) => ({
-      ...requirement,
-      id: requirementIds.get(requirement.id),
-      subjectId: subjectId(requirement.subjectId)
-    })),
-    evidence: project.evidence.map((evidence) => ({
-      ...evidence,
-      id: evidenceIds.get(evidence.id),
-      subjectId: subjectId(evidence.subjectId),
-      provenance:
-        evidence.provenance === null
-          ? `Imported as copy from ${project.project.id}`
-          : `Imported as copy from ${project.project.id}; ${evidence.provenance}`
-    })),
-    engineeringValues: project.engineeringValues.map((value) => ({
-      ...value,
-      id: crypto.randomUUID(),
-      provenance: `Imported as copy from ${project.project.id}; ${value.provenance}`
-    })),
-    operatingStates: project.operatingStates.map((state) => ({
-      ...state,
-      id: crypto.randomUUID()
-    })),
-    results: project.results.map((result) => ({
-      ...result,
-      id: crypto.randomUUID(),
-      sourceRevision: 1,
-      status: 'stale'
-    })),
-    tombstones: project.tombstones.map((tombstone) => ({
-      ...tombstone,
-      subjectId: subjectId(tombstone.subjectId),
-      successorId: subjectId(tombstone.successorId)
-    }))
+    results: copiedResults,
+    validationApplicabilityDecisions: []
   });
 }
 
@@ -214,4 +216,71 @@ export async function commitStagedExchange(
     projectId: snapshot.project.id,
     revision: snapshot.project.revision
   });
+}
+
+export type TemplateExchangeCommitDecision = 'replace' | 'import-copy' | 'cancel';
+
+export type TemplateExchangeCommitOutcome =
+  | Readonly<{
+      committed: true;
+      decision: 'replace' | 'import-copy';
+      templateIds: readonly string[];
+      assetWrites: number;
+    }>
+  | Readonly<{
+      committed: false;
+      reason: 'canceled' | 'invalid-structure' | 'quota-exceeded' | 'storage-error';
+    }>;
+
+export async function commitStagedTemplateExchange(
+  staged: StagedTemplateExchange,
+  decision: TemplateExchangeCommitDecision = 'cancel',
+  library: BrowserProjectLibrary
+): Promise<TemplateExchangeCommitOutcome> {
+  if (decision === 'cancel') return Object.freeze({ committed: false, reason: 'canceled' });
+  const outcome = await library.importTemplateRevisions({
+    templateRevisions: staged.envelope.payload.templateRevisions,
+    assets: staged.assets,
+    decision
+  });
+  if (!outcome.imported) return Object.freeze({ committed: false, reason: outcome.reason });
+  return Object.freeze({
+    committed: true,
+    decision,
+    templateIds: outcome.templateIds,
+    assetWrites: outcome.assetWrites
+  });
+}
+
+export type LibraryBackupExchangeCommitOutcome =
+  | Readonly<{ committed: true; projectCount: number }>
+  | Readonly<{ committed: false; reason: 'canceled' | 'invalid-backup' }>;
+
+export async function commitStagedLibraryBackupExchange(
+  staged: StagedLibraryBackupExchange,
+  decision: 'replace' | 'cancel' = 'cancel',
+  library: BrowserProjectLibrary
+): Promise<LibraryBackupExchangeCommitOutcome> {
+  if (decision === 'cancel') return Object.freeze({ committed: false, reason: 'canceled' });
+  const { schemaVersion, createdAt, projects, namedSnapshots, templates, settings } =
+    staged.envelope.payload;
+  const payload = libraryBackupPayloadSchema.parse({
+    schemaVersion,
+    createdAt,
+    projects,
+    namedSnapshots,
+    templates,
+    settings,
+    assets: staged.assets
+  });
+  const restoredAt = new Date().toISOString();
+  const outcome = await library.restoreLibraryBackup({
+    payload,
+    decision,
+    activeGenerationId: crypto.randomUUID(),
+    rollbackGenerationId: crypto.randomUUID(),
+    restoredAt
+  });
+  if (!outcome.restored) return Object.freeze({ committed: false, reason: outcome.reason });
+  return Object.freeze({ committed: true, projectCount: outcome.projectCount });
 }

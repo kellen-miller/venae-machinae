@@ -6,15 +6,16 @@
   import { createBrowserApplication } from '$lib/composition/create-browser-application';
 
   import type { BrowserApplication } from '$lib/composition/create-browser-application';
+  import type { PartDefinition } from '$lib/project/project';
   import type { ProjectSession } from '$lib/session/project-session.svelte';
   import type { PageProps } from './$types';
 
   let { params }: PageProps = $props();
   let session = $state<ProjectSession | null>(null);
   let failure = $state<string | null>(null);
+  let application: BrowserApplication | null = null;
 
   onMount(() => {
-    let application: BrowserApplication | null = null;
     let canceled = false;
     void (async () => {
       try {
@@ -42,10 +43,15 @@
       if (application) void application.close();
     };
   });
+
+  async function promotePartDefinition(definition: PartDefinition) {
+    if (!application) return { promoted: false as const, reason: 'library-unavailable' };
+    return application.promotePartDefinition(definition, new Date().toISOString());
+  }
 </script>
 
 {#if session}
-  <ProjectWorkspace {session} />
+  <ProjectWorkspace {session} onpromotetemplate={promotePartDefinition} />
 {:else if failure}
   <main class="route-error">
     <p class="eyebrow">Project unavailable</p>

@@ -1,7 +1,10 @@
 <script lang="ts">
   import type { AuthoringCapability } from '../../session/authoring-capability';
 
-  let { capability }: { capability: AuthoringCapability } = $props();
+  let {
+    capability,
+    onrequesttakeover
+  }: { capability: AuthoringCapability; onrequesttakeover: () => void } = $props();
 
   const message = $derived.by(() => {
     if (capability.mode === 'author') return null;
@@ -22,6 +25,9 @@
   <aside class="capability-notice" role="status" data-capability-reason={capability.reason}>
     <span aria-hidden="true">Read only</span>
     <p>{message}</p>
+    {#if capability.reason === 'lease-held'}
+      <button type="button" onclick={onrequesttakeover}>Request authoring takeover</button>
+    {/if}
   </aside>
 {/if}
 
@@ -50,7 +56,19 @@
   }
 
   p {
+    flex: 1 1 auto;
     margin: 0;
     font-size: 0.7rem;
+  }
+
+  button {
+    flex: 0 0 auto;
+    min-height: 2rem;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: inherit;
+    font: 0.62rem var(--font-mono);
+    cursor: pointer;
   }
 </style>

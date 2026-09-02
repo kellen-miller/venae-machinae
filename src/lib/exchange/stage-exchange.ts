@@ -1,8 +1,14 @@
 import { canonicalJson, sha256Hex } from './canonical-json';
-import { base64ToBytes, projectExchangeEnvelopeSchema } from './project-exchange';
+import { base64ToBytes, exchangeEnvelopeSchema } from './project-exchange';
+import { migrateProjectDocument } from './project-document-migration';
+import { APPLICATION_VERSIONS } from '../version/version-registry';
 
 import type { MeasuredExchangeLimits } from './measured-limits';
-import type { ProjectExchangeEnvelope } from './project-exchange';
+import type {
+  LibraryBackupExchangeEnvelope,
+  ProjectExchangeEnvelope,
+  TemplateExchangeEnvelope
+} from './project-exchange';
 
 type StageBlockReason =
   | 'envelope-size'
@@ -10,11 +16,14 @@ type StageBlockReason =
   | 'nesting-depth'
   | 'collection-count'
   | 'structure'
+  | 'newer-schema'
+  | 'unsupported-schema'
   | 'identity'
   | 'asset-count'
   | 'individual-asset-size'
   | 'combined-asset-size'
   | 'asset-integrity'
+  | 'asset-content'
   | 'asset-reference'
   | 'payload-integrity'
   | 'export-metadata-integrity'
@@ -41,6 +50,7 @@ type StageMeasurements = Readonly<{
 
 export type StagedExchange = Readonly<{
   staged: true;
+  format: 'venae-project';
   envelope: ProjectExchangeEnvelope;
   assets: readonly Readonly<{
     sha256: string;
@@ -60,15 +70,62 @@ export type StagedExchange = Readonly<{
   measurements: StageMeasurements;
 }>;
 
-export type StageExchangeOutcome =
-  | StagedExchange
-  | Readonly<{
-      staged: false;
-      reason: StageBlockReason;
-      message: string;
-    }>;
+export type StagedTemplateExchange = Readonly<{
+  staged: true;
+  format: 'venae-templates';
+  envelope: TemplateExchangeEnvelope;
+  assets: readonly Readonly<{
+    sha256: string;
+    mimeType: string;
+    bytes: Uint8Array;
+  }>[];
+  summary: Readonly<{
+    format: 'venae-templates';
+    templateCount: number;
+    revisionCount: number;
+    assetCount: number;
+    originalAssetBytes: number;
+    warnings: readonly string[];
+  }>;
+  measurements: StageMeasurements;
+}>;
 
-function blocked(reason: StageBlockReason, message: string): StageExchangeOutcome {
+export type StagedLibraryBackupExchange = Readonly<{
+  staged: true;
+  format: 'venae-backup';
+  envelope: LibraryBackupExchangeEnvelope;
+  assets: readonly Readonly<{
+    sha256: string;
+    mimeType: string;
+    bytes: Uint8Array;
+  }>[];
+  summary: Readonly<{
+    format: 'venae-backup';
+    projectCount: number;
+    namedSnapshotCount: number;
+    templateRevisionCount: number;
+    assetCount: number;
+    originalAssetBytes: number;
+    warnings: readonly string[];
+  }>;
+  measurements: StageMeasurements;
+}>;
+
+type StagedKnownExchange = StagedExchange | StagedTemplateExchange | StagedLibraryBackupExchange;
+
+type StageBlockedOutcome = Readonly<{
+  staged: false;
+  reason: StageBlockReason;
+  message: string;
+}>;
+
+export type StageExchangeOutcome = StagedExchange | StageBlockedOutcome;
+
+export type StageTemplateExchangeOutcome = StagedTemplateExchange | StageBlockedOutcome;
+
+export type StageLibraryBackupExchangeOutcome = StagedLibraryBackupExchange | StageBlockedOutcome;
+
+function blocked(reason: StageBlockReason, message: string): StageBlockedOutcome {
   return Object.freeze({ staged: false as const, reason, message });
 }
 
@@ -95,10 +152,65 @@ function inspectStructure(value: unknown): { maxNestingDepth: number; collection
   return { maxNestingDepth, collectionEntries };
 }
 
-export async function stageExchange(
+function checkSchemaCompatibility(value: unknown): StageBlockedOutcome | null {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return null;
+  const envelope = value as Record<string, unknown>;
+  const exchangeVersion = envelope.exchangeVersion;
+  if (typeof exchangeVersion !== 'number' || !Number.isInteger(exchangeVersion)) return null;
+  if (exchangeVersion > APPLICATION_VERSIONS.exchangeFormat) {
+    return blocked('newer-schema', 'The exchange envelope requires a newer application version');
+  }
+  if (exchangeVersion < APPLICATION_VERSIONS.exchangeFormat) {
+    return blocked('unsupported-schema', 'The exchange envelope is not from a released schema');
+  }
+
+  const payload = envelope.payload;
+  if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  const payloadVersion = (payload as Record<string, unknown>).schemaVersion;
+  if (typeof payloadVersion !== 'number' || !Number.isInteger(payloadVersion)) return null;
+  const expectedPayloadVersion =
+    envelope.format === 'venae-templates' || envelope.format === 'venae-backup' ? 1 : null;
+  if (expectedPayloadVersion === null) return null;
+  if (payloadVersion > expectedPayloadVersion) {
+    return blocked('newer-schema', 'The exchange payload requires a newer application version');
+  }
+  if (payloadVersion < expectedPayloadVersion) {
+    return blocked('unsupported-schema', 'The exchange payload is not from a released schema');
+  }
+
+  return null;
+}
+
+function hasRasterSignature(mimeType: string, bytes: Uint8Array): boolean {
+  if (mimeType === 'image/png') {
+    return (
+      bytes.length >= 4 && bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71
+    );
+  }
+  if (mimeType === 'image/jpeg') {
+    return bytes.length >= 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+  }
+  if (mimeType === 'image/webp') {
+    return (
+      bytes.length >= 12 &&
+      bytes[0] === 82 &&
+      bytes[1] === 73 &&
+      bytes[2] === 70 &&
+      bytes[3] === 70 &&
+      bytes[8] === 87 &&
+      bytes[9] === 69 &&
+      bytes[10] === 66 &&
+      bytes[11] === 80
+    );
+  }
+
+  return false;
+}
+
+async function stageKnownExchange(
   blob: Blob,
   limits: MeasuredExchangeLimits
-): Promise<StageExchangeOutcome> {
+): Promise<StagedKnownExchange | StageBlockedOutcome> {
   if (blob.size > limits.maxEnvelopeBytes) {
     return blocked('envelope-size', 'The encoded exchange envelope exceeds the measured limit');
   }
@@ -124,18 +236,58 @@ export async function stageExchange(
     );
   }
 
+  const incompatibleSchema = checkSchemaCompatibility(unknownEnvelope);
+  if (incompatibleSchema) return incompatibleSchema;
+
+  let migratedEnvelope = unknownEnvelope;
+  if (
+    unknownEnvelope !== null &&
+    typeof unknownEnvelope === 'object' &&
+    !Array.isArray(unknownEnvelope)
+  ) {
+    const envelope = unknownEnvelope as Record<string, unknown>;
+    if (envelope.format === 'venae-project') {
+      const migration = migrateProjectDocument(envelope.payload);
+      if (!migration.migrated) {
+        return blocked(migration.reason, 'The project payload cannot be migrated by this version');
+      }
+      migratedEnvelope = { ...envelope, payload: migration.document };
+    }
+  }
+
   const validationStartedAt = performance.now();
-  const parsed = projectExchangeEnvelopeSchema.safeParse(unknownEnvelope);
+  const parsed = exchangeEnvelopeSchema.safeParse(migratedEnvelope);
   const validationMs = performance.now() - validationStartedAt;
   if (!parsed.success)
     return blocked('structure', 'The exchange envelope has an invalid structure');
   const envelope = parsed.data;
 
-  if (
-    envelope.identity.projectId !== envelope.payload.project.id ||
-    envelope.identity.projectRevision !== envelope.payload.project.revision
+  if (envelope.format === 'venae-project') {
+    if (
+      envelope.identity.projectId !== envelope.payload.project.id ||
+      envelope.identity.projectRevision !== envelope.payload.project.revision
+    ) {
+      return blocked('identity', 'Envelope identity does not match its project payload');
+    }
+  } else if (envelope.format === 'venae-templates') {
+    const templateIds = [
+      ...new Set(envelope.payload.templateRevisions.map((revision) => revision.templateId))
+    ].sort();
+    const latestRevision = Math.max(
+      0,
+      ...envelope.payload.templateRevisions.map((revision) => revision.revision)
+    );
+    if (
+      JSON.stringify(templateIds) !== JSON.stringify(envelope.identity.templateIds) ||
+      latestRevision !== envelope.identity.latestRevision
+    ) {
+      return blocked('identity', 'Envelope identity does not match its template payload');
+    }
+  } else if (
+    envelope.identity.generationId !== envelope.payload.settings.activeGenerationId ||
+    envelope.identity.libraryRevision !== envelope.payload.schemaVersion
   ) {
-    return blocked('identity', 'Envelope identity does not match its project payload');
+    return blocked('identity', 'Envelope identity does not match its Library Backup payload');
   }
 
   if (envelope.assets.length > limits.maxAssets) {
@@ -152,11 +304,17 @@ export async function stageExchange(
   }
 
   const hashingStartedAt = performance.now();
-  const decodedAssets = [];
+  const decodedAssets: Array<{ sha256: string; mimeType: string; bytes: Uint8Array }> = [];
   for (const asset of envelope.assets) {
     const bytes = base64ToBytes(asset.base64);
     if (bytes.byteLength !== asset.byteLength || (await sha256Hex(bytes)) !== asset.sha256) {
       return blocked('asset-integrity', 'An embedded asset failed corruption detection');
+    }
+    if (!hasRasterSignature(asset.mimeType, bytes)) {
+      return blocked(
+        'asset-content',
+        'An embedded asset does not match its allowlisted raster type'
+      );
     }
 
     decodedAssets.push({ sha256: asset.sha256, mimeType: asset.mimeType, bytes });
@@ -180,7 +338,7 @@ export async function stageExchange(
 
   const canonicalPayload = canonicalJson(envelope.payload);
   if ((await sha256Hex(canonicalPayload)) !== envelope.integrity.payloadSha256) {
-    return blocked('payload-integrity', 'The project payload failed corruption detection');
+    return blocked('payload-integrity', 'The exchange payload failed corruption detection');
   }
 
   if (
@@ -221,22 +379,98 @@ export async function stageExchange(
     estimatedPeakBytes,
     estimatedPhasePeakBytes: phasePeaks
   });
-  const summary = Object.freeze({
-    format: 'venae-project' as const,
-    projectId: envelope.payload.project.id,
-    projectRevision: envelope.payload.project.revision,
-    assetCount: envelope.assets.length,
-    originalAssetBytes: declaredAssetBytes,
-    componentCount: envelope.payload.topology.components.length,
-    connectionCount: envelope.payload.topology.connections.length,
-    warnings: Object.freeze([] as string[])
-  });
+  const warnings = Object.freeze([] as string[]);
+  if (stagedEnvelope.format === 'venae-project') {
+    return Object.freeze({
+      staged: true as const,
+      format: stagedEnvelope.format,
+      envelope: stagedEnvelope,
+      assets: stagedAssets,
+      summary: Object.freeze({
+        format: stagedEnvelope.format,
+        projectId: stagedEnvelope.payload.project.id,
+        projectRevision: stagedEnvelope.payload.project.revision,
+        assetCount: stagedEnvelope.assets.length,
+        originalAssetBytes: declaredAssetBytes,
+        componentCount: stagedEnvelope.payload.topology.components.length,
+        connectionCount: stagedEnvelope.payload.topology.connections.length,
+        warnings
+      }),
+      measurements
+    });
+  }
+
+  if (stagedEnvelope.format === 'venae-templates') {
+    return Object.freeze({
+      staged: true as const,
+      format: stagedEnvelope.format,
+      envelope: stagedEnvelope,
+      assets: stagedAssets,
+      summary: Object.freeze({
+        format: stagedEnvelope.format,
+        templateCount: stagedEnvelope.identity.templateIds.length,
+        revisionCount: stagedEnvelope.payload.templateRevisions.length,
+        assetCount: stagedEnvelope.assets.length,
+        originalAssetBytes: declaredAssetBytes,
+        warnings
+      }),
+      measurements
+    });
+  }
 
   return Object.freeze({
     staged: true as const,
+    format: stagedEnvelope.format,
     envelope: stagedEnvelope,
     assets: stagedAssets,
-    summary,
+    summary: Object.freeze({
+      format: stagedEnvelope.format,
+      projectCount: stagedEnvelope.payload.projects.length,
+      namedSnapshotCount: stagedEnvelope.payload.namedSnapshots.length,
+      templateRevisionCount: stagedEnvelope.payload.templates.length,
+      assetCount: stagedEnvelope.assets.length,
+      originalAssetBytes: declaredAssetBytes,
+      warnings
+    }),
     measurements
   });
+}
+
+export async function stageExchange(
+  blob: Blob,
+  limits: MeasuredExchangeLimits
+): Promise<StageExchangeOutcome> {
+  const outcome = await stageKnownExchange(blob, limits);
+  if (!outcome.staged) return outcome;
+  if (outcome.format !== 'venae-project') {
+    return blocked('structure', 'Expected a .venae.json project exchange envelope');
+  }
+
+  return outcome;
+}
+
+export async function stageTemplateExchange(
+  blob: Blob,
+  limits: MeasuredExchangeLimits
+): Promise<StageTemplateExchangeOutcome> {
+  const outcome = await stageKnownExchange(blob, limits);
+  if (!outcome.staged) return outcome;
+  if (outcome.format !== 'venae-templates') {
+    return blocked('structure', 'Expected a .venae-templates.json exchange envelope');
+  }
+
+  return outcome;
+}
+
+export async function stageLibraryBackupExchange(
+  blob: Blob,
+  limits: MeasuredExchangeLimits
+): Promise<StageLibraryBackupExchangeOutcome> {
+  const outcome = await stageKnownExchange(blob, limits);
+  if (!outcome.staged) return outcome;
+  if (outcome.format !== 'venae-backup') {
+    return blocked('structure', 'Expected a .venae-backup.json exchange envelope');
+  }
+
+  return outcome;
 }

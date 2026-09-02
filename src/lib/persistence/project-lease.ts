@@ -9,6 +9,44 @@ export interface ProjectLease {
 export type ProjectLeaseOutcome =
   { acquired: true; lease: ProjectLease } | { acquired: false; reason: 'held' | 'unsupported' };
 
+export type LibraryLockOutcome<Value> =
+  | Readonly<{ acquired: true; value: Value }>
+  | Readonly<{ acquired: false; reason: 'held' | 'unsupported' }>;
+
+export async function withExclusiveLibraryLock<Value>(
+  operation: () => Promise<Value>
+): Promise<LibraryLockOutcome<Value>> {
+  if (typeof navigator === 'undefined' || !navigator.locks) {
+    return { acquired: false, reason: 'unsupported' };
+  }
+
+  return navigator.locks.request(
+    LIBRARY_LOCK_NAME,
+    { mode: 'exclusive' },
+    async (lock): Promise<LibraryLockOutcome<Value>> => {
+      if (!lock) return { acquired: false, reason: 'unsupported' };
+      return { acquired: true, value: await operation() };
+    }
+  );
+}
+
+export async function tryRunLibraryMaintenance<Value>(
+  operation: () => Promise<Value>
+): Promise<LibraryLockOutcome<Value>> {
+  if (typeof navigator === 'undefined' || !navigator.locks) {
+    return { acquired: false, reason: 'unsupported' };
+  }
+
+  return navigator.locks.request(
+    LIBRARY_LOCK_NAME,
+    { mode: 'exclusive', ifAvailable: true },
+    async (lock): Promise<LibraryLockOutcome<Value>> => {
+      if (!lock) return { acquired: false, reason: 'held' };
+      return { acquired: true, value: await operation() };
+    }
+  );
+}
+
 export async function acquireProjectLease(projectId: string): Promise<ProjectLeaseOutcome> {
   if (
     typeof navigator === 'undefined' ||

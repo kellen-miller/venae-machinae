@@ -8,6 +8,11 @@
 
   import type { BrowserApplication } from '$lib/composition/create-browser-application';
   import type {
+    DownloadArtifact,
+    LibraryOverview,
+    StagedLibraryImport
+  } from '$lib/composition/create-browser-application';
+  import type {
     ProjectLibraryState,
     ProjectListing
   } from '$lib/presentation/library/ProjectLibraryView.svelte';
@@ -16,6 +21,18 @@
   let projects = $state<readonly ProjectListing[]>([]);
   let libraryState = $state<ProjectLibraryState>('loading');
   let failure = $state<string | null>(null);
+  let operationFailure = $state<string | null>(null);
+  let operationStatus = $state<string | null>(null);
+  let overview = $state<LibraryOverview | null>(null);
+  let stagedImport = $state<StagedLibraryImport | null>(null);
+
+  async function refreshLibrary(openedApplication: BrowserApplication): Promise<void> {
+    const now = new Date().toISOString();
+    [projects, overview] = await Promise.all([
+      openedApplication.listProjects(),
+      openedApplication.readLibraryOverview(now)
+    ]);
+  }
 
   onMount(() => {
     let canceled = false;
@@ -28,7 +45,7 @@
         }
 
         application = openedApplication;
-        projects = await openedApplication.listProjects();
+        await refreshLibrary(openedApplication);
         libraryState = 'ready';
       } catch (error) {
         failure = error instanceof Error ? error.message : 'The browser Project Library failed.';
@@ -85,6 +102,135 @@
 
     await openCreatedProject(outcome.snapshot.id);
   }
+
+  function startDownload(artifact: DownloadArtifact): void {
+    const url = URL.createObjectURL(new Blob([artifact.json], { type: 'application/json' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = artifact.filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function createNamedSnapshot(project: ProjectListing): Promise<void> {
+    if (!application) return;
+    operationFailure = null;
+    const outcome = await application.createNamedSnapshot(project.id, new Date().toISOString());
+    if (!outcome.created) {
+      operationFailure = `Named Snapshot failed: ${outcome.reason}.`;
+      return;
+    }
+    operationStatus = `Created a user-retained Named Snapshot for ${project.name}.`;
+    await refreshLibrary(application);
+  }
+
+  async function trashProject(project: ProjectListing): Promise<void> {
+    if (!application) return;
+    operationFailure = null;
+    const outcome = await application.trashProject(project.id, new Date().toISOString());
+    if (!outcome.trashed) {
+      operationFailure = `Trash failed: ${outcome.reason}.`;
+      return;
+    }
+    operationStatus = `${project.name} remains recoverable in Trash for 30 days.`;
+    await refreshLibrary(application);
+  }
+
+  async function restoreNamedSnapshot(snapshotId: string): Promise<void> {
+    if (!application) return;
+    operationFailure = null;
+    const outcome = await application.restoreNamedSnapshot(snapshotId, new Date().toISOString());
+    if (!outcome.restored) {
+      operationFailure = `Named Snapshot restore failed: ${outcome.reason}.`;
+      return;
+    }
+    operationStatus = 'Restored immutable snapshot contents as a new current Project revision.';
+    await refreshLibrary(application);
+  }
+
+  async function restoreTrash(trashId: string): Promise<void> {
+    if (!application) return;
+    operationFailure = null;
+    const outcome = await application.restoreTrash(trashId);
+    if (!outcome.restored) {
+      operationFailure = `Trash restore failed: ${outcome.reason}.`;
+      return;
+    }
+    operationStatus = 'Restored the browser-local record from Trash.';
+    await refreshLibrary(application);
+  }
+
+  async function exportProject(project: ProjectListing): Promise<void> {
+    if (!application) return;
+    operationFailure = null;
+    const outcome = await application.createProjectDownload(project.id, new Date().toISOString());
+    if (!outcome.created) {
+      operationFailure = `Project export failed: ${outcome.reason}.`;
+      return;
+    }
+    startDownload(outcome.artifact);
+    operationStatus = `Exported ${project.name}; SHA-256 hashes detect corruption, not authorship.`;
+    await refreshLibrary(application);
+  }
+
+  async function exportTemplates(): Promise<void> {
+    if (!application) return;
+    operationFailure = null;
+    const outcome = await application.createTemplateDownload(new Date().toISOString());
+    if (!outcome.created) {
+      operationFailure = `Template export failed: ${outcome.reason}.`;
+      return;
+    }
+    startDownload(outcome.artifact);
+    operationStatus = 'Exported immutable Part Definition Template revisions.';
+  }
+
+  async function downloadLibraryBackup(): Promise<void> {
+    if (!application) return;
+    operationFailure = null;
+    const outcome = await application.createLibraryBackupDownload(new Date().toISOString());
+    if (!outcome.created) {
+      operationFailure = `Library Backup failed: ${outcome.reason}.`;
+      return;
+    }
+    startDownload(outcome.artifact);
+    operationStatus = 'Library Backup downloaded; this is the profile and device loss boundary.';
+    await refreshLibrary(application);
+  }
+
+  async function stageLibraryImport(file: File): Promise<void> {
+    if (!application) return;
+    operationFailure = null;
+    operationStatus = null;
+    stagedImport = null;
+    const outcome = await application.stageLibraryImport(file);
+    if (!outcome.staged) {
+      operationFailure = `Import blocked by corruption detection (${outcome.reason}): ${outcome.message}`;
+      await refreshLibrary(application);
+      return;
+    }
+    stagedImport = outcome;
+  }
+
+  async function commitLibraryImport(
+    decision: 'replace' | 'import-copy' | 'cancel'
+  ): Promise<void> {
+    if (!application || !stagedImport) return;
+    if (decision === 'cancel') {
+      stagedImport = null;
+      operationStatus = 'Import canceled without changing the Project Library.';
+      return;
+    }
+    operationFailure = null;
+    const outcome = await application.commitLibraryImport(stagedImport, decision);
+    if (!outcome.committed) {
+      operationFailure = `Import commit failed: ${outcome.reason}.`;
+      return;
+    }
+    stagedImport = null;
+    operationStatus = `Committed ${outcome.format} after explicit ${decision}.`;
+    await refreshLibrary(application);
+  }
 </script>
 
 <svelte:head>
@@ -95,6 +241,19 @@
   state={libraryState}
   {projects}
   {failure}
+  {operationFailure}
+  {operationStatus}
+  {overview}
+  {stagedImport}
   onblank={createBlankProject}
   onduplicate={duplicateProject}
+  onnamedsnapshot={createNamedSnapshot}
+  onrestoresnapshot={restoreNamedSnapshot}
+  ontrash={trashProject}
+  onrestoretrash={restoreTrash}
+  onexportproject={exportProject}
+  onexporttemplates={exportTemplates}
+  onbackup={downloadLibraryBackup}
+  onstageimport={stageLibraryImport}
+  oncommitimport={commitLibraryImport}
 />
