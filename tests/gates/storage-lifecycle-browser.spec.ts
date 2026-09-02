@@ -107,6 +107,14 @@ test('MVP-DATA-003 MVP-DATA-005 MVP-GATE-006 automates storage, lease, upgrade, 
   await contender.bringToFront();
   const backgroundVisibility = await page.evaluate(() => document.visibilityState);
   await page.close();
+  await expect
+    .poll(async () => {
+      const locks = await contender.evaluate(() =>
+        window.VenaeStorageLifecycleGate.heldLockModes()
+      );
+      return locks.some(({ name }) => name === 'venae-machinae:project:crash-gate');
+    })
+    .toBe(false);
   expect(
     await contender.evaluate(() => window.VenaeStorageLifecycleGate.holdProjectLease('crash-gate'))
   ).toEqual({ acquired: true, reason: null });
