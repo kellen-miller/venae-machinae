@@ -24,6 +24,7 @@ import type {
   ProjectResult,
   VehicleBackground
 } from './project';
+import type { StateBinding } from '../operating-state/operating-state';
 import type {
   Component,
   Connection,
@@ -95,6 +96,27 @@ export type ProjectAction =
         boundary: FluidBoundaryCondition;
       }>)
   | (Causation & Readonly<{ type: 'add-operating-state'; state: OperatingState }>)
+  | (Causation & Readonly<{ type: 'update-operating-state'; state: OperatingState }>)
+  | (Causation &
+      Readonly<{
+        type: 'clone-operating-state';
+        stateId: SubjectId;
+        cloneId: SubjectId;
+        cloneName: string;
+      }>)
+  | (Causation & Readonly<{ type: 'delete-operating-state'; stateId: SubjectId }>)
+  | (Causation &
+      Readonly<{
+        type: 'upsert-state-binding';
+        operatingStateId: SubjectId;
+        binding: StateBinding;
+      }>)
+  | (Causation &
+      Readonly<{
+        type: 'remove-state-binding';
+        operatingStateId: SubjectId;
+        bindingId: SubjectId;
+      }>)
   | (Causation & Readonly<{ type: 'configure-calculation'; calculation: CalculationRequest }>)
   | (Causation & Readonly<{ type: 'configure-screening'; screening: CandidateScreenRequest }>)
   | (Causation &

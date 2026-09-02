@@ -12,7 +12,11 @@ import type { CandidateScreenRequest, ScreeningResult } from '../calculation/scr
 import type { ElectricalModel } from '../electrical/electrical';
 import type { EngineeringEvidence } from '../evidence/evidence';
 import type { FluidModel } from '../fluid/fluid';
+import type { OperatingState } from '../operating-state/operating-state';
+import type { OperatingStateOverlay } from '../operating-state/evaluate-overlay';
 import type { Point, SubjectId, Topology } from '../topology/topology';
+
+export type { OperatingState } from '../operating-state/operating-state';
 
 export type ResultId = string;
 
@@ -38,8 +42,33 @@ export type ProjectResult = Readonly<{
   detail:
     | Readonly<{ type: 'calculation'; outcome: CalculationOutcome }>
     | Readonly<{ type: 'screening'; result: ScreeningResult }>
+    | Readonly<{ type: 'overlay'; overlay: OperatingStateOverlay }>
     | null;
 }>;
+
+export function retainStaleProjectResult(result: ProjectResult): ProjectResult {
+  if (result.status !== 'current') return result;
+  if (result.detail?.type !== 'overlay') return { ...result, status: 'stale' };
+
+  return {
+    ...result,
+    status: 'stale',
+    detail: {
+      type: 'overlay',
+      overlay: {
+        ...result.detail.overlay,
+        status: 'stale',
+        systems: result.detail.overlay.systems.map((system) => ({
+          ...system,
+          channels: system.channels.map((channel) => ({
+            ...channel,
+            evaluationStatus: 'stale'
+          }))
+        }))
+      }
+    }
+  };
+}
 
 export type SubjectTombstone = Readonly<{
   subjectId: SubjectId;
@@ -52,12 +81,6 @@ export type EngineeringValue = Readonly<{
   decimal: string;
   unit: string;
   provenance: string;
-}>;
-
-export type OperatingState = Readonly<{
-  id: SubjectId;
-  name: string;
-  description: string;
 }>;
 
 export type VehicleBackground = Readonly<{
@@ -322,6 +345,16 @@ export function projectSubjectExists(snapshot: ProjectSnapshot, subjectId: Subje
     snapshot.evidence.some((subject) => subject.id === subjectId) ||
     snapshot.engineeringValues.some((subject) => subject.id === subjectId) ||
     snapshot.operatingStates.some((subject) => subject.id === subjectId) ||
+    snapshot.operatingStates.some((state) =>
+      [
+        ...state.commands,
+        ...state.conditions,
+        ...state.measurements,
+        ...state.assumptions,
+        ...state.bindings,
+        ...state.bindings.flatMap((binding) => (binding.behavior ? [binding.behavior] : []))
+      ].some((subject) => subject.id === subjectId)
+    ) ||
     snapshot.results.some((subject) => subject.id === subjectId) ||
     snapshot.tombstones.some(
       (subject) => subject.subjectId === subjectId || subject.successorId === subjectId

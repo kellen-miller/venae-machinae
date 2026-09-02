@@ -25,7 +25,7 @@ function createInitialization(
     inputFingerprint: fingerprint,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 6,
+    schemaVersion: 7,
     project
   };
 }
@@ -38,13 +38,19 @@ function createIncrementalChange(requestId: string): EvaluateChangeSet {
     inputFingerprint: fingerprintTwo,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 6,
+    schemaVersion: 7,
     changeSet: {
       baseRevision: 1,
+      upsertSystems: [],
+      removeSystemIds: [],
       upsertComponents: [],
       removeComponentIds: [],
       upsertConnections: [],
       removeConnectionIds: [],
+      upsertCircuits: [],
+      removeCircuitIds: [],
+      upsertEvidence: [],
+      removeEvidenceIds: [],
       upsertEngineeringValues: [
         { id: 'value-voltage', decimal: '12.8', unit: 'V', provenance: 'gate fixture' }
       ],

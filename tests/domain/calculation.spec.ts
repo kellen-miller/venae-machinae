@@ -8,6 +8,7 @@ import {
 } from '../../src/lib/calculation/quantity';
 import { screenCandidates } from '../../src/lib/calculation/screen-candidates';
 import { convertDecimal } from '../../src/lib/calculation/unit-registry';
+import { createOperatingState } from '../../src/lib/operating-state/operating-state';
 import {
   projectDocumentToSnapshot,
   projectSnapshotToDocument
@@ -410,7 +411,11 @@ describe('MVP-CALC-002 calculation configuration lifecycle', () => {
     const state = applyProjectAction(snapshot, {
       type: 'add-operating-state',
       causationId: 'cause-state',
-      state: { id: 'state-run-hot', name: 'Run Hot / Fan On', description: 'Static fixture' }
+      state: createOperatingState({
+        id: 'state-run-hot',
+        name: 'Run Hot / Fan On',
+        description: 'Static fixture'
+      })
     });
     if (!state.accepted) throw new Error(state.rejection.message);
     snapshot = state.snapshot;
@@ -472,7 +477,11 @@ describe('MVP-CALC-002 calculation configuration lifecycle', () => {
       {
         type: 'add-operating-state' as const,
         causationId: 'cause-screen-state',
-        state: { id: 'state-screen', name: 'Run Hot', description: 'Static fixture' }
+        state: createOperatingState({
+          id: 'state-screen',
+          name: 'Run Hot',
+          description: 'Static fixture'
+        })
       },
       {
         type: 'add-part-definition' as const,

@@ -90,6 +90,10 @@ export type ProjectProjectionOptions = Readonly<{
   previewSourcePortId?: string | null;
   domainFilter?: 'all' | 'electrical' | 'fluid';
   systemFilterId?: string | null;
+  operatingStateId?: string | null;
+  overlayChannels?: readonly (
+    'potential' | 'current' | 'signal' | 'fluid-direction' | 'temperature' | 'finding' | 'selection'
+  )[];
 }>;
 
 export type RendererCapabilityMode = 'author' | 'review' | 'mobile-review';
@@ -194,6 +198,25 @@ export function projectSnapshotToRendererProjection(
   snapshot: ProjectSnapshot,
   options: ProjectProjectionOptions = {}
 ): RendererProjection {
+  const activeOverlayResult = snapshot.results.find(
+    (result) =>
+      (result.status === 'current' || result.status === 'stale') &&
+      result.detail?.type === 'overlay' &&
+      result.detail.overlay.operatingStateId === options.operatingStateId
+  );
+  const activeOverlay =
+    activeOverlayResult?.detail?.type === 'overlay' ? activeOverlayResult.detail.overlay : null;
+  const selectedOverlayChannels = new Set(
+    options.overlayChannels ?? [
+      'potential',
+      'current',
+      'signal',
+      'fluid-direction',
+      'temperature',
+      'finding',
+      'selection'
+    ]
+  );
   const previewSource = snapshot.topology.components
     .flatMap((component) => component.ports)
     .find((port) => port.id === options.previewSourcePortId);
@@ -260,6 +283,12 @@ export function projectSnapshotToRendererProjection(
       const route = snapshot.topology.routes.find(
         (candidate) => candidate.id === connection.routeId
       );
+      const direction = activeOverlay?.marks.find(
+        (mark) =>
+          mark.connectionId === connection.id &&
+          mark.channel === 'fluid-direction' &&
+          selectedOverlayChannels.has('fluid-direction')
+      )?.direction;
       return {
         id: connection.id,
         label: connection.label,
@@ -277,7 +306,12 @@ export function projectSnapshotToRendererProjection(
             : {
                 kind: connection.kind.replace('fluid-', '') as 'hose' | 'tube' | 'pipe',
                 ...(connection.mediumId ? { medium: connection.mediumId } : {}),
-                direction: 'unknown'
+                direction:
+                  direction === 'forward' ||
+                  direction === 'reverse' ||
+                  direction === 'bidirectional'
+                    ? direction
+                    : 'unknown'
               },
         routePoints:
           route?.segmentIds.flatMap((segmentId) => {
@@ -302,7 +336,7 @@ export function projectSnapshotToRendererProjection(
   const overlayMarks: RendererOverlayMark[] = [];
   for (const connection of snapshot.topology.connections) {
     if (!visibleConnectionIds.has(connection.id)) continue;
-    if (options.selectedSubjectId === connection.id) {
+    if (options.selectedSubjectId === connection.id && selectedOverlayChannels.has('selection')) {
       overlayMarks.push({
         id: `selection:${connection.id}`,
         connectionId: connection.id,
@@ -310,7 +344,46 @@ export function projectSnapshotToRendererProjection(
         label: `Selected ${connection.label}`
       });
     }
-    if (connection.domain === 'fluid') {
+    if (activeOverlay) {
+      for (const mark of activeOverlay.marks.filter(
+        (candidate) =>
+          candidate.connectionId === connection.id && selectedOverlayChannels.has(candidate.channel)
+      )) {
+        const channel = mark.channel === 'fluid-direction' ? 'direction' : mark.channel;
+        overlayMarks.push({
+          id: mark.id,
+          connectionId: connection.id,
+          channel,
+          label: `${mark.staticCue} · ${mark.label}${
+            activeOverlayResult?.status === 'stale' ? ' · stale' : ''
+          }`
+        });
+        if (mark.trace.sources.length > 0) {
+          overlayMarks.push({
+            id: `provenance:${mark.id}`,
+            connectionId: connection.id,
+            channel: 'provenance',
+            label: `${mark.channel} provenance: ${mark.trace.sources.join('; ')}`
+          });
+        }
+        if (mark.status === 'unavailable') {
+          overlayMarks.push({
+            id: `unknown:${mark.id}`,
+            connectionId: connection.id,
+            channel: 'unknown',
+            label: `${mark.channel} unavailable`
+          });
+        }
+        if (mark.status === 'conflicting') {
+          overlayMarks.push({
+            id: `conflict:${mark.id}`,
+            connectionId: connection.id,
+            channel: 'conflict',
+            label: `${mark.channel} conflicts: ${mark.trace.conflicts.join('; ')}`
+          });
+        }
+      }
+    } else if (connection.domain === 'fluid' && selectedOverlayChannels.has('fluid-direction')) {
       overlayMarks.push({
         id: `direction:${connection.id}`,
         connectionId: connection.id,
@@ -345,7 +418,10 @@ export function projectSnapshotToRendererProjection(
           label: `${evidence.label} conflicting`
         });
       }
-      if (evidence.label.toLowerCase().includes('temperature')) {
+      if (
+        selectedOverlayChannels.has('temperature') &&
+        evidence.label.toLowerCase().includes('temperature')
+      ) {
         overlayMarks.push({
           id: `temperature:${evidence.id}`,
           connectionId: connection.id,
@@ -355,6 +431,7 @@ export function projectSnapshotToRendererProjection(
       }
     }
     if (
+      selectedOverlayChannels.has('finding') &&
       snapshot.results.some(
         (result) => result.status === 'current' && result.kind === `finding:${connection.id}`
       )

@@ -1,4 +1,5 @@
 import { applyProjectAction, previewProjectActionImpact } from '../project/apply-action';
+import { retainStaleProjectResult } from '../project/project';
 import { resolveAuthoringCapability } from './authoring-capability';
 
 import type { ActionRejection } from '../project/apply-action';
@@ -91,7 +92,7 @@ export type ProjectSessionView = Readonly<{
     message: string | null;
   }>;
   evaluation: Readonly<{
-    status: 'idle' | 'queued' | 'current' | 'stale';
+    status: 'idle' | 'queued' | 'current' | 'stale' | 'failed';
     sourceRevision: number | null;
   }>;
   canUndo: boolean;
@@ -231,7 +232,10 @@ export function createProjectSession(dependencies: {
         ? { ...frame, after: outcome.snapshot }
         : frame
     );
-    evaluation = { status: 'current', sourceRevision };
+    evaluation = {
+      status: results.some((result) => result.status === 'failed') ? 'failed' : 'current',
+      sourceRevision
+    };
     queueSave();
     return { published: true, revision: snapshot.revision };
   }
@@ -254,9 +258,7 @@ export function createProjectSession(dependencies: {
     snapshot = {
       ...frameSnapshot,
       revision: snapshot.revision + 1,
-      results: frameSnapshot.results.map((result) =>
-        result.status === 'current' ? { ...result, status: 'stale' as const } : result
-      )
+      results: frameSnapshot.results.map(retainStaleProjectResult)
     };
     queueSave();
     scheduleEvaluation({ kind: 'changed-subjects', subjectIds: [snapshot.id] }, causationId);

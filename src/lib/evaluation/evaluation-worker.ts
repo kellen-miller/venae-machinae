@@ -6,6 +6,9 @@ import {
 } from './protocol';
 import { evaluateCalculation } from '../calculation/evaluate-calculation';
 import { screenCandidates } from '../calculation/screen-candidates';
+import { evaluateOperatingStateOverlay } from '../operating-state/evaluate-overlay';
+import { createEmptyElectricalModel } from '../electrical/electrical';
+import { createEmptyFluidModel } from '../fluid/fluid';
 
 import type {
   CancelEvaluation,
@@ -15,6 +18,7 @@ import type {
   EvaluationRequest,
   WorkerResult
 } from './protocol';
+import type { ProjectResult, ProjectSnapshot } from '../project/project';
 
 type ActiveEvaluation = {
   request: EvaluationRequest;
@@ -137,6 +141,79 @@ async function evaluate(token: ActiveEvaluation): Promise<void> {
         kind: 'screening',
         status: 'current',
         detail: { type: 'screening', result: screenCandidates(screening) }
+      })
+    );
+  }
+
+  const overlayResults: ProjectResult[] = results.map((result) => ({
+    ...result,
+    sourceRevision: evaluating.projectRevision
+  }));
+  const overlaySnapshot: ProjectSnapshot = {
+    id: evaluating.projectId,
+    name: 'Evaluation mirror',
+    createdAt: '1970-01-01T00:00:00.000Z',
+    revision: evaluating.projectRevision,
+    topology: {
+      systems: evaluating.systems.map((system) => ({
+        ...system,
+        label: system.id
+      })),
+      components: evaluating.components.map((component) => ({
+        id: component.id,
+        label: component.id,
+        kind: 'part',
+        definitionId: null,
+        predecessorId: null,
+        successorId: null,
+        position: { x: '0', y: '0' },
+        ports: component.ports.map((port) => ({
+          ...port,
+          componentId: component.id,
+          label: port.id,
+          mediumId: port.domain === 'fluid' ? 'evaluation-medium' : null,
+          interfaceKey: null
+        }))
+      })),
+      connections: evaluating.connections.map((connection) => ({
+        ...connection,
+        label: connection.id,
+        interfaceAssessment: 'unknown',
+        routeId: null
+      })),
+      routes: [],
+      segments: []
+    },
+    electrical: {
+      ...createEmptyElectricalModel(),
+      circuits: evaluating.circuits
+    },
+    fluid: createEmptyFluidModel(),
+    calculations: evaluating.calculations,
+    screenings: evaluating.screenings,
+    partDefinitions: [],
+    partRequirements: [],
+    evidence: evaluating.evidence,
+    results: overlayResults,
+    tombstones: [],
+    engineeringValues: evaluating.engineeringValues,
+    operatingStates: evaluating.operatingStates,
+    settings: { unitSystem: 'metric' },
+    assetHashes: [],
+    vehicleBackground: null
+  };
+  for (const state of evaluating.operatingStates) {
+    const overlay = evaluateOperatingStateOverlay(
+      overlaySnapshot,
+      state.id,
+      token.request.inputFingerprint
+    );
+    results.push(
+      evaluationDerivedResultSchema.parse({
+        id: `result-overlay-${state.id}`,
+        kind: 'overlay',
+        status: 'current',
+        detail: { type: 'overlay', overlay }
       })
     );
   }

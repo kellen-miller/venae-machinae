@@ -6,6 +6,7 @@ import {
 } from '../../src/lib/persistence/project-document';
 import { applyProjectAction } from '../../src/lib/project/apply-action';
 import { createBlankProject } from '../../src/lib/project/project';
+import { createOperatingState } from '../../src/lib/operating-state/operating-state';
 
 import type { ProjectAction } from '../../src/lib/project/action';
 import type { ProjectSnapshot } from '../../src/lib/project/project';
@@ -163,11 +164,11 @@ describe('MVP-FLUID-001 MVP-FLUID-003 MVP-FLUID-005 fluid systems and behaviors'
     snapshot = accept(snapshot, {
       type: 'add-operating-state',
       causationId: 'cause-state',
-      state: {
+      state: createOperatingState({
         id: 'state-warm-idle',
         name: 'Warm idle',
         description: 'Engine warm at idle'
-      }
+      })
     });
     snapshot = accept(snapshot, {
       type: 'record-fluid-boundary-condition',

@@ -35,7 +35,7 @@ function createInitialization(
     inputFingerprint: fingerprint,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 6,
+    schemaVersion: 7,
     project
   };
 }
@@ -148,13 +148,19 @@ describe('MVP-GATE-005 worker boundary', () => {
       inputFingerprint: fingerprintTwo,
       formulaCatalogVersion: 1,
       validationRuleCatalogVersion: 1,
-      schemaVersion: 6,
+      schemaVersion: 7,
       changeSet: {
         baseRevision: 1,
+        upsertSystems: [],
+        removeSystemIds: [],
         upsertComponents: [],
         removeComponentIds: [],
         upsertConnections: [],
         removeConnectionIds: [],
+        upsertCircuits: [],
+        removeCircuitIds: [],
+        upsertEvidence: [],
+        removeEvidenceIds: [],
         upsertEngineeringValues: [
           { id: 'value-voltage', decimal: '12.8', unit: 'V', provenance: 'gate fixture' }
         ],
@@ -206,7 +212,7 @@ describe('MVP-GATE-005 worker boundary', () => {
       inputFingerprint: fingerprintOne,
       formulaCatalogVersion: 1,
       validationRuleCatalogVersion: 1,
-      schemaVersion: 6
+      schemaVersion: 7
     });
     expect(harness.workers[0]?.sent.map((message) => message.requestId)).toEqual([
       'first',
@@ -288,10 +294,16 @@ describe('MVP-GATE-005 worker boundary', () => {
       schemaVersion: fallback.schemaVersion,
       changeSet: {
         baseRevision: 1,
+        upsertSystems: [],
+        removeSystemIds: [],
         upsertComponents: [],
         removeComponentIds: [],
         upsertConnections: [],
         removeConnectionIds: [],
+        upsertCircuits: [],
+        removeCircuitIds: [],
+        upsertEvidence: [],
+        removeEvidenceIds: [],
         upsertEngineeringValues: [],
         removeEngineeringValueIds: [],
         upsertOperatingStates: [],

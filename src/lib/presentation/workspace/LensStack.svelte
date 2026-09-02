@@ -2,6 +2,7 @@
   import type { ProjectSnapshot } from '../../project/project';
   import type { ImpactPreview, ProjectAction } from '../../project/action';
   import type { RendererViewport } from '../../renderer/projection';
+  import type { OverlayChannel } from '../../operating-state/operating-state';
   import BomLens from './lenses/BomLens.svelte';
   import CalculationsLens from './lenses/CalculationsLens.svelte';
   import CircuitsLinesLens from './lenses/CircuitsLinesLens.svelte';
@@ -21,6 +22,9 @@
     selection,
     viewport,
     comparisonViewports,
+    comparisonStateIds,
+    overlayChannels,
+    motionPaused,
     canAuthor,
     branchPreview,
     onaction,
@@ -30,6 +34,8 @@
     onclose,
     onincreasezoom,
     onincreasecomparison,
+    oncomparisonstate,
+    oncomparisonviewport,
     onpreview,
     onselect
   }: {
@@ -38,6 +44,9 @@
     selection: WorkspaceSubject | null;
     viewport: RendererViewport;
     comparisonViewports: Readonly<{ left: RendererViewport; right: RendererViewport }>;
+    comparisonStateIds: Readonly<{ left: string | null; right: string | null }>;
+    overlayChannels: readonly OverlayChannel[];
+    motionPaused: boolean;
     canAuthor: boolean;
     branchPreview: ImpactPreview | null;
     onaction: (action: ProjectAction) => boolean;
@@ -47,6 +56,8 @@
     onclose: () => void;
     onincreasezoom: () => void;
     onincreasecomparison: (side: 'left' | 'right') => void;
+    oncomparisonstate: (side: 'left' | 'right', stateId: string | null) => void;
+    oncomparisonviewport: (viewport: RendererViewport) => void;
     onpreview: (componentId: string) => void;
     onselect: (componentId: string) => void;
   } = $props();
@@ -116,9 +127,16 @@
     {:else}
       <StateCompareLens
         {snapshot}
+        {canAuthor}
+        {onaction}
         leftViewport={comparisonViewports.left}
         rightViewport={comparisonViewports.right}
+        stateIds={comparisonStateIds}
+        {overlayChannels}
+        {motionPaused}
         onincrease={onincreasecomparison}
+        onstate={oncomparisonstate}
+        onviewport={oncomparisonviewport}
       />
     {/if}
   </div>

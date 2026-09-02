@@ -3,7 +3,12 @@ import { validateElectricalModel } from '../electrical/electrical';
 import { validateFluidModel } from '../fluid/fluid';
 import { getFormulaDefinition } from '../calculation/formula-catalog';
 import { unitSemantic } from '../calculation/unit-registry';
-import { projectSubjectExists as projectIdentityExists, validateCalculationModel } from './project';
+import { validateOperatingStateModel } from '../operating-state/operating-state';
+import {
+  projectSubjectExists as projectIdentityExists,
+  retainStaleProjectResult,
+  validateCalculationModel
+} from './project';
 
 import type {
   DestructiveProjectAction,
@@ -25,6 +30,8 @@ export type ActionRejectionCode =
   | 'invalid-fluid-reference'
   | 'invalid-calculation'
   | 'invalid-screening'
+  | 'invalid-operating-state'
+  | 'invalid-state-binding'
   | 'missing-asset'
   | 'invalid-result'
   | 'stale-system-action';
@@ -130,9 +137,19 @@ export function applyProjectAction(
       return reject('invalid-result', 'Every published Result must name the evaluated revision');
     }
 
+    const failed = action.results.some((result) => result.status === 'failed');
+    const publishedResults = failed
+      ? [
+          ...snapshot.results
+            .filter((result) => !action.results.some((replacement) => replacement.id === result.id))
+            .map(retainStaleProjectResult),
+          ...action.results
+        ]
+      : [...action.results];
+
     return {
       accepted: true,
-      snapshot: { ...snapshot, revision: snapshot.revision + 1, results: [...action.results] },
+      snapshot: { ...snapshot, revision: snapshot.revision + 1, results: publishedResults },
       changedSubjects: action.results.map((result) => result.id),
       invalidatedResults: snapshot.results
         .filter((result) => result.status === 'current')
@@ -144,9 +161,7 @@ export function applyProjectAction(
   const invalidatedResults = snapshot.results
     .filter((result) => result.status === 'current')
     .map((result) => result.id);
-  const staleResults = snapshot.results.map((result) =>
-    result.status === 'current' ? { ...result, status: 'stale' as const } : result
-  );
+  const staleResults = snapshot.results.map(retainStaleProjectResult);
   let next: ProjectSnapshot;
   let changedSubjects: readonly SubjectId[];
   let undoLabel: string;
@@ -721,6 +736,174 @@ export function applyProjectAction(
       undoLabel = `Add ${action.state.name}`;
       break;
 
+    case 'update-operating-state': {
+      const existing = snapshot.operatingStates.find((state) => state.id === action.state.id);
+      if (!existing) {
+        return reject('missing-subject', `Operating State ${action.state.id} does not exist`);
+      }
+      next = {
+        ...snapshot,
+        operatingStates: snapshot.operatingStates.map((state) =>
+          state.id === action.state.id ? action.state : state
+        ),
+        results: staleResults
+      };
+      changedSubjects = [action.state.id];
+      undoLabel = `Update ${action.state.name}`;
+      break;
+    }
+
+    case 'clone-operating-state': {
+      const source = snapshot.operatingStates.find((state) => state.id === action.stateId);
+      if (!source) {
+        return reject('missing-subject', `Operating State ${action.stateId} does not exist`);
+      }
+      if (
+        !action.cloneId.trim() ||
+        !action.cloneName.trim() ||
+        projectIdentityExists(snapshot, action.cloneId)
+      ) {
+        return reject(
+          'duplicate-identity',
+          `Operating State clone identity ${action.cloneId} is invalid or in use`
+        );
+      }
+      const clone = source;
+      const rekeyStatements = (
+        statements: typeof clone.commands,
+        kind: 'command' | 'condition' | 'measurement' | 'assumption'
+      ) =>
+        statements.map((statement, index) => ({
+          ...statement,
+          id: `${action.cloneId}:${kind}:${index + 1}`
+        }));
+      next = {
+        ...snapshot,
+        operatingStates: [
+          ...snapshot.operatingStates,
+          {
+            ...clone,
+            id: action.cloneId,
+            name: action.cloneName,
+            commands: rekeyStatements(clone.commands, 'command'),
+            conditions: rekeyStatements(clone.conditions, 'condition'),
+            measurements: rekeyStatements(clone.measurements, 'measurement'),
+            assumptions: rekeyStatements(clone.assumptions, 'assumption'),
+            applicableEvidenceIds: [...clone.applicableEvidenceIds],
+            bindings: clone.bindings.map((binding, index) => ({
+              ...binding,
+              id: `${action.cloneId}:binding:${index + 1}`,
+              pathConnectionIds: [...binding.pathConnectionIds],
+              evidenceIds: [...binding.evidenceIds],
+              assumptions: [...binding.assumptions],
+              omissions: [...binding.omissions],
+              conflictValues: [...binding.conflictValues],
+              provenance: [...binding.provenance],
+              behavior: binding.behavior
+                ? {
+                    ...binding.behavior,
+                    id: `${action.cloneId}:behavior:${index + 1}`
+                  }
+                : null
+            }))
+          }
+        ],
+        results: staleResults
+      };
+      changedSubjects = [action.stateId, action.cloneId];
+      undoLabel = `Clone ${source.name}`;
+      break;
+    }
+
+    case 'delete-operating-state': {
+      const state = snapshot.operatingStates.find((candidate) => candidate.id === action.stateId);
+      if (!state) {
+        return reject('missing-subject', `Operating State ${action.stateId} does not exist`);
+      }
+      if (
+        snapshot.calculations.some(
+          (calculation) => calculation.operatingStateId === action.stateId
+        ) ||
+        snapshot.screenings.some((screening) => screening.operatingStateId === action.stateId) ||
+        snapshot.fluid.boundaryConditions.some(
+          (boundary) => boundary.operatingStateId === action.stateId
+        )
+      ) {
+        return reject(
+          'invalid-operating-state',
+          `Operating State ${action.stateId} is referenced by authored engineering records`
+        );
+      }
+      next = {
+        ...snapshot,
+        operatingStates: snapshot.operatingStates.filter(
+          (candidate) => candidate.id !== action.stateId
+        ),
+        results: staleResults
+      };
+      changedSubjects = [action.stateId];
+      undoLabel = `Delete ${state.name}`;
+      break;
+    }
+
+    case 'upsert-state-binding': {
+      const state = snapshot.operatingStates.find(
+        (candidate) => candidate.id === action.operatingStateId
+      );
+      if (!state) {
+        return reject(
+          'missing-subject',
+          `Operating State ${action.operatingStateId} does not exist`
+        );
+      }
+      const existing = state.bindings.find((binding) => binding.id === action.binding.id);
+      next = {
+        ...snapshot,
+        operatingStates: snapshot.operatingStates.map((candidate) =>
+          candidate.id === state.id
+            ? {
+                ...candidate,
+                bindings: [
+                  ...candidate.bindings.filter((binding) => binding.id !== action.binding.id),
+                  action.binding
+                ]
+              }
+            : candidate
+        ),
+        results: staleResults
+      };
+      changedSubjects = [state.id, action.binding.id, action.binding.subjectId];
+      undoLabel = `${existing ? 'Update' : 'Add'} ${action.binding.channel} binding`;
+      break;
+    }
+
+    case 'remove-state-binding': {
+      const state = snapshot.operatingStates.find(
+        (candidate) => candidate.id === action.operatingStateId
+      );
+      const binding = state?.bindings.find((candidate) => candidate.id === action.bindingId);
+      if (!state || !binding) {
+        return reject('missing-subject', `State Binding ${action.bindingId} does not exist`);
+      }
+      next = {
+        ...snapshot,
+        operatingStates: snapshot.operatingStates.map((candidate) =>
+          candidate.id === state.id
+            ? {
+                ...candidate,
+                bindings: candidate.bindings.filter(
+                  (candidateBinding) => candidateBinding.id !== action.bindingId
+                )
+              }
+            : candidate
+        ),
+        results: staleResults
+      };
+      changedSubjects = [state.id, binding.id, binding.subjectId];
+      undoLabel = `Remove ${binding.channel} binding`;
+      break;
+    }
+
     case 'configure-calculation': {
       const calculation = action.calculation;
       const formula = getFormulaDefinition(calculation.formulaId);
@@ -1101,6 +1284,11 @@ export function applyProjectAction(
     next.fluid
   );
   if (fluidRejection) return { accepted: false, rejection: fluidRejection };
+
+  const operatingStateRejection = validateOperatingStateModel(next);
+  if (operatingStateRejection) {
+    return { accepted: false, rejection: operatingStateRejection };
+  }
 
   const calculationRejection = validateCalculationModel(next);
   if (calculationRejection) return { accepted: false, rejection: calculationRejection };

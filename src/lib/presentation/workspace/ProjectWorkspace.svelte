@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { onMount } from 'svelte';
 
   import { projectSnapshotToRendererProjection } from '../../renderer/projection';
   import { createProjectComponentFromPrimitive, PRIMITIVES } from '../../reference/primitives';
@@ -41,8 +42,10 @@
     { type: 'insert-electrical-branch' }
   > | null>(null);
   let branchPreview = $state<ImpactPreview | null>(null);
+  let prefersReducedMotion = $state(false);
   const canAuthor = $derived(session.view.capability.mode === 'author');
   const rendererCapability = $derived(canAuthor ? ('author' as const) : ('review' as const));
+  const motionPaused = $derived(presentation.motionPaused || prefersReducedMotion);
   const backgroundAsset = $derived(
     session.view.snapshot.vehicleBackground
       ? (session.view.assets.find(
@@ -53,18 +56,46 @@
   const activeDenseView = $derived(
     presentation.activeView === 'canvas' ? null : (presentation.activeView as DenseWorkspaceView)
   );
+  const activeOverlayResult = $derived(
+    session.view.snapshot.results.find(
+      (result) =>
+        (result.status === 'current' || result.status === 'stale') &&
+        result.detail?.type === 'overlay' &&
+        result.detail.overlay.operatingStateId === presentation.operatingStateId
+    )
+  );
+  const activeOverlay = $derived(
+    activeOverlayResult?.detail?.type === 'overlay' ? activeOverlayResult.detail.overlay : null
+  );
+  const overlayLifecycleStatus = $derived(
+    session.view.evaluation.status === 'queued'
+      ? 'stale'
+      : session.view.snapshot.results.some((result) => result.status === 'failed')
+        ? 'failed'
+        : (activeOverlayResult?.status ?? 'unavailable')
+  );
   const projection = $derived(
     projectSnapshotToRendererProjection(session.view.snapshot, {
       selectedSubjectId: presentation.selection?.id ?? null,
       previewSubjectId: presentation.preview?.id ?? null,
       previewSourcePortId,
       domainFilter: presentation.domainFilter,
-      systemFilterId: presentation.systemFilterId
+      systemFilterId: presentation.systemFilterId,
+      operatingStateId: presentation.operatingStateId,
+      overlayChannels: presentation.overlayChannels
     })
   );
   const canvasViewportIdentity = $derived(
     `${presentation.canvasViewport.x},${presentation.canvasViewport.y},${presentation.canvasViewport.zoom}`
   );
+
+  onMount(() => {
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => (prefersReducedMotion = preference.matches);
+    update();
+    preference.addEventListener('change', update);
+    return () => preference.removeEventListener('change', update);
+  });
 
   function execute(action: ProjectAction): boolean {
     const outcome = session.execute(action);
@@ -86,6 +117,17 @@
     }
     presentation.setMode(mode);
     interactionStatus = `${mode} mode active.`;
+  }
+
+  function activateOperatingState(stateId: string | null): void {
+    if (stateId === presentation.operatingStateId) return;
+    presentation.setOperatingState(stateId);
+    if (stateId) {
+      session.requestEvaluation({ kind: 'changed-subjects', subjectIds: [stateId] });
+      interactionStatus = `Operating State ${stateId} selected; prior Overlay is stale until atomic replacement.`;
+    } else {
+      interactionStatus = 'No Operating State selected; physical topology remains visible.';
+    }
   }
 
   function componentForPort(portId: string | null): string | null {
@@ -416,6 +458,9 @@
   data-primary-selection={presentation.selection?.id ?? ''}
   data-workspace-preview={presentation.preview?.id ?? ''}
   data-canvas-viewport={canvasViewportIdentity}
+  data-operating-state={presentation.operatingStateId ?? ''}
+  data-overlay-status={overlayLifecycleStatus}
+  data-motion-paused={motionPaused}
 >
   <header class="workspace-header">
     <a href={resolve('/')} aria-label="Back to Project Library">← Library</a>
@@ -437,13 +482,17 @@
       domainFilter={presentation.domainFilter}
       systemFilterId={presentation.systemFilterId}
       operatingStateId={presentation.operatingStateId}
+      overlayChannels={presentation.overlayChannels}
+      {motionPaused}
       canUndo={session.view.canUndo}
       canRedo={session.view.canRedo}
       {canAuthor}
       onmode={setMode}
       ondomainfilter={(domain) => (presentation.domainFilter = domain)}
       onsystemfilter={(systemId) => (presentation.systemFilterId = systemId)}
-      onstate={(stateId) => (presentation.operatingStateId = stateId)}
+      onstate={activateOperatingState}
+      onchannel={(channel, enabled) => presentation.setOverlayChannel(channel, enabled)}
+      onmotion={(paused) => (presentation.motionPaused = paused)}
       onundo={() => session.undo()}
       onredo={() => session.redo()}
       onsearch={() => {
@@ -486,6 +535,9 @@
         selection={presentation.selection}
         viewport={presentation.lensViewports[activeDenseView]}
         comparisonViewports={presentation.comparisonViewports}
+        comparisonStateIds={presentation.comparisonStateIds}
+        overlayChannels={presentation.overlayChannels}
+        {motionPaused}
         {canAuthor}
         {branchPreview}
         onaction={execute}
@@ -495,6 +547,8 @@
         onclose={() => presentation.openView('canvas')}
         onincreasezoom={() => presentation.increaseLensZoom(activeDenseView)}
         onincreasecomparison={(side) => presentation.increaseComparisonZoom(side)}
+        oncomparisonstate={(side, stateId) => presentation.setComparisonState(side, stateId)}
+        oncomparisonviewport={(viewport) => presentation.updateComparisonViewport(viewport)}
         onpreview={(componentId) => presentation.setPreview({ kind: 'component', id: componentId })}
         onselect={(componentId) => select({ kind: 'component', id: componentId })}
       />
@@ -517,6 +571,75 @@
       onapply={(background, asset) => setBackground(background, asset)}
       onremove={() => setBackground(null, null)}
     />
+
+    {#if presentation.operatingStateId}
+      <aside
+        class="overlay-inspector"
+        aria-label="Operating State Overlay"
+        data-overlay-inspector-status={overlayLifecycleStatus}
+      >
+        <header>
+          <div>
+            <span>Derived · read-only</span>
+            <strong>{activeOverlay?.operatingStateName ?? 'Overlay unavailable'}</strong>
+          </div>
+          <output>{overlayLifecycleStatus}</output>
+        </header>
+        {#if activeOverlay}
+          <p>
+            Revision {activeOverlay.sourceRevision} · fingerprint {activeOverlay.inputFingerprint.slice(
+              0,
+              12
+            )}
+          </p>
+          <ul class="overlay-availability" aria-label="Overlay availability">
+            {#each activeOverlay.systems as system (system.systemId)}
+              {#each system.channels as channel (`${system.systemId}:${channel.channel}`)}
+                <li>
+                  <strong>{channel.channel}</strong>
+                  <span>{channel.availability} · {channel.evaluationStatus}</span>
+                </li>
+              {/each}
+            {/each}
+          </ul>
+          <div class="overlay-traces">
+            {#each activeOverlay.marks as mark (mark.id)}
+              <details data-overlay-trace={mark.id}>
+                <summary>{mark.staticCue} · {mark.label}</summary>
+                <dl>
+                  <dt>Physical topology</dt>
+                  <dd>{mark.trace.physicalConnectionId}</dd>
+                  <dt>Selected path</dt>
+                  <dd>{mark.trace.pathConnectionIds.join(' → ')}</dd>
+                  <dt>State Binding</dt>
+                  <dd>{mark.trace.stateBindingId}</dd>
+                  <dt>Component Behavior</dt>
+                  <dd>{mark.trace.componentBehaviorId ?? 'explicitly absent'}</dd>
+                  <dt>Calculation Result</dt>
+                  <dd>{mark.trace.calculationResultId ?? 'explicitly absent'}</dd>
+                  <dt>Sources</dt>
+                  <dd>{mark.trace.sources.join('; ') || 'none'}</dd>
+                  <dt>Assumptions</dt>
+                  <dd>{mark.trace.assumptions.join('; ') || 'none'}</dd>
+                  <dt>Omissions</dt>
+                  <dd>{mark.trace.omissions.join('; ') || 'none'}</dd>
+                  <dt>Applicability</dt>
+                  <dd>{mark.trace.applicability}</dd>
+                  <dt>Uncertainty</dt>
+                  <dd>{mark.trace.uncertainty ?? 'none'}</dd>
+                  <dt>Conflicts</dt>
+                  <dd>{mark.trace.conflicts.join('; ') || 'none'}</dd>
+                  <dt>Overlay mark</dt>
+                  <dd>{mark.id}</dd>
+                </dl>
+              </details>
+            {/each}
+          </div>
+        {:else}
+          <p>Evaluation unavailable. Physical topology remains visible.</p>
+        {/if}
+      </aside>
+    {/if}
 
     {#if presentation.revealFrame}
       <button
@@ -616,6 +739,87 @@
     cursor: pointer;
   }
 
+  .overlay-inspector {
+    position: absolute;
+    z-index: 9;
+    bottom: 0.75rem;
+    left: 5.4rem;
+    width: min(29rem, calc(100% - 8.5rem));
+    max-height: 42%;
+    overflow: auto;
+    padding: 0.65rem;
+    border: 1px solid #8aa6a0;
+    border-radius: 0.6rem 0.2rem 0.6rem 0.2rem;
+    background: rgb(245 248 244 / 95%);
+    color: #173d3f;
+    box-shadow: 0 0.8rem 2rem rgb(14 39 39 / 24%);
+  }
+
+  .overlay-inspector header,
+  .overlay-inspector li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  .overlay-inspector header span,
+  .overlay-inspector output,
+  .overlay-inspector p,
+  .overlay-inspector li,
+  .overlay-inspector summary,
+  .overlay-inspector dl {
+    font: 0.62rem/1.45 var(--font-mono);
+  }
+
+  .overlay-inspector header span,
+  .overlay-inspector output {
+    display: block;
+    color: #5b716d;
+    text-transform: uppercase;
+  }
+
+  .overlay-inspector p,
+  .overlay-availability {
+    margin: 0.4rem 0;
+  }
+
+  .overlay-availability {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: 0.25rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .overlay-availability li {
+    padding: 0.28rem 0.4rem;
+    background: #e5eeea;
+  }
+
+  .overlay-traces details {
+    border-top: 1px solid #c7d4d0;
+  }
+
+  .overlay-traces summary {
+    padding: 0.38rem 0;
+    cursor: pointer;
+  }
+
+  .overlay-traces dl {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    margin: 0 0 0.5rem;
+  }
+
+  .overlay-traces dt {
+    color: #5b716d;
+  }
+
+  .overlay-traces dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
   .revision-action:disabled {
     cursor: not-allowed;
     opacity: 0.42;
@@ -703,6 +907,14 @@
 
     .interaction-status {
       display: none;
+    }
+
+    .overlay-inspector {
+      right: 0.5rem;
+      bottom: 4rem;
+      left: 0.5rem;
+      width: auto;
+      max-height: 36%;
     }
   }
 </style>

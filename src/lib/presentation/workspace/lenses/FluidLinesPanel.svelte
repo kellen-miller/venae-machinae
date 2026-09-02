@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { createOperatingState } from '../../../operating-state/operating-state';
+
   import type { FluidBehaviorRole, FluidLineConstruction, FluidLength } from '../../../fluid/fluid';
   import type { ProjectAction } from '../../../project/action';
   import type { ProjectSnapshot } from '../../../project/project';
@@ -220,11 +222,11 @@
       onaction({
         type: 'add-operating-state',
         causationId: crypto.randomUUID(),
-        state: {
+        state: createOperatingState({
           id: crypto.randomUUID(),
           name: stateName.trim(),
           description: stateDescription.trim()
-        }
+        })
       })
     ) {
       stateName = '';

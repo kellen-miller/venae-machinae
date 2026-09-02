@@ -295,9 +295,10 @@ export class BrowserProjectEvaluationScheduler implements ProjectEvaluationSched
       ...requestIdentity,
       project
     };
-    const evaluationRequest = this.#mirror
-      ? createEvaluationChangeSet(this.#mirror, project, requestIdentity)
-      : initialization;
+    const evaluationRequest =
+      this.#mirror && project.projectRevision > this.#mirror.projectRevision
+        ? createEvaluationChangeSet(this.#mirror, project, requestIdentity)
+        : initialization;
     this.#mirror = project;
     this.#requests.clear();
     this.#requests.set(initialization.requestId, request);

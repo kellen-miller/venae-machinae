@@ -2,6 +2,11 @@ import { z } from 'zod';
 
 import { validateElectricalModel } from '../electrical/electrical';
 import { validateFluidModel } from '../fluid/fluid';
+import {
+  operatingStateSchema,
+  validateOperatingStateModel
+} from '../operating-state/operating-state';
+import { operatingStateOverlaySchema } from '../operating-state/evaluate-overlay';
 import { validateTopology } from '../topology/topology';
 import { APPLICATION_VERSIONS } from '../version/version-registry';
 import { validateCalculationModel } from '../project/project';
@@ -103,7 +108,8 @@ const projectResultSchema = z.strictObject({
   detail: z
     .discriminatedUnion('type', [
       z.strictObject({ type: z.literal('calculation'), outcome: calculationOutcomeSchema }),
-      z.strictObject({ type: z.literal('screening'), result: screeningResultSchema })
+      z.strictObject({ type: z.literal('screening'), result: screeningResultSchema }),
+      z.strictObject({ type: z.literal('overlay'), overlay: operatingStateOverlaySchema })
     ])
     .nullable()
 });
@@ -407,9 +413,7 @@ export const projectDocumentSchema = z.strictObject({
       provenance: z.string().min(1)
     })
   ),
-  operatingStates: z.array(
-    z.strictObject({ id: identity, name: z.string().min(1), description: z.string() })
-  ),
+  operatingStates: z.array(operatingStateSchema),
   settings: z.strictObject({ unitSystem: z.enum(['metric', 'imperial']) }),
   assetHashes: z.array(z.string().regex(/^[a-f0-9]{64}$/)),
   vehicleBackground: z
@@ -504,6 +508,12 @@ export function projectDocumentToSnapshot(document: ProjectDocument): ProjectSna
   );
   if (fluidRejection) {
     throw new Error(`Persisted Project fluid model is invalid: ${fluidRejection.message}`);
+  }
+  const operatingStateRejection = validateOperatingStateModel(snapshot);
+  if (operatingStateRejection) {
+    throw new Error(
+      `Persisted Project Operating State model is invalid: ${operatingStateRejection.message}`
+    );
   }
   const calculationRejection = validateCalculationModel(snapshot);
   if (calculationRejection) {

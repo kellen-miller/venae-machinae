@@ -29,7 +29,7 @@ export async function seedWorkspaceProject(page: Page): Promise<void> {
     {
       projectId: WORKSPACE_PROJECT_ID,
       snapshot: {
-        schemaVersion: 6,
+        schemaVersion: 7,
         project: {
           id: WORKSPACE_PROJECT_ID,
           name: 'RX-7 workshop study',
@@ -375,9 +375,25 @@ export async function seedWorkspaceProject(page: Page): Promise<void> {
           {
             id: 'state-key-on',
             name: 'Key-on, engine-off',
-            description: 'Electrical checks before cranking.'
+            description: 'Electrical checks before cranking.',
+            commands: [],
+            conditions: [],
+            measurements: [],
+            assumptions: [],
+            applicableEvidenceIds: [],
+            bindings: []
           },
-          { id: 'state-hot-idle', name: 'Hot idle', description: 'Warm steady idle review.' }
+          {
+            id: 'state-hot-idle',
+            name: 'Hot idle',
+            description: 'Warm steady idle review.',
+            commands: [],
+            conditions: [],
+            measurements: [],
+            assumptions: [],
+            applicableEvidenceIds: [],
+            bindings: []
+          }
         ],
         settings: { unitSystem: 'metric' },
         assetHashes: [],

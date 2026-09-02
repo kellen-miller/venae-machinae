@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ProjectSnapshot } from '../../project/project';
+  import type { OverlayChannel } from '../../operating-state/operating-state';
   import type { WorkspaceMode } from './workspace-presentation.svelte';
 
   const modes: readonly Readonly<{ id: WorkspaceMode; label: string; shortcut: string }>[] = [
@@ -9,6 +10,18 @@
     { id: 'connect', label: 'Connect', shortcut: 'C' },
     { id: 'route', label: 'Route', shortcut: 'R' }
   ];
+  const overlayChannelControls: readonly Readonly<{
+    id: OverlayChannel;
+    label: string;
+  }>[] = [
+    { id: 'potential', label: 'Electrical potential' },
+    { id: 'current', label: 'Electrical current' },
+    { id: 'signal', label: 'Signal direction' },
+    { id: 'fluid-direction', label: 'Fluid direction' },
+    { id: 'temperature', label: 'Temperature' },
+    { id: 'finding', label: 'Findings' },
+    { id: 'selection', label: 'Selection' }
+  ];
 
   let {
     snapshot,
@@ -16,6 +29,8 @@
     domainFilter,
     systemFilterId,
     operatingStateId,
+    overlayChannels,
+    motionPaused,
     canUndo,
     canRedo,
     canAuthor,
@@ -23,6 +38,8 @@
     ondomainfilter,
     onsystemfilter,
     onstate,
+    onchannel,
+    onmotion,
     onundo,
     onredo,
     onsearch,
@@ -33,6 +50,8 @@
     domainFilter: 'all' | 'electrical' | 'fluid';
     systemFilterId: string | null;
     operatingStateId: string | null;
+    overlayChannels: readonly OverlayChannel[];
+    motionPaused: boolean;
     canUndo: boolean;
     canRedo: boolean;
     canAuthor: boolean;
@@ -40,6 +59,8 @@
     ondomainfilter: (domain: 'all' | 'electrical' | 'fluid') => void;
     onsystemfilter: (systemId: string | null) => void;
     onstate: (stateId: string | null) => void;
+    onchannel: (channel: OverlayChannel, enabled: boolean) => void;
+    onmotion: (paused: boolean) => void;
     onundo: () => void;
     onredo: () => void;
     onsearch: () => void;
@@ -107,6 +128,33 @@
     </label>
   </div>
 
+  <details class="overlay-controls">
+    <summary>Overlay channels</summary>
+    <fieldset>
+      <legend>Independent derived channels</legend>
+      {#each overlayChannelControls as channel (channel.id)}
+        <label>
+          <input
+            type="checkbox"
+            aria-label={`${channel.label} Overlay Channel`}
+            checked={overlayChannels.includes(channel.id)}
+            onchange={(event) => onchannel(channel.id, event.currentTarget.checked)}
+          />
+          <span>{channel.label}</span>
+        </label>
+      {/each}
+      <label>
+        <input
+          type="checkbox"
+          aria-label="Pause direction motion"
+          checked={motionPaused}
+          onchange={(event) => onmotion(event.currentTarget.checked)}
+        />
+        <span>Pause direction motion</span>
+      </label>
+    </fieldset>
+  </details>
+
   <div class="utility-actions">
     <button type="button" disabled={!canUndo} onclick={onundo} aria-label="Undo last Project action"
       >↶</button
@@ -126,7 +174,7 @@
 <style>
   .workspace-toolbar {
     display: grid;
-    grid-template-columns: auto minmax(24rem, 1fr) auto;
+    grid-template-columns: auto minmax(24rem, 1fr) auto auto;
     gap: 0.8rem;
     align-items: center;
     min-height: 3.2rem;
@@ -142,6 +190,44 @@
     display: flex;
     gap: 0.3rem;
     align-items: center;
+  }
+
+  .overlay-controls {
+    position: relative;
+    color: var(--color-text);
+    font: 0.68rem var(--font-mono);
+  }
+
+  .overlay-controls summary {
+    min-height: 2.25rem;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--color-line);
+    border-radius: 0.35rem;
+    background: rgb(27 45 46 / 88%);
+    cursor: pointer;
+  }
+
+  .overlay-controls fieldset {
+    position: absolute;
+    z-index: 20;
+    right: 0;
+    display: grid;
+    min-width: 16rem;
+    margin: 0.25rem 0 0;
+    padding: 0.65rem;
+    border: 1px solid var(--color-line);
+    border-radius: 0.35rem;
+    background: #102526;
+    box-shadow: var(--shadow-panel);
+  }
+
+  .overlay-controls label {
+    grid-template-columns: auto 1fr;
+    min-height: 1.8rem;
+  }
+
+  .overlay-controls legend {
+    color: var(--color-text-muted);
   }
 
   button,
@@ -221,6 +307,11 @@
       justify-content: start;
       overflow-x: auto;
     }
+
+    .overlay-controls {
+      grid-column: 2;
+      grid-row: 1;
+    }
   }
 
   @media (max-width: 43.75rem) {
@@ -232,6 +323,12 @@
 
     .projection-filters {
       display: none;
+    }
+
+    .overlay-controls fieldset {
+      position: fixed;
+      top: 7rem;
+      right: 0.5rem;
     }
 
     .mode-group button span,

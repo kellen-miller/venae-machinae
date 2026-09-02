@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { BrowserProjectEvaluationScheduler } from '../../src/lib/evaluation/evaluation-client';
+import { createOperatingState } from '../../src/lib/operating-state/operating-state';
 import { applyProjectAction } from '../../src/lib/project/apply-action';
 import { createBlankProject } from '../../src/lib/project/project';
 
@@ -69,11 +70,11 @@ describe('MVP-ARCH-004 Project evaluation adapter', () => {
     expect(request).toMatchObject({
       type: 'initialize-evaluation',
       projectRevision: 1,
-      schemaVersion: 6,
+      schemaVersion: 7,
       formulaCatalogVersion: 1,
       validationRuleCatalogVersion: 1,
       project: {
-        schemaVersion: 6,
+        schemaVersion: 7,
         projectRevision: 1,
         components: [{ id: 'component-load', ports: [] }]
       }
@@ -112,7 +113,11 @@ describe('MVP-ARCH-004 Project evaluation adapter', () => {
     const withState = applyProjectAction(changed.snapshot, {
       type: 'add-operating-state',
       causationId: 'cause-state',
-      state: { id: 'state-run-hot', name: 'Run Hot / Fan On', description: 'Static fixture' }
+      state: createOperatingState({
+        id: 'state-run-hot',
+        name: 'Run Hot / Fan On',
+        description: 'Static fixture'
+      })
     });
     if (!withState.accepted) throw new Error(withState.rejection.message);
     const withCalculation = applyProjectAction(withState.snapshot, {

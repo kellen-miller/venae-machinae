@@ -406,4 +406,45 @@ describe('MVP-PROD-003 derived result revision behavior', () => {
     expect(snapshot.revision).toBe(2);
     expect(snapshot.results[0]).toMatchObject({ id: 'result-summary', status: 'stale' });
   });
+
+  it('retains the prior atomic result as stale when replacement evaluation fails', () => {
+    const initial = createBlankProject({
+      id: 'project-result-failure',
+      name: 'Result failure fixture',
+      createdAt: '2026-09-01T00:00:00Z'
+    });
+    const current = accept(initial, {
+      type: 'publish-evaluation',
+      causationId: 'cause-current',
+      sourceRevision: 0,
+      results: [
+        {
+          id: 'result-overlay-state-hot',
+          sourceRevision: 0,
+          status: 'current',
+          kind: 'overlay',
+          detail: null
+        }
+      ]
+    });
+    const failed = accept(current, {
+      type: 'publish-evaluation',
+      causationId: 'cause-failed',
+      sourceRevision: 1,
+      results: [
+        {
+          id: 'result-evaluation-summary',
+          sourceRevision: 1,
+          status: 'failed',
+          kind: 'evaluation-summary',
+          detail: null
+        }
+      ]
+    });
+
+    expect(failed.results).toEqual([
+      expect.objectContaining({ id: 'result-overlay-state-hot', status: 'stale' }),
+      expect.objectContaining({ id: 'result-evaluation-summary', status: 'failed' })
+    ]);
+  });
 });

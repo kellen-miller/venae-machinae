@@ -8,6 +8,7 @@
     unitSemantic,
     unitsForSemantic
   } from '../../../calculation/unit-registry';
+  import { createOperatingState } from '../../../operating-state/operating-state';
 
   import type { FormulaId } from '../../../calculation/formula-catalog';
   import type { SemanticQuantity, UnitId } from '../../../calculation/unit-registry';
@@ -102,11 +103,11 @@
       onaction({
         type: 'add-operating-state',
         causationId: crypto.randomUUID(),
-        state: {
+        state: createOperatingState({
           id: stateId,
           name: stateName.trim(),
           description: stateDescription.trim()
-        }
+        })
       })
     ) {
       calculationStateId = stateId;

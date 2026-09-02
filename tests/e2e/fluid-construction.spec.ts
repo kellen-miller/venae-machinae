@@ -338,7 +338,7 @@ test('MVP-FLUID-001..005 builds coolant, oil, and fuel construction', async ({ p
     };
   }, projectId);
   expect(stored).toEqual({
-    schemaVersion: 6,
+    schemaVersion: 7,
     fluidSystemCount: 3,
     mediumCount: 3,
     fluidRecordCount: 3,

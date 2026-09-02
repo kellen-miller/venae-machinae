@@ -101,7 +101,7 @@ describe('MVP-ARCH-003 persisted and live project boundaries', () => {
     const document = projectSnapshotToDocument(snapshot);
     expect(document).not.toBe(snapshot);
     expect(document).toMatchObject({
-      schemaVersion: 6,
+      schemaVersion: 7,
       project: { id: 'project-round-trip', revision: 3 },
       topology: {
         systems: [{ id: 'system-coolant', mediumId: 'medium-coolant' }],
