@@ -25,7 +25,8 @@ function createInitialization(
     inputFingerprint: fingerprint,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 7,
+    schemaVersion: 8,
+    scope: { kind: 'incremental', subjectIds: [] },
     project
   };
 }
@@ -38,7 +39,8 @@ function createIncrementalChange(requestId: string): EvaluateChangeSet {
     inputFingerprint: fingerprintTwo,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 7,
+    schemaVersion: 8,
+    scope: { kind: 'incremental', subjectIds: [] },
     changeSet: {
       baseRevision: 1,
       upsertSystems: [],
@@ -60,7 +62,10 @@ function createIncrementalChange(requestId: string): EvaluateChangeSet {
       upsertCalculations: [],
       removeCalculationIds: [],
       upsertScreenings: [],
-      removeScreeningIds: []
+      removeScreeningIds: [],
+      validationHistory: { findings: [], runs: [], currentRunIds: [] },
+      validationApplicabilityDecisions: [],
+      tombstones: []
     }
   };
 }

@@ -200,12 +200,19 @@ export function projectSnapshotToRendererProjection(
 ): RendererProjection {
   const activeOverlayResult = snapshot.results.find(
     (result) =>
-      (result.status === 'current' || result.status === 'stale') &&
+      (result.status === 'current' || result.status === 'stale' || result.status === 'failed') &&
       result.detail?.type === 'overlay' &&
       result.detail.overlay.operatingStateId === options.operatingStateId
   );
   const activeOverlay =
     activeOverlayResult?.detail?.type === 'overlay' ? activeOverlayResult.detail.overlay : null;
+  const validationResult = snapshot.results.find(
+    (result) =>
+      (result.status === 'current' || result.status === 'stale') &&
+      result.detail?.type === 'validation'
+  );
+  const validationHistory =
+    validationResult?.detail?.type === 'validation' ? validationResult.detail.history : null;
   const selectedOverlayChannels = new Set(
     options.overlayChannels ?? [
       'potential',
@@ -430,18 +437,19 @@ export function projectSnapshotToRendererProjection(
         });
       }
     }
-    if (
-      selectedOverlayChannels.has('finding') &&
-      snapshot.results.some(
-        (result) => result.status === 'current' && result.kind === `finding:${connection.id}`
-      )
-    ) {
-      overlayMarks.push({
-        id: `finding:${connection.id}`,
-        connectionId: connection.id,
-        channel: 'finding',
-        label: `Finding attached to ${connection.label}`
-      });
+    if (selectedOverlayChannels.has('finding')) {
+      const findings =
+        validationHistory?.findings.filter(
+          (finding) => finding.lifecycle === 'active' && finding.subjectId === connection.id
+        ) ?? [];
+      for (const finding of findings) {
+        overlayMarks.push({
+          id: finding.id,
+          connectionId: connection.id,
+          channel: 'finding',
+          label: `${finding.severity} Finding · ${finding.claim}${finding.evaluation === 'stale' ? ' · stale' : ''}`
+        });
+      }
     }
   }
 

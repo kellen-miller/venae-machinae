@@ -35,7 +35,8 @@ function createInitialization(
     inputFingerprint: fingerprint,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 7,
+    schemaVersion: 8,
+    scope: { kind: 'incremental', subjectIds: [] },
     project
   };
 }
@@ -148,7 +149,8 @@ describe('MVP-GATE-005 worker boundary', () => {
       inputFingerprint: fingerprintTwo,
       formulaCatalogVersion: 1,
       validationRuleCatalogVersion: 1,
-      schemaVersion: 7,
+      schemaVersion: 8,
+      scope: { kind: 'incremental', subjectIds: [] },
       changeSet: {
         baseRevision: 1,
         upsertSystems: [],
@@ -170,7 +172,10 @@ describe('MVP-GATE-005 worker boundary', () => {
         upsertCalculations: [],
         removeCalculationIds: [],
         upsertScreenings: [],
-        removeScreeningIds: []
+        removeScreeningIds: [],
+        validationHistory: initialization.project.validationHistory,
+        validationApplicabilityDecisions: initialization.project.validationApplicabilityDecisions,
+        tombstones: initialization.project.tombstones
       }
     };
 
@@ -212,7 +217,7 @@ describe('MVP-GATE-005 worker boundary', () => {
       inputFingerprint: fingerprintOne,
       formulaCatalogVersion: 1,
       validationRuleCatalogVersion: 1,
-      schemaVersion: 7
+      schemaVersion: 8
     });
     expect(harness.workers[0]?.sent.map((message) => message.requestId)).toEqual([
       'first',
@@ -292,6 +297,7 @@ describe('MVP-GATE-005 worker boundary', () => {
       formulaCatalogVersion: fallback.formulaCatalogVersion,
       validationRuleCatalogVersion: fallback.validationRuleCatalogVersion,
       schemaVersion: fallback.schemaVersion,
+      scope: fallback.scope,
       changeSet: {
         baseRevision: 1,
         upsertSystems: [],
@@ -311,7 +317,10 @@ describe('MVP-GATE-005 worker boundary', () => {
         upsertCalculations: [],
         removeCalculationIds: [],
         upsertScreenings: [],
-        removeScreeningIds: []
+        removeScreeningIds: [],
+        validationHistory: fallback.project.validationHistory,
+        validationApplicabilityDecisions: fallback.project.validationApplicabilityDecisions,
+        tombstones: fallback.project.tombstones
       }
     };
     harness.client.schedule({ request: change, initialization: fallback });

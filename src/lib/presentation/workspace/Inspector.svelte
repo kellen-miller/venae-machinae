@@ -9,6 +9,7 @@
     selection,
     preview,
     mode,
+    denseViewOpen,
     canAuthor,
     onmove,
     onaddprimitive,
@@ -19,6 +20,7 @@
     selection: WorkspaceSubject | null;
     preview: WorkspaceSubject | null;
     mode: WorkspaceMode;
+    denseViewOpen: boolean;
     canAuthor: boolean;
     onmove: (componentId: string, x: string, y: string) => void;
     onaddprimitive: (primitiveId: string, fluidSystemId?: string) => void;
@@ -49,7 +51,7 @@
   let fluidSystemId = $state('');
 </script>
 
-<aside class="inspector" aria-label="Inspector">
+<aside class="inspector" class:dense-view-open={denseViewOpen} aria-label="Inspector">
   <header>
     <p>Inspector</p>
     <span>{selection?.kind ?? 'No selection'}</span>
@@ -371,6 +373,12 @@
     color: #526665;
     font-size: 0.72rem;
     line-height: 1.45;
+  }
+
+  @media (max-width: 70rem) {
+    .inspector.dense-view-open {
+      display: none;
+    }
   }
 
   @media (max-width: 43.75rem) {

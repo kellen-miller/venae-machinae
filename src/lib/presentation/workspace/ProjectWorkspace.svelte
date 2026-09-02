@@ -541,6 +541,11 @@
         {canAuthor}
         {branchPreview}
         onaction={execute}
+        onvalidate={(scope) => {
+          session.requestEvaluation(scope);
+          interactionStatus =
+            'Validation requested; prior evidence remains visible until publication.';
+        }}
         onpreviewbranch={previewBranch}
         onconfirmbranch={confirmBranch}
         oncancelbranch={cancelBranch}
@@ -559,6 +564,7 @@
       selection={presentation.selection}
       preview={presentation.preview}
       mode={presentation.mode}
+      denseViewOpen={activeDenseView !== null}
       {canAuthor}
       onmove={moveComponent}
       onaddprimitive={addPrimitive}

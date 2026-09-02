@@ -29,7 +29,7 @@ export async function seedWorkspaceProject(page: Page): Promise<void> {
     {
       projectId: WORKSPACE_PROJECT_ID,
       snapshot: {
-        schemaVersion: 7,
+        schemaVersion: 8,
         project: {
           id: WORKSPACE_PROJECT_ID,
           name: 'RX-7 workshop study',
@@ -362,13 +362,98 @@ export async function seedWorkspaceProject(page: Page): Promise<void> {
         ],
         results: [
           {
-            id: 'finding-tube-interface',
+            id: 'result-validation-history',
             sourceRevision: 7,
             status: 'current',
-            kind: 'finding:tube-return',
-            detail: null
+            kind: 'validation',
+            detail: {
+              type: 'validation',
+              history: {
+                findings: [
+                  {
+                    id: 'finding:topology.interface-known:0123456789abcdef',
+                    ruleId: 'topology.interface-known',
+                    ruleRevision: 1,
+                    subjectId: 'tube-return',
+                    scopeKey: 'profile:topology-review',
+                    claim: 'Return tube has no explicit interface compatibility conclusion.',
+                    severity: 'caution',
+                    severityRationale:
+                      'Caution records missing profile evidence for this connection only.',
+                    evaluation: 'current',
+                    lifecycle: 'active',
+                    unknownReason: 'ambiguous',
+                    knownEvidence: [],
+                    unknownEvidence: ['interface compatibility conclusion'],
+                    affectedOperation: 'Topology Review',
+                    inputIds: ['radiator-out', 'pump-return'],
+                    assumptions: [],
+                    trace: {
+                      ruleId: 'topology.interface-known',
+                      ruleRevision: 1,
+                      subjectId: 'tube-return',
+                      scopeKey: 'profile:topology-review',
+                      inputIds: ['radiator-out', 'pump-return'],
+                      evidenceIds: ['evidence-tube-interface'],
+                      resultIds: [],
+                      assumptions: [],
+                      tombstone: null
+                    },
+                    disposition: { kind: 'unreviewed' },
+                    occurrences: [
+                      {
+                        number: 1,
+                        openedAtRevision: 7,
+                        resolvedAtRevision: null,
+                        resolutionReason: null
+                      }
+                    ],
+                    correctiveActions: ['Record compatibility evidence or an explicit transition.'],
+                    invalidationKey: 'fedcba9876543210'
+                  }
+                ],
+                runs: [
+                  {
+                    id: 'run-topology-review-7',
+                    projectRevision: 7,
+                    scope: { kind: 'review-profile', profileId: 'topology-review' },
+                    scopeKey: 'profile:topology-review',
+                    profileId: 'topology-review',
+                    status: 'current',
+                    evaluatedAt: '2026-08-31T12:10:00.000Z',
+                    ruleIds: ['topology.interface-known'],
+                    findingIds: ['finding:topology.interface-known:0123456789abcdef'],
+                    coverage: {
+                      applicable: 1,
+                      evaluated: 1,
+                      passed: 0,
+                      activeFinding: 1,
+                      unknown: 0,
+                      stale: 0,
+                      unsupported: 0,
+                      failed: 0,
+                      excluded: 0,
+                      notApplicable: 0,
+                      entries: [
+                        {
+                          ruleId: 'topology.interface-known',
+                          ruleRevision: 1,
+                          subjectId: 'tube-return',
+                          scopeKey: 'profile:topology-review',
+                          outcome: 'active-finding',
+                          findingId: 'finding:topology.interface-known:0123456789abcdef',
+                          unknownReason: 'ambiguous'
+                        }
+                      ]
+                    }
+                  }
+                ],
+                currentRunIds: ['run-topology-review-7']
+              }
+            }
           }
         ],
+        validationApplicabilityDecisions: [],
         tombstones: [],
         engineeringValues: [],
         operatingStates: [

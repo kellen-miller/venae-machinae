@@ -6,6 +6,7 @@ import type { ActionRejection } from '../project/apply-action';
 import type { ProjectAction, DestructiveProjectAction, ImpactPreview } from '../project/action';
 import type { ProjectResult, ProjectSnapshot } from '../project/project';
 import type { SubjectId } from '../topology/topology';
+import type { ReviewProfileId } from '../validation/finding';
 import type {
   AuthoringBlockReason,
   AuthoringCapability,
@@ -21,7 +22,8 @@ import type {
 
 export type EvaluationScope =
   | Readonly<{ kind: 'all' }>
-  | Readonly<{ kind: 'changed-subjects'; subjectIds: readonly SubjectId[] }>;
+  | Readonly<{ kind: 'changed-subjects'; subjectIds: readonly SubjectId[] }>
+  | Readonly<{ kind: 'review-profile'; profileId: ReviewProfileId }>;
 
 export type EvaluationPublicationOutcome =
   | Readonly<{ published: true; revision: number }>

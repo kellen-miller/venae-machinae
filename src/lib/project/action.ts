@@ -25,6 +25,7 @@ import type {
   VehicleBackground
 } from './project';
 import type { StateBinding } from '../operating-state/operating-state';
+import type { ValidationApplicabilityDecision } from '../validation/finding';
 import type {
   Component,
   Connection,
@@ -129,6 +130,13 @@ export type ProjectAction =
   | (Causation & Readonly<{ type: 'add-part-definition'; definition: PartDefinition }>)
   | (Causation & Readonly<{ type: 'add-part-requirement'; requirement: PartRequirement }>)
   | (Causation & Readonly<{ type: 'record-evidence'; evidence: EngineeringEvidence }>)
+  | (Causation & Readonly<{ type: 'acknowledge-finding'; findingId: string; rationale: string }>)
+  | (Causation & Readonly<{ type: 'suppress-finding'; findingId: string; rationale: string }>)
+  | (Causation &
+      Readonly<{
+        type: 'set-validation-applicability';
+        decision: Omit<ValidationApplicabilityDecision, 'recordedAtRevision'>;
+      }>)
   | (Causation & Readonly<{ type: 'set-vehicle-background'; background: VehicleBackground | null }>)
   | (Causation &
       Readonly<{

@@ -15,6 +15,34 @@ test('records the synchronized desktop canvas and dense Lens Stack', async ({ pa
   });
 });
 
+test('records scoped Finding evidence at desktop and tablet boundaries', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await seedWorkspaceProject(page);
+  await page.goto(`/projects/${WORKSPACE_PROJECT_ID}`);
+  await page.getByRole('button', { name: 'Findings view' }).click();
+  await expect(
+    page.getByRole('article', { name: 'Caution Finding for tube-return' })
+  ).toBeVisible();
+  await page.screenshot({
+    path: 'evidence/frontend/M4C-findings-desktop.png',
+    animations: 'disabled',
+    scale: 'css'
+  });
+
+  await page.setViewportSize({ width: 820, height: 1000 });
+  await page.reload();
+  await page.getByRole('button', { name: 'Findings view' }).click();
+  await expect(page.getByRole('region', { name: 'Validation Coverage' })).toBeVisible();
+  await page.screenshot({
+    path: 'evidence/frontend/M4C-findings-tablet.png',
+    animations: 'disabled',
+    scale: 'css'
+  });
+  await expect(page.getByRole('complementary', { name: 'Inspector' })).toBeHidden();
+  await page.getByRole('button', { name: 'Close Lens Stack and return to Canvas' }).click();
+  await expect(page.getByRole('complementary', { name: 'Inspector' })).toBeVisible();
+});
+
 test('records the 1120, 700, and mobile-review workspace boundaries', async ({ page }) => {
   await page.setViewportSize({ width: 1120, height: 900 });
   await seedWorkspaceProject(page);

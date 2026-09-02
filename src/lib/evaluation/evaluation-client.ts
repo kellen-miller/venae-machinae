@@ -10,6 +10,8 @@ import {
 import { canonicalJson, sha256Hex } from '../exchange/canonical-json';
 import { projectSnapshotToDocument } from '../persistence/project-document';
 import { APPLICATION_VERSIONS } from '../version/version-registry';
+import { recordValidationRunFailure } from '../validation/evaluate-validation';
+import { EMPTY_VALIDATION_HISTORY } from '../validation/finding';
 
 import type {
   EvaluationProject,
@@ -21,6 +23,16 @@ import type {
   ProjectEvaluationRequest,
   ProjectEvaluationScheduler
 } from '../session/project-session.svelte';
+
+function validationScopeForEvaluation(
+  scope: ProjectEvaluationRequest['scope']
+): InitializeEvaluation['scope'] {
+  if (scope.kind === 'all') return { kind: 'validate-project' };
+  if (scope.kind === 'review-profile') {
+    return { kind: 'review-profile', profileId: scope.profileId };
+  }
+  return { kind: 'incremental', subjectIds: [...scope.subjectIds] };
+}
 
 type ScheduledEvaluation = {
   request: EvaluationRequest;
@@ -74,6 +86,7 @@ export class EvaluationClient {
       request.formulaCatalogVersion !== initialization.formulaCatalogVersion ||
       request.validationRuleCatalogVersion !== initialization.validationRuleCatalogVersion ||
       request.schemaVersion !== initialization.schemaVersion ||
+      canonicalJson(request.scope) !== canonicalJson(initialization.scope) ||
       initialization.project.projectRevision !== initialization.projectRevision ||
       initialization.project.schemaVersion !== initialization.schemaVersion
     ) {
@@ -279,7 +292,8 @@ export class BrowserProjectEvaluationScheduler implements ProjectEvaluationSched
   async #prepare(request: ProjectEvaluationRequest, sequence: number): Promise<void> {
     const document = projectSnapshotToDocument(request.snapshot);
     const project = createEvaluationProject(document);
-    const inputFingerprint = await sha256Hex(canonicalJson(project));
+    const scope = validationScopeForEvaluation(request.scope);
+    const inputFingerprint = await sha256Hex(canonicalJson({ project, scope }));
     if (this.#closed || sequence !== this.#sequence) return;
 
     const requestIdentity = {
@@ -288,7 +302,8 @@ export class BrowserProjectEvaluationScheduler implements ProjectEvaluationSched
       inputFingerprint,
       formulaCatalogVersion: APPLICATION_VERSIONS.formulaCatalog,
       validationRuleCatalogVersion: APPLICATION_VERSIONS.validationRuleCatalog,
-      schemaVersion: APPLICATION_VERSIONS.projectDocumentSchema
+      schemaVersion: APPLICATION_VERSIONS.projectDocumentSchema,
+      scope
     };
     const initialization: InitializeEvaluation = {
       type: 'initialize-evaluation',
@@ -309,24 +324,58 @@ export class BrowserProjectEvaluationScheduler implements ProjectEvaluationSched
     const request = this.#requests.get(action.outcome.requestId);
     if (!request) return;
     this.#requests.delete(action.outcome.requestId);
+    const validationScope = validationScopeForEvaluation(request.scope);
+    const priorValidationResult = request.snapshot.results.find(
+      (result) => result.detail?.type === 'validation'
+    );
+    const priorValidationHistory =
+      priorValidationResult?.detail?.type === 'validation'
+        ? priorValidationResult.detail.history
+        : EMPTY_VALIDATION_HISTORY;
     const results =
       action.outcome.type === 'evaluation-succeeded' && action.outcome.results.length > 0
         ? action.outcome.results.map((result) => ({
             ...result,
             sourceRevision: request.sourceRevision
           }))
-        : [
-            {
-              id: 'result-evaluation-summary',
-              sourceRevision: request.sourceRevision,
-              status:
-                action.outcome.type === 'evaluation-succeeded'
-                  ? ('current' as const)
-                  : ('failed' as const),
-              kind: 'evaluation-summary',
-              detail: null
-            }
-          ];
+        : action.outcome.type === 'evaluation-failed'
+          ? [
+              {
+                id: 'result-validation-history',
+                sourceRevision: request.sourceRevision,
+                status: 'failed' as const,
+                kind: 'validation',
+                detail: {
+                  type: 'validation' as const,
+                  history: recordValidationRunFailure(priorValidationHistory, {
+                    runId: action.outcome.requestId,
+                    projectRevision: request.sourceRevision,
+                    evaluatedAt: new Date().toISOString(),
+                    scope: validationScope,
+                    status: 'failed'
+                  })
+                }
+              },
+              {
+                id: 'result-evaluation-summary',
+                sourceRevision: request.sourceRevision,
+                status: 'failed' as const,
+                kind: 'evaluation-summary',
+                detail: null
+              }
+            ]
+          : [
+              {
+                id: 'result-evaluation-summary',
+                sourceRevision: request.sourceRevision,
+                status:
+                  action.outcome.type === 'evaluation-succeeded'
+                    ? ('current' as const)
+                    : ('failed' as const),
+                kind: 'evaluation-summary',
+                detail: null
+              }
+            ];
     request.publish(results);
   }
 }

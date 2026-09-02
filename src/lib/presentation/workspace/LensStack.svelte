@@ -3,6 +3,7 @@
   import type { ImpactPreview, ProjectAction } from '../../project/action';
   import type { RendererViewport } from '../../renderer/projection';
   import type { OverlayChannel } from '../../operating-state/operating-state';
+  import type { EvaluationScope } from '../../session/project-session.svelte';
   import BomLens from './lenses/BomLens.svelte';
   import CalculationsLens from './lenses/CalculationsLens.svelte';
   import CircuitsLinesLens from './lenses/CircuitsLinesLens.svelte';
@@ -28,6 +29,7 @@
     canAuthor,
     branchPreview,
     onaction,
+    onvalidate,
     onpreviewbranch,
     onconfirmbranch,
     oncancelbranch,
@@ -50,6 +52,7 @@
     canAuthor: boolean;
     branchPreview: ImpactPreview | null;
     onaction: (action: ProjectAction) => boolean;
+    onvalidate: (scope: EvaluationScope) => void;
     onpreviewbranch: (action: Extract<ProjectAction, { type: 'insert-electrical-branch' }>) => void;
     onconfirmbranch: () => void;
     oncancelbranch: () => void;
@@ -123,7 +126,7 @@
     {:else if activeView === 'bom'}
       <BomLens {snapshot} />
     {:else if activeView === 'findings'}
-      <FindingsLens {snapshot} />
+      <FindingsLens {snapshot} {canAuthor} {onaction} {onvalidate} />
     {:else}
       <StateCompareLens
         {snapshot}

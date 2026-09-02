@@ -4,6 +4,7 @@ import { createEmptyFluidModel } from '../fluid/fluid';
 import { getFormulaDefinition } from '../calculation/formula-catalog';
 import { createEngineeringQuantity } from '../calculation/quantity';
 import { unitSemantic } from '../calculation/unit-registry';
+import { retainStaleValidationHistory } from '../validation/finding';
 
 import type { CalculationRequest } from '../calculation/evaluate-calculation';
 import type { CalculationOutcome } from '../calculation/evaluate-calculation';
@@ -15,6 +16,7 @@ import type { FluidModel } from '../fluid/fluid';
 import type { OperatingState } from '../operating-state/operating-state';
 import type { OperatingStateOverlay } from '../operating-state/evaluate-overlay';
 import type { Point, SubjectId, Topology } from '../topology/topology';
+import type { ValidationApplicabilityDecision, ValidationHistory } from '../validation/finding';
 
 export type { OperatingState } from '../operating-state/operating-state';
 
@@ -43,11 +45,22 @@ export type ProjectResult = Readonly<{
     | Readonly<{ type: 'calculation'; outcome: CalculationOutcome }>
     | Readonly<{ type: 'screening'; result: ScreeningResult }>
     | Readonly<{ type: 'overlay'; overlay: OperatingStateOverlay }>
+    | Readonly<{ type: 'validation'; history: ValidationHistory }>
     | null;
 }>;
 
 export function retainStaleProjectResult(result: ProjectResult): ProjectResult {
   if (result.status !== 'current') return result;
+  if (result.detail?.type === 'validation') {
+    return {
+      ...result,
+      status: 'stale',
+      detail: {
+        type: 'validation',
+        history: retainStaleValidationHistory(result.detail.history)
+      }
+    };
+  }
   if (result.detail?.type !== 'overlay') return { ...result, status: 'stale' };
 
   return {
@@ -111,6 +124,7 @@ export type ProjectSnapshot = Readonly<{
   partRequirements: readonly PartRequirement[];
   evidence: readonly EngineeringEvidence[];
   results: readonly ProjectResult[];
+  validationApplicabilityDecisions: readonly ValidationApplicabilityDecision[];
   tombstones: readonly SubjectTombstone[];
   engineeringValues: readonly EngineeringValue[];
   operatingStates: readonly OperatingState[];
@@ -138,6 +152,7 @@ export function createBlankProject(input: {
     partRequirements: [],
     evidence: [],
     results: [],
+    validationApplicabilityDecisions: [],
     tombstones: [],
     engineeringValues: [],
     operatingStates: [],

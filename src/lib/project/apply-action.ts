@@ -4,6 +4,8 @@ import { validateFluidModel } from '../fluid/fluid';
 import { getFormulaDefinition } from '../calculation/formula-catalog';
 import { unitSemantic } from '../calculation/unit-registry';
 import { validateOperatingStateModel } from '../operating-state/operating-state';
+import { acknowledgeFinding, suppressFinding } from '../validation/finding';
+import { validationRule } from '../validation/rule-catalog';
 import {
   projectSubjectExists as projectIdentityExists,
   retainStaleProjectResult,
@@ -32,6 +34,7 @@ export type ActionRejectionCode =
   | 'invalid-screening'
   | 'invalid-operating-state'
   | 'invalid-state-binding'
+  | 'invalid-validation-action'
   | 'missing-asset'
   | 'invalid-result'
   | 'stale-system-action';
@@ -158,6 +161,52 @@ export function applyProjectAction(
     };
   }
 
+  if (action.type === 'acknowledge-finding' || action.type === 'suppress-finding') {
+    const validationResult = snapshot.results.find(
+      (result) => result.detail?.type === 'validation'
+    );
+    if (!validationResult?.detail || validationResult.detail.type !== 'validation') {
+      return reject('invalid-validation-action', 'No published Validation Finding is available');
+    }
+
+    const outcome = (action.type === 'acknowledge-finding' ? acknowledgeFinding : suppressFinding)(
+      validationResult.detail.history,
+      {
+        findingId: action.findingId,
+        projectRevision: snapshot.revision + 1,
+        rationale: action.rationale
+      }
+    );
+    if (!outcome.accepted) {
+      return reject(
+        'invalid-validation-action',
+        `Finding disposition was rejected: ${outcome.reason}`
+      );
+    }
+
+    const nextRevision = snapshot.revision + 1;
+    return {
+      accepted: true,
+      snapshot: {
+        ...snapshot,
+        revision: nextRevision,
+        results: snapshot.results.map((result) =>
+          result.id === validationResult.id
+            ? {
+                ...result,
+                sourceRevision: nextRevision,
+                status: 'current',
+                detail: { type: 'validation', history: outcome.history }
+              }
+            : result
+        )
+      },
+      changedSubjects: [action.findingId],
+      invalidatedResults: [],
+      undoLabel: action.type === 'acknowledge-finding' ? 'Acknowledge Finding' : 'Suppress Finding'
+    };
+  }
+
   const invalidatedResults = snapshot.results
     .filter((result) => result.status === 'current')
     .map((result) => result.id);
@@ -167,6 +216,46 @@ export function applyProjectAction(
   let undoLabel: string;
 
   switch (action.type) {
+    case 'set-validation-applicability': {
+      const decision = action.decision;
+      if (
+        !validationRule(decision.ruleId) ||
+        !projectIdentityExists(snapshot, decision.subjectId) ||
+        !decision.scopeKey.trim() ||
+        !decision.rationale.trim() ||
+        decision.evidenceIds.length === 0 ||
+        decision.evidenceIds.some(
+          (evidenceId) => !snapshot.evidence.some((evidence) => evidence.id === evidenceId)
+        )
+      ) {
+        return reject(
+          'invalid-validation-action',
+          'Validation applicability requires a known rule, subject, scope, rationale, and evidence'
+        );
+      }
+
+      next = {
+        ...snapshot,
+        validationApplicabilityDecisions: [
+          ...snapshot.validationApplicabilityDecisions.filter(
+            (candidate) =>
+              candidate.ruleId !== decision.ruleId ||
+              candidate.subjectId !== decision.subjectId ||
+              candidate.scopeKey !== decision.scopeKey
+          ),
+          {
+            ...decision,
+            rationale: decision.rationale.trim(),
+            recordedAtRevision: snapshot.revision + 1
+          }
+        ],
+        results: staleResults
+      };
+      changedSubjects = [decision.subjectId];
+      undoLabel = `Set ${decision.classification} applicability`;
+      break;
+    }
+
     case 'rename-project':
       next = { ...snapshot, name: action.name, results: staleResults };
       changedSubjects = [snapshot.id];

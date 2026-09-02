@@ -9,6 +9,7 @@ import { screenCandidates } from '../calculation/screen-candidates';
 import { evaluateOperatingStateOverlay } from '../operating-state/evaluate-overlay';
 import { createEmptyElectricalModel } from '../electrical/electrical';
 import { createEmptyFluidModel } from '../fluid/fluid';
+import { evaluateValidation, publishValidationRun } from '../validation/evaluate-validation';
 
 import type {
   CancelEvaluation,
@@ -176,10 +177,7 @@ async function evaluate(token: ActiveEvaluation): Promise<void> {
         }))
       })),
       connections: evaluating.connections.map((connection) => ({
-        ...connection,
-        label: connection.id,
-        interfaceAssessment: 'unknown',
-        routeId: null
+        ...connection
       })),
       routes: [],
       segments: []
@@ -195,7 +193,8 @@ async function evaluate(token: ActiveEvaluation): Promise<void> {
     partRequirements: [],
     evidence: evaluating.evidence,
     results: overlayResults,
-    tombstones: [],
+    validationApplicabilityDecisions: evaluating.validationApplicabilityDecisions,
+    tombstones: evaluating.tombstones,
     engineeringValues: evaluating.engineeringValues,
     operatingStates: evaluating.operatingStates,
     settings: { unitSystem: 'metric' },
@@ -217,6 +216,23 @@ async function evaluate(token: ActiveEvaluation): Promise<void> {
       })
     );
   }
+
+  const validationCandidate = evaluateValidation(overlaySnapshot, {
+    runId: token.request.requestId,
+    evaluatedAt,
+    scope: token.request.scope,
+    previousHistory: evaluating.validationHistory,
+    applicabilityDecisions: evaluating.validationApplicabilityDecisions
+  });
+  const validationHistory = publishValidationRun(evaluating.validationHistory, validationCandidate);
+  results.push(
+    evaluationDerivedResultSchema.parse({
+      id: 'result-validation-history',
+      kind: 'validation',
+      status: 'current',
+      detail: { type: 'validation', history: validationHistory }
+    })
+  );
 
   workerScope.postMessage({
     type: 'evaluation-succeeded',

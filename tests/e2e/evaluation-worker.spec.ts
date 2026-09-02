@@ -57,6 +57,22 @@ test('evaluates bounded calculations and selected candidates through the product
   await expect(calculationResult).toContainText(/unknown/i);
   await expect(calculationResult).toContainText('missing input: resistance');
 
+  await launcher.getByRole('button', { name: 'Findings view' }).click();
+  const calculationFinding = lens
+    .getByRole('article', { name: /Blocker Finding for/ })
+    .filter({ hasText: 'missing-input: resistance' })
+    .first();
+  await expect(calculationFinding).toContainText('missing-input: resistance');
+  await expect(calculationFinding).toContainText('Affected operation');
+  await expect(calculationFinding).toContainText(/calculation:[0-9a-f-]+/);
+  await expect(calculationFinding.getByRole('button', { name: 'Suppress Finding' })).toBeDisabled();
+
+  await lens.getByRole('button', { name: 'Validate Project' }).click();
+  await expect(lens.getByRole('region', { name: 'Validation Coverage' })).toContainText(
+    'profile:as-built-review'
+  );
+  await expect(lens.locator('article[data-severity="caution"]').first()).toBeVisible();
+
   await launcher.getByRole('button', { name: 'Interfaces view' }).click();
   await lens.getByLabel('Part label').fill('Hose Candidate A');
   await lens.getByRole('button', { name: 'Add Part Definition' }).click();

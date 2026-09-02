@@ -11,6 +11,10 @@ import { validateTopology } from '../topology/topology';
 import { APPLICATION_VERSIONS } from '../version/version-registry';
 import { validateCalculationModel } from '../project/project';
 import {
+  validationApplicabilityDecisionSchema,
+  validationHistorySchema
+} from '../validation/finding';
+import {
   calculationOutcomeSchema,
   calculationRequestSchema,
   candidateScreenRequestSchema,
@@ -109,7 +113,8 @@ const projectResultSchema = z.strictObject({
     .discriminatedUnion('type', [
       z.strictObject({ type: z.literal('calculation'), outcome: calculationOutcomeSchema }),
       z.strictObject({ type: z.literal('screening'), result: screeningResultSchema }),
-      z.strictObject({ type: z.literal('overlay'), overlay: operatingStateOverlaySchema })
+      z.strictObject({ type: z.literal('overlay'), overlay: operatingStateOverlaySchema }),
+      z.strictObject({ type: z.literal('validation'), history: validationHistorySchema })
     ])
     .nullable()
 });
@@ -404,6 +409,7 @@ export const projectDocumentSchema = z.strictObject({
   partRequirements: z.array(partRequirementSchema),
   evidence: z.array(evidenceSchema),
   results: z.array(projectResultSchema),
+  validationApplicabilityDecisions: z.array(validationApplicabilityDecisionSchema),
   tombstones: z.array(tombstoneSchema),
   engineeringValues: z.array(
     z.strictObject({
@@ -456,6 +462,7 @@ export function projectSnapshotToDocument(snapshot: ProjectSnapshot): ProjectDoc
     partRequirements: snapshot.partRequirements,
     evidence: snapshot.evidence,
     results: snapshot.results,
+    validationApplicabilityDecisions: snapshot.validationApplicabilityDecisions,
     tombstones: snapshot.tombstones,
     engineeringValues: snapshot.engineeringValues,
     operatingStates: snapshot.operatingStates,
@@ -481,6 +488,7 @@ export function projectDocumentToSnapshot(document: ProjectDocument): ProjectSna
     partRequirements: parsed.partRequirements,
     evidence: parsed.evidence,
     results: parsed.results,
+    validationApplicabilityDecisions: parsed.validationApplicabilityDecisions,
     tombstones: parsed.tombstones,
     engineeringValues: parsed.engineeringValues,
     operatingStates: parsed.operatingStates,

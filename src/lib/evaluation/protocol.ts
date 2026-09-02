@@ -8,6 +8,12 @@ import {
 } from '../calculation/calculation-schema';
 import { operatingStateSchema } from '../operating-state/operating-state';
 import { operatingStateOverlaySchema } from '../operating-state/evaluate-overlay';
+import {
+  EMPTY_VALIDATION_HISTORY,
+  validationApplicabilityDecisionSchema,
+  validationHistorySchema,
+  validationScopeSchema
+} from '../validation/finding';
 import type { ProjectDocument } from '../persistence/project-document';
 
 z.config({ jitless: true });
@@ -44,12 +50,15 @@ const evaluationComponentSchema = z.strictObject({
 
 const evaluationConnectionSchema = z.strictObject({
   id: identity,
+  label: z.string().min(1),
   systemId: identity,
   sourcePortId: identity,
   targetPortId: identity,
   domain: z.enum(['electrical', 'fluid']),
   mediumId: identity.nullable(),
-  kind: z.enum(['electrical-wire', 'electrical-mate', 'fluid-hose', 'fluid-tube', 'fluid-pipe'])
+  kind: z.enum(['electrical-wire', 'electrical-mate', 'fluid-hose', 'fluid-tube', 'fluid-pipe']),
+  interfaceAssessment: z.enum(['compatible', 'incompatible', 'unknown']),
+  routeId: identity.nullable()
 });
 
 const evaluationCircuitSchema = z.strictObject({
@@ -91,7 +100,16 @@ export const evaluationProjectSchema = z.strictObject({
   engineeringValues: z.array(evaluationEngineeringValueSchema),
   operatingStates: z.array(operatingStateSchema),
   calculations: z.array(calculationRequestSchema),
-  screenings: z.array(candidateScreenRequestSchema)
+  screenings: z.array(candidateScreenRequestSchema),
+  validationHistory: validationHistorySchema,
+  validationApplicabilityDecisions: z.array(validationApplicabilityDecisionSchema),
+  tombstones: z.array(
+    z.strictObject({
+      subjectId: identity,
+      subjectKind: z.enum(['component', 'connection']),
+      successorId: identity
+    })
+  )
 });
 
 const evaluationChangeSetSchema = z.strictObject({
@@ -113,18 +131,29 @@ const evaluationChangeSetSchema = z.strictObject({
   upsertCalculations: z.array(calculationRequestSchema),
   removeCalculationIds: z.array(identity),
   upsertScreenings: z.array(candidateScreenRequestSchema),
-  removeScreeningIds: z.array(identity)
+  removeScreeningIds: z.array(identity),
+  validationHistory: validationHistorySchema,
+  validationApplicabilityDecisions: z.array(validationApplicabilityDecisionSchema),
+  tombstones: z.array(
+    z.strictObject({
+      subjectId: identity,
+      subjectKind: z.enum(['component', 'connection']),
+      successorId: identity
+    })
+  )
 });
 
 export const initializeEvaluationSchema = z.strictObject({
   type: z.literal('initialize-evaluation'),
   ...messageIdentityShape,
+  scope: validationScopeSchema,
   project: evaluationProjectSchema
 });
 
 export const evaluateChangeSetSchema = z.strictObject({
   type: z.literal('evaluate-change-set'),
   ...messageIdentityShape,
+  scope: validationScopeSchema,
   changeSet: evaluationChangeSetSchema
 });
 
@@ -158,6 +187,12 @@ export const evaluationDerivedResultSchema = z.discriminatedUnion('kind', [
     kind: z.literal('overlay'),
     status: z.literal('current'),
     detail: z.strictObject({ type: z.literal('overlay'), overlay: operatingStateOverlaySchema })
+  }),
+  z.strictObject({
+    id: identity,
+    kind: z.literal('validation'),
+    status: z.literal('current'),
+    detail: z.strictObject({ type: z.literal('validation'), history: validationHistorySchema })
   })
 ]);
 
@@ -215,6 +250,11 @@ export type ProjectSystemAction = {
 };
 
 export function createEvaluationProject(document: ProjectDocument): EvaluationProject {
+  const validationResult = document.results.find((result) => result.detail?.type === 'validation');
+  const validationHistory =
+    validationResult?.detail?.type === 'validation'
+      ? structuredClone(validationResult.detail.history)
+      : EMPTY_VALIDATION_HISTORY;
   return evaluationProjectSchema.parse({
     schemaVersion: document.schemaVersion,
     projectId: document.project.id,
@@ -230,19 +270,28 @@ export function createEvaluationProject(document: ProjectDocument): EvaluationPr
     })),
     connections: document.topology.connections.map((connection) => ({
       id: connection.id,
+      label: connection.label,
       systemId: connection.systemId,
       sourcePortId: connection.sourcePortId,
       targetPortId: connection.targetPortId,
       domain: connection.domain,
       mediumId: connection.mediumId,
-      kind: connection.kind
+      kind: connection.kind,
+      interfaceAssessment: connection.interfaceAssessment,
+      routeId: connection.routeId
     })),
     circuits: document.electrical.circuits.map((circuit) => ({ ...circuit })),
     evidence: document.evidence.map((evidence) => ({ ...evidence })),
     engineeringValues: document.engineeringValues.map((value) => ({ ...value })),
     operatingStates: document.operatingStates.map((state) => ({ ...state })),
     calculations: document.calculations.map((calculation) => structuredClone(calculation)),
-    screenings: document.screenings.map((screening) => structuredClone(screening))
+    screenings: document.screenings.map((screening) => structuredClone(screening)),
+    validationHistory,
+    validationApplicabilityDecisions: document.validationApplicabilityDecisions.map((decision) => ({
+      ...decision,
+      evidenceIds: [...decision.evidenceIds]
+    })),
+    tombstones: document.tombstones.map((tombstone) => ({ ...tombstone }))
   });
 }
 
@@ -381,7 +430,10 @@ export function applyEvaluationChangeSet(
     engineeringValues,
     operatingStates,
     calculations,
-    screenings
+    screenings,
+    validationHistory: message.changeSet.validationHistory,
+    validationApplicabilityDecisions: message.changeSet.validationApplicabilityDecisions,
+    tombstones: message.changeSet.tombstones
   });
 }
 
@@ -440,7 +492,10 @@ export function createEvaluationChangeSet(
       upsertCalculations: calculations.upserts,
       removeCalculationIds: calculations.removals,
       upsertScreenings: screenings.upserts,
-      removeScreeningIds: screenings.removals
+      removeScreeningIds: screenings.removals,
+      validationHistory: current.validationHistory,
+      validationApplicabilityDecisions: current.validationApplicabilityDecisions,
+      tombstones: current.tombstones
     }
   });
 }
