@@ -26,6 +26,7 @@ import type {
 } from './project';
 import type { StateBinding } from '../operating-state/operating-state';
 import type { ValidationApplicabilityDecision } from '../validation/finding';
+import type { InstallationRecord, ProcurementChoice } from '../build/build-record';
 import type {
   Component,
   Connection,
@@ -129,6 +130,8 @@ export type ProjectAction =
       }>)
   | (Causation & Readonly<{ type: 'add-part-definition'; definition: PartDefinition }>)
   | (Causation & Readonly<{ type: 'add-part-requirement'; requirement: PartRequirement }>)
+  | (Causation & Readonly<{ type: 'set-procurement-choice'; choice: ProcurementChoice }>)
+  | (Causation & Readonly<{ type: 'record-installation'; installation: InstallationRecord }>)
   | (Causation & Readonly<{ type: 'record-evidence'; evidence: EngineeringEvidence }>)
   | (Causation & Readonly<{ type: 'acknowledge-finding'; findingId: string; rationale: string }>)
   | (Causation & Readonly<{ type: 'suppress-finding'; findingId: string; rationale: string }>)

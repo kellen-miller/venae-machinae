@@ -4,6 +4,7 @@
   import type { RendererViewport } from '../../renderer/projection';
   import type { OverlayChannel } from '../../operating-state/operating-state';
   import type { EvaluationScope } from '../../session/project-session.svelte';
+  import type { ProjectOutputKind } from '../../reporting/generate-output';
   import BomLens from './lenses/BomLens.svelte';
   import CalculationsLens from './lenses/CalculationsLens.svelte';
   import CircuitsLinesLens from './lenses/CircuitsLinesLens.svelte';
@@ -31,6 +32,7 @@
     onpromotetemplate,
     onaction,
     onvalidate,
+    onoutput,
     onpreviewbranch,
     onconfirmbranch,
     oncancelbranch,
@@ -57,6 +59,7 @@
     ) => Promise<{ promoted: true } | { promoted: false; reason: string }>;
     onaction: (action: ProjectAction) => boolean;
     onvalidate: (scope: EvaluationScope) => void;
+    onoutput: (kind: ProjectOutputKind) => Promise<void>;
     onpreviewbranch: (action: Extract<ProjectAction, { type: 'insert-electrical-branch' }>) => void;
     onconfirmbranch: () => void;
     oncancelbranch: () => void;
@@ -128,7 +131,7 @@
     {:else if activeView === 'evidence'}
       <EvidenceLens {snapshot} />
     {:else if activeView === 'bom'}
-      <BomLens {snapshot} />
+      <BomLens {snapshot} {canAuthor} {onaction} {onoutput} />
     {:else if activeView === 'findings'}
       <FindingsLens {snapshot} {canAuthor} {onaction} {onvalidate} />
     {:else}

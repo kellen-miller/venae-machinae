@@ -5,6 +5,7 @@ import { getFormulaDefinition } from '../calculation/formula-catalog';
 import { createEngineeringQuantity } from '../calculation/quantity';
 import { unitSemantic } from '../calculation/unit-registry';
 import { retainStaleValidationHistory } from '../validation/finding';
+import { createEmptyBuildRecord } from '../build/build-record';
 
 import type { CalculationRequest } from '../calculation/evaluate-calculation';
 import type { CalculationOutcome } from '../calculation/evaluate-calculation';
@@ -17,6 +18,7 @@ import type { OperatingState } from '../operating-state/operating-state';
 import type { OperatingStateOverlay } from '../operating-state/evaluate-overlay';
 import type { Point, SubjectId, Topology } from '../topology/topology';
 import type { ValidationApplicabilityDecision, ValidationHistory } from '../validation/finding';
+import type { BuildRecord } from '../build/build-record';
 
 export type { OperatingState } from '../operating-state/operating-state';
 
@@ -32,8 +34,13 @@ export type PartDefinition = Readonly<{
 export type PartRequirement = Readonly<{
   id: SubjectId;
   subjectId: SubjectId;
+  partDefinitionId?: SubjectId | undefined;
+  variant?: string | undefined;
   label: string;
   quantity: string;
+  unit?: string | undefined;
+  domain?: 'electrical' | 'fluid' | undefined;
+  systemId?: SubjectId | undefined;
 }>;
 
 export type ProjectResult = Readonly<{
@@ -122,6 +129,7 @@ export type ProjectSnapshot = Readonly<{
   screenings: readonly CandidateScreenRequest[];
   partDefinitions: readonly PartDefinition[];
   partRequirements: readonly PartRequirement[];
+  build: BuildRecord;
   evidence: readonly EngineeringEvidence[];
   results: readonly ProjectResult[];
   validationApplicabilityDecisions: readonly ValidationApplicabilityDecision[];
@@ -150,6 +158,7 @@ export function createBlankProject(input: {
     screenings: [],
     partDefinitions: [],
     partRequirements: [],
+    build: createEmptyBuildRecord(),
     evidence: [],
     results: [],
     validationApplicabilityDecisions: [],
@@ -357,6 +366,8 @@ export function projectSubjectExists(snapshot: ProjectSnapshot, subjectId: Subje
     snapshot.screenings.some((subject) => subject.id === subjectId) ||
     snapshot.partDefinitions.some((subject) => subject.id === subjectId) ||
     snapshot.partRequirements.some((subject) => subject.id === subjectId) ||
+    snapshot.build.procurementChoices.some((subject) => subject.id === subjectId) ||
+    snapshot.build.installations.some((subject) => subject.id === subjectId) ||
     snapshot.evidence.some((subject) => subject.id === subjectId) ||
     snapshot.engineeringValues.some((subject) => subject.id === subjectId) ||
     snapshot.operatingStates.some((subject) => subject.id === subjectId) ||

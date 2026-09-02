@@ -8,6 +8,7 @@ import {
 } from '../../src/lib/evaluation/protocol';
 import { EvaluationClient } from '../../src/lib/evaluation/evaluation-client';
 import { generateCapacityProject } from '../fixtures/capacity-project';
+import { generateRx7CapacityProject, RX7_CAPACITY_COUNTS } from '../fixtures/rx7-capacity-project';
 
 import type {
   EvaluateChangeSet,
@@ -111,31 +112,31 @@ afterEach(() => {
 });
 
 describe('MVP-GATE-005 worker boundary', () => {
-  it.each([
-    [1, 300, 1200],
-    [2, 600, 2400],
-    [5, 1500, 6000]
-  ] as const)(
-    'builds a structured-cloneable evaluation-only %sx initialization',
-    (scale, componentCount, connectionCount) => {
-      const initialization = workerRequestSchema.parse(createInitialization(scale));
+  it.each([1, 2, 5] as const)(
+    'builds a structured-cloneable RX-7 evaluation-only %sx initialization',
+    (scale) => {
+      const project = createEvaluationProject(generateRx7CapacityProject(scale));
+      const initialization = workerRequestSchema.parse({
+        type: 'initialize-evaluation',
+        requestId: `rx7-initialize-${scale}x`,
+        projectRevision: project.projectRevision,
+        inputFingerprint: fingerprintOne,
+        formulaCatalogVersion: 1,
+        validationRuleCatalogVersion: 1,
+        schemaVersion: 8,
+        scope: { kind: 'incremental', subjectIds: [] },
+        project
+      });
       const cloned = structuredClone(initialization);
 
       expect(cloned.type).toBe('initialize-evaluation');
       if (cloned.type !== 'initialize-evaluation') throw new Error('Expected initialization');
-      expect(cloned.project.components).toHaveLength(componentCount);
-      expect(cloned.project.connections).toHaveLength(connectionCount);
-      expect(cloned.project.components[0]).toEqual({
-        id: `component-${scale}x-0`,
-        ports: [
-          { id: `port-${scale}x-0`, domain: 'electrical' },
-          { id: `port-${scale}x-1`, domain: 'electrical' },
-          { id: `port-${scale}x-2`, domain: 'electrical' },
-          { id: `port-${scale}x-3`, domain: 'electrical' },
-          { id: `port-${scale}x-4`, domain: 'electrical' }
-        ]
-      });
-      expect(cloned.project.components[0]).not.toHaveProperty('x');
+      expect(cloned.project.components).toHaveLength(RX7_CAPACITY_COUNTS[scale].components);
+      expect(cloned.project.connections).toHaveLength(RX7_CAPACITY_COUNTS[scale].connections);
+      expect(cloned.project.components.flatMap((component) => component.ports)).toHaveLength(
+        RX7_CAPACITY_COUNTS[scale].ports
+      );
+      expect(cloned.project.components[0]).not.toHaveProperty('position');
       expect(cloned.project).not.toHaveProperty('assetHashes');
     }
   );

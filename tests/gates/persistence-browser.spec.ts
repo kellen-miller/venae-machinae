@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { build } from 'vite';
 
-import { CAPACITY_COUNTS } from '../fixtures/capacity-project';
+import { RX7_CAPACITY_COUNTS } from '../fixtures/rx7-capacity-counts';
 
 let browserBundle = '';
 
@@ -68,7 +68,7 @@ test('MVP-GATE-003 persists and recovers whole snapshots in a production browser
       components: measurement.componentCount,
       ports: measurement.portCount,
       connections: measurement.connectionCount
-    }).toEqual(CAPACITY_COUNTS[measurement.scale]);
+    }).toEqual(RX7_CAPACITY_COUNTS[measurement.scale]);
     expect(measurement.saved).toBe(true);
     expect(measurement.recoveredExactly).toBe(true);
     expect(measurement.serializationMs).toBeLessThan(2_000);

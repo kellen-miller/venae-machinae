@@ -5,6 +5,8 @@ import { validateOperatingStateModel } from './operating-state';
 import type { OverlayChannel, StateBinding, StateBindingDirection } from './operating-state';
 import type { ProjectSnapshot } from '../project/project';
 
+z.config({ jitless: true });
+
 export type OverlayAvailability =
   'available' | 'partial' | 'unavailable' | 'conflicting' | 'unsupported' | 'excluded';
 

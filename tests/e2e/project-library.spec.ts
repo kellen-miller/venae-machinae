@@ -21,7 +21,14 @@ test('MVP-UX-008 exposes loading, empty guidance, and honest creation affordance
   await expect(page.getByRole('button', { name: 'Blank project' })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Duplicate project' })).toBeDisabled();
   await expect(page.getByRole('button', { name: /Import \.venae\.json/ })).toBeEnabled();
-  await expect(page.getByRole('button', { name: 'Copy illustrative example' })).toBeDisabled();
+  const exampleButton = page.getByRole('button', { name: 'Copy illustrative example' });
+  await expect(exampleButton).toBeEnabled();
+  await expect(exampleButton).toContainText(
+    'Illustrative assumptions and unknowns remain explicit'
+  );
+  await expect(exampleButton).toContainText(
+    'not a safety endorsement or recommended vehicle design'
+  );
   await expect(page.getByText('Strictly validate and stage before confirmation')).toBeVisible();
 });
 

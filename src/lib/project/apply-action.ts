@@ -6,6 +6,7 @@ import { unitSemantic } from '../calculation/unit-registry';
 import { validateOperatingStateModel } from '../operating-state/operating-state';
 import { acknowledgeFinding, suppressFinding } from '../validation/finding';
 import { validationRule } from '../validation/rule-catalog';
+import { validateBuildRecord } from '../build/build-record';
 import {
   projectSubjectExists as projectIdentityExists,
   retainStaleProjectResult,
@@ -35,6 +36,7 @@ export type ActionRejectionCode =
   | 'invalid-operating-state'
   | 'invalid-state-binding'
   | 'invalid-validation-action'
+  | 'invalid-build-record'
   | 'missing-asset'
   | 'invalid-result'
   | 'stale-system-action';
@@ -120,7 +122,10 @@ export function previewProjectActionImpact(
         .map((requirement) => requirement.id),
       ...snapshot.evidence
         .filter((evidence) => evidence.subjectId === action.componentId)
-        .map((evidence) => evidence.id)
+        .map((evidence) => evidence.id),
+      ...snapshot.build.installations
+        .filter((installation) => installation.subjectId === action.componentId)
+        .map((installation) => installation.id)
     ]
   };
 }
@@ -141,19 +146,34 @@ export function applyProjectAction(
     }
 
     const failed = action.results.some((result) => result.status === 'failed');
+    const publishedResultIds = new Set(action.results.map((result) => result.id));
+    const stateBindingResultIds = new Set(
+      snapshot.operatingStates.flatMap((state) =>
+        state.bindings.flatMap((binding) =>
+          binding.calculationResultId ? [binding.calculationResultId] : []
+        )
+      )
+    );
     const publishedResults = failed
       ? [
           ...snapshot.results
-            .filter((result) => !action.results.some((replacement) => replacement.id === result.id))
+            .filter((result) => !publishedResultIds.has(result.id))
             .map(retainStaleProjectResult),
           ...action.results
         ]
-      : [...action.results];
+      : [
+          ...snapshot.results
+            .filter(
+              (result) => stateBindingResultIds.has(result.id) && !publishedResultIds.has(result.id)
+            )
+            .map(retainStaleProjectResult),
+          ...action.results
+        ];
 
     return {
       accepted: true,
       snapshot: { ...snapshot, revision: snapshot.revision + 1, results: publishedResults },
-      changedSubjects: action.results.map((result) => result.id),
+      changedSubjects: publishedResults.map((result) => result.id),
       invalidatedResults: snapshot.results
         .filter((result) => result.status === 'current')
         .map((result) => result.id),
@@ -1208,6 +1228,60 @@ export function applyProjectAction(
       undoLabel = `Add ${action.requirement.label}`;
       break;
 
+    case 'set-procurement-choice': {
+      const existing = snapshot.build.procurementChoices.find(
+        (choice) => choice.id === action.choice.id
+      );
+      if (!existing && projectIdentityExists(snapshot, action.choice.id)) {
+        return reject(
+          'duplicate-identity',
+          `Subject identity ${action.choice.id} is already in use`
+        );
+      }
+      next = {
+        ...snapshot,
+        build: {
+          ...snapshot.build,
+          procurementChoices: [
+            ...snapshot.build.procurementChoices.filter((choice) => choice.id !== action.choice.id),
+            action.choice
+          ]
+        },
+        results: staleResults
+      };
+      changedSubjects = [action.choice.id, action.choice.partDefinitionId];
+      undoLabel = `${existing ? 'Update' : 'Add'} procurement choice`;
+      break;
+    }
+
+    case 'record-installation': {
+      const existing = snapshot.build.installations.find(
+        (installation) => installation.id === action.installation.id
+      );
+      if (!existing && projectIdentityExists(snapshot, action.installation.id)) {
+        return reject(
+          'duplicate-identity',
+          `Subject identity ${action.installation.id} is already in use`
+        );
+      }
+      next = {
+        ...snapshot,
+        build: {
+          ...snapshot.build,
+          installations: [
+            ...snapshot.build.installations.filter(
+              (installation) => installation.id !== action.installation.id
+            ),
+            action.installation
+          ]
+        },
+        results: staleResults
+      };
+      changedSubjects = [action.installation.id, action.installation.subjectId];
+      undoLabel = `${existing ? 'Update' : 'Record'} installation`;
+      break;
+    }
+
     case 'record-evidence':
       if (!projectIdentityExists(snapshot, action.evidence.subjectId)) {
         return reject(
@@ -1381,6 +1455,8 @@ export function applyProjectAction(
 
   const calculationRejection = validateCalculationModel(next);
   if (calculationRejection) return { accepted: false, rejection: calculationRejection };
+  const buildRecordRejection = validateBuildRecord(next);
+  if (buildRecordRejection) return { accepted: false, rejection: buildRecordRejection };
 
   return {
     accepted: true,

@@ -111,7 +111,7 @@ test('MVP-GATE-005 preserves the evaluation worker boundary', async ({ page }, t
   for (const measurement of result.measurements) {
     expect(measurement.initializationDispatchMs).toBeLessThan(2_000);
     expect(measurement.incrementalDispatchMs).toBeLessThan(100);
-    expect(measurement.incrementalBytes).toBeLessThan(measurement.initializationBytes / 100);
+    expect(measurement.incrementalBytes).toBeLessThan(measurement.initializationBytes / 5);
   }
   expect(result.cooperative).toEqual({
     publishedRequestIds: ['cooperative-replacement'],

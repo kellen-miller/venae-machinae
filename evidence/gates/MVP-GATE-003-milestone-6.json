@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-003",
+  "recordId": "MVP-GATE-003-milestone-6",
+  "recordedAt": "2026-09-02T05:32:52Z",
+  "supersedes": "MVP-GATE-003-milestone-5",
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "browsers": {
+      "chromium": "151.0.7922.34",
+      "firefox": "153.0",
+      "webkit": "26.5"
+    }
+  },
+  "versions": {
+    "idb": "8.0.3",
+    "zod": "4.5.4",
+    "playwright": "1.62.1",
+    "projectDocumentSchema": 8,
+    "indexedDbStructure": 2
+  },
+  "fixtures": [
+    "src/lib/reference/rx7-example.v1.venae.json",
+    "tests/fixtures/rx7-capacity-counts.ts",
+    "tests/fixtures/rx7-capacity-project.ts"
+  ],
+  "command": "pnpm gate:persistence -- --fixture rx7 --record milestone-6",
+  "rawArtifacts": ["evidence/gates/raw/MVP-GATE-003-milestone-6-rx7-browser-measurements.json"],
+  "measurements": {
+    "fixtureScales": [1, 2, 5],
+    "largestComponents": 130,
+    "largestPorts": 325,
+    "largestConnections": 160,
+    "largestSerializedBytes": 788207,
+    "largestObservedSaveMs": 17,
+    "largestObservedReopenAndLoadMs": 14,
+    "operationLimitMs": 2000,
+    "browserEngines": 3,
+    "unitCases": 10,
+    "failures": 0
+  },
+  "verdict": "Pass",
+  "boundedDecision": "Whole-document IndexedDB transactions, separate hash-addressed assets, immutable checkpoints, and strict schema-8 recovery remain viable for the complete RX-7 evidence, result, history, geometry, asset, and build-record envelope at 1x, 2x, and 5x."
+}

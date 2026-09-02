@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { openBundledRx7Example } from '../fixtures/rx7-example';
 import { seedWorkspaceProject, WORKSPACE_PROJECT_ID } from '../fixtures/workspace-project';
 
 test('records the synchronized desktop canvas and dense Lens Stack', async ({ page }) => {
@@ -41,6 +42,31 @@ test('records scoped Finding evidence at desktop and tablet boundaries', async (
   await expect(page.getByRole('complementary', { name: 'Inspector' })).toBeHidden();
   await page.getByRole('button', { name: 'Close Lens Stack and return to Canvas' }).click();
   await expect(page.getByRole('complementary', { name: 'Inspector' })).toBeVisible();
+});
+
+test('records the RX-7 BOM and revision-locked output preview', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await openBundledRx7Example(page);
+  await page.getByRole('button', { name: 'BOM view' }).click();
+  const lens = page.getByRole('dialog', { name: 'Lens Stack' });
+  await expect(lens.getByRole('heading', { name: 'Exact design demand' })).toBeVisible();
+  await expect(lens.getByText('2 procurement choices · 2 installation records')).toBeVisible();
+  await page.screenshot({
+    path: 'evidence/frontend/M6-rx7-bom-desktop.png',
+    animations: 'disabled',
+    scale: 'css'
+  });
+
+  await page.setViewportSize({ width: 820, height: 1000 });
+  await lens.getByRole('button', { name: 'Preview printable report' }).click();
+  const preview = page.getByRole('dialog', { name: 'Printable Project Report' });
+  await expect(preview.getByRole('heading', { name: 'BOM · exact design demand' })).toBeVisible();
+  await expect(preview.getByText('Durable revision', { exact: false }).first()).toBeVisible();
+  await page.screenshot({
+    path: 'evidence/frontend/M6-rx7-output-tablet.png',
+    animations: 'disabled',
+    scale: 'css'
+  });
 });
 
 test('records the 1120, 700, and mobile-review workspace boundaries', async ({ page }) => {

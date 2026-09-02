@@ -23,6 +23,7 @@ import {
 } from '../persistence/persisted-session-backing';
 import { readBrowserStorageStatus } from '../persistence/storage-lifecycle';
 import { createProjectSession } from '../session/project-session.svelte';
+import rx7ExampleSource from '../reference/rx7-example.v1.venae.json?raw';
 
 import type { BrowserStorageStatus } from '../persistence/storage-lifecycle';
 import type {
@@ -99,6 +100,9 @@ export type BrowserApplication = Readonly<{
     | { created: true; snapshot: ProjectSnapshot }
     | { created: false; reason: 'already-exists' | 'quota-exceeded' | 'storage-error' }
   >;
+  copyIllustrativeExample(): Promise<
+    { copied: true; projectId: string } | { copied: false; reason: string }
+  >;
   duplicateProject(input: {
     sourceProjectId: string;
     id: string;
@@ -172,6 +176,23 @@ export async function createBrowserApplication(): Promise<BrowserApplication> {
     },
     createBlankProject(input) {
       return library.createBlankProject(input);
+    },
+    async copyIllustrativeExample() {
+      const staged = await stageExchange(
+        new Blob([rx7ExampleSource], { type: 'application/json' }),
+        MEASURED_EXCHANGE_LIMITS
+      );
+      if (!staged.staged) {
+        return { copied: false, reason: `${staged.reason}: ${staged.message}` };
+      }
+
+      const locked = await withExclusiveLibraryLock(() =>
+        commitStagedExchange(staged, 'import-copy', library)
+      );
+      if (!locked.acquired) return { copied: false, reason: locked.reason };
+      return locked.value.committed
+        ? { copied: true, projectId: locked.value.projectId }
+        : { copied: false, reason: locked.value.reason };
     },
     duplicateProject(input) {
       return library.duplicateProject(input);

@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-005",
+  "fixture": "Illustrative RX-7 complete MVP evaluation envelope",
+  "fixtureSchemaVersion": 8,
+  "results": [
+    {
+      "browser": "chromium",
+      "version": "151.0.7922.34",
+      "scales": [
+        {
+          "scale": 1,
+          "initializationBytes": 59377,
+          "incrementalBytes": 8426,
+          "initializationDispatchMs": 2.2,
+          "incrementalDispatchMs": 0.4
+        },
+        {
+          "scale": 2,
+          "initializationBytes": 122351,
+          "incrementalBytes": 8908,
+          "initializationDispatchMs": 1.4,
+          "incrementalDispatchMs": 0.5
+        },
+        {
+          "scale": 5,
+          "initializationBytes": 293336,
+          "incrementalBytes": 9187,
+          "initializationDispatchMs": 2.5,
+          "incrementalDispatchMs": 1
+        }
+      ],
+      "completeResultCspDecode": true,
+      "cooperativeCancellation": true,
+      "staleRejection": true,
+      "forcedRestart": true,
+      "crashRestart": true,
+      "serverLossRetainedInitialization": true,
+      "verdict": "Pass"
+    },
+    {
+      "browser": "firefox",
+      "version": "153.0",
+      "scales": [
+        {
+          "scale": 1,
+          "initializationBytes": 59377,
+          "incrementalBytes": 8426,
+          "initializationDispatchMs": 2,
+          "incrementalDispatchMs": 1
+        },
+        {
+          "scale": 2,
+          "initializationBytes": 122351,
+          "incrementalBytes": 8908,
+          "initializationDispatchMs": 2,
+          "incrementalDispatchMs": 1
+        },
+        {
+          "scale": 5,
+          "initializationBytes": 293336,
+          "incrementalBytes": 9187,
+          "initializationDispatchMs": 4,
+          "incrementalDispatchMs": 2
+        }
+      ],
+      "completeResultCspDecode": true,
+      "cooperativeCancellation": true,
+      "staleRejection": true,
+      "forcedRestart": true,
+      "crashRestart": true,
+      "serverLossRetainedInitialization": true,
+      "verdict": "Pass"
+    },
+    {
+      "browser": "webkit",
+      "version": "26.5",
+      "scales": [
+        {
+          "scale": 1,
+          "initializationBytes": 59377,
+          "incrementalBytes": 8426,
+          "initializationDispatchMs": 2,
+          "incrementalDispatchMs": 1
+        },
+        {
+          "scale": 2,
+          "initializationBytes": 122351,
+          "incrementalBytes": 8908,
+          "initializationDispatchMs": 1,
+          "incrementalDispatchMs": 1
+        },
+        {
+          "scale": 5,
+          "initializationBytes": 293336,
+          "incrementalBytes": 9187,
+          "initializationDispatchMs": 3,
+          "incrementalDispatchMs": 2
+        }
+      ],
+      "completeResultCspDecode": true,
+      "cooperativeCancellation": true,
+      "staleRejection": true,
+      "forcedRestart": true,
+      "crashRestart": true,
+      "serverLossRetainedInitialization": true,
+      "verdict": "Pass"
+    }
+  ],
+  "boundaryTests": {
+    "unitCases": 10,
+    "oneActiveEvaluation": true,
+    "oneAutomaticCrashRestart": true,
+    "explicitRetryAfterSecondCrash": true,
+    "noRestartWhileServerDisconnected": true,
+    "priorProjectInitializationRetained": true
+  }
+}

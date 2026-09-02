@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-003",
+  "fixture": "Illustrative RX-7 complete MVP envelope",
+  "fixtureSchemaVersion": 8,
+  "results": [
+    {
+      "browser": "chromium",
+      "version": "151.0.7922.34",
+      "scales": [
+        {
+          "scale": 1,
+          "components": 26,
+          "ports": 65,
+          "connections": 32,
+          "bytes": 146551,
+          "serializeMs": 0.1,
+          "validateMs": 1.2,
+          "cloneMs": 0.3,
+          "saveMs": 2.9,
+          "reopenAndLoadMs": 1.8
+        },
+        {
+          "scale": 2,
+          "components": 52,
+          "ports": 130,
+          "connections": 64,
+          "bytes": 315956,
+          "serializeMs": 0.3,
+          "validateMs": 1.4,
+          "cloneMs": 0.8,
+          "saveMs": 3.7,
+          "reopenAndLoadMs": 2.7
+        },
+        {
+          "scale": 5,
+          "components": 130,
+          "ports": 325,
+          "connections": 160,
+          "bytes": 788207,
+          "serializeMs": 1,
+          "validateMs": 3.3,
+          "cloneMs": 1.8,
+          "saveMs": 7.4,
+          "reopenAndLoadMs": 6.2
+        }
+      ],
+      "recoveredExactly": true,
+      "checkpointRecoveredExactly": true,
+      "assetWrites": [1, 0, 0],
+      "assetCount": 1,
+      "verdict": "Pass"
+    },
+    {
+      "browser": "firefox",
+      "version": "153.0",
+      "scales": [
+        {
+          "scale": 1,
+          "components": 26,
+          "ports": 65,
+          "connections": 32,
+          "bytes": 146551,
+          "serializeMs": 0,
+          "validateMs": 2,
+          "cloneMs": 1,
+          "saveMs": 4,
+          "reopenAndLoadMs": 5
+        },
+        {
+          "scale": 2,
+          "components": 52,
+          "ports": 130,
+          "connections": 64,
+          "bytes": 315956,
+          "serializeMs": 1,
+          "validateMs": 1,
+          "cloneMs": 1,
+          "saveMs": 7,
+          "reopenAndLoadMs": 5
+        },
+        {
+          "scale": 5,
+          "components": 130,
+          "ports": 325,
+          "connections": 160,
+          "bytes": 788207,
+          "serializeMs": 1,
+          "validateMs": 6,
+          "cloneMs": 3,
+          "saveMs": 17,
+          "reopenAndLoadMs": 14
+        }
+      ],
+      "recoveredExactly": true,
+      "checkpointRecoveredExactly": true,
+      "assetWrites": [1, 0, 0],
+      "assetCount": 1,
+      "verdict": "Pass"
+    },
+    {
+      "browser": "webkit",
+      "version": "26.5",
+      "scales": [
+        {
+          "scale": 1,
+          "components": 26,
+          "ports": 65,
+          "connections": 32,
+          "bytes": 146551,
+          "serializeMs": 0,
+          "validateMs": 2,
+          "cloneMs": 1,
+          "saveMs": 4,
+          "reopenAndLoadMs": 2
+        },
+        {
+          "scale": 2,
+          "components": 52,
+          "ports": 130,
+          "connections": 64,
+          "bytes": 315956,
+          "serializeMs": 0,
+          "validateMs": 2,
+          "cloneMs": 1,
+          "saveMs": 5,
+          "reopenAndLoadMs": 3
+        },
+        {
+          "scale": 5,
+          "components": 130,
+          "ports": 325,
+          "connections": 160,
+          "bytes": 788207,
+          "serializeMs": 1,
+          "validateMs": 4,
+          "cloneMs": 3,
+          "saveMs": 11,
+          "reopenAndLoadMs": 7
+        }
+      ],
+      "recoveredExactly": true,
+      "checkpointRecoveredExactly": true,
+      "assetWrites": [1, 0, 0],
+      "assetCount": 1,
+      "verdict": "Pass"
+    }
+  ],
+  "boundaryTests": {
+    "unitCases": 10,
+    "revisionConflictRetainedPrior": true,
+    "quotaExceededRetainedPrior": true
+  }
+}

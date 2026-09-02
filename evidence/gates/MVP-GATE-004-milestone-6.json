@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-004",
+  "recordId": "MVP-GATE-004-milestone-6",
+  "recordedAt": "2026-09-02T05:32:52Z",
+  "supersedes": "MVP-GATE-004-milestone-5",
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "browsers": {
+      "chromium": "151.0.7922.34",
+      "firefox": "153.0",
+      "webkit": "26.5"
+    }
+  },
+  "versions": {
+    "zod": "4.5.4",
+    "idb": "8.0.3",
+    "vite": "8.2.2",
+    "playwright": "1.62.1",
+    "projectDocumentSchema": 8,
+    "exchangeFormat": 1
+  },
+  "fixtures": [
+    "src/lib/reference/rx7-example.v1.venae.json",
+    "tests/fixtures/rx7-capacity-counts.ts",
+    "tests/fixtures/rx7-capacity-project.ts"
+  ],
+  "command": "pnpm gate:exchange -- --fixture rx7 --record milestone-6",
+  "rawArtifacts": ["evidence/gates/raw/MVP-GATE-004-milestone-6-rx7-browser-measurements.json"],
+  "measurements": {
+    "fixtureScales": [1, 2, 5],
+    "largestEnvelopeBytes": 17566751,
+    "largestOriginalAssetBytes": 12582912,
+    "largestIndividualAssetBytes": 6291456,
+    "largestNestingDepth": 10,
+    "largestCollectionEntries": 3654,
+    "largestEncodeMs": 434,
+    "largestStageTotalMs": 108,
+    "largestParseMs": 17,
+    "largestValidationMs": 33,
+    "largestHashingMs": 55.6,
+    "largestCloneMs": 6.5,
+    "largestCommitMs": 48,
+    "largestEstimatedPeakBytes": 70266994,
+    "maxEnvelopeBytes": 20971520,
+    "maxIndividualAssetBytes": 6291456,
+    "maxCombinedAssetBytes": 12582912,
+    "maxAssets": 64,
+    "maxNestingDepth": 32,
+    "maxCollectionEntries": 50000,
+    "maxEstimatedPeakBytes": 134217728,
+    "browserEngines": 3,
+    "unitCases": 10,
+    "failures": 0
+  },
+  "verdict": "Pass",
+  "boundedDecision": "Strict monolithic JSON remains viable for the complete RX-7 schema-8 project exchange with the frozen 20 MiB envelope, 6 MiB individual asset, 12 MiB combined assets, 64 assets, depth 32, 50000 collection entries, and 128 MiB retained-representation bounds."
+}

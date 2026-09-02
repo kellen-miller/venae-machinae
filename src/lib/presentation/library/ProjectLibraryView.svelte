@@ -1,5 +1,6 @@
 <script module lang="ts">
-  export type ProjectLibraryState = 'loading' | 'ready' | 'creating' | 'duplicating' | 'failed';
+  export type ProjectLibraryState =
+    'loading' | 'ready' | 'creating' | 'copying-example' | 'duplicating' | 'failed';
 
   export type ProjectListing = Readonly<{
     id: string;
@@ -26,6 +27,7 @@
     overview,
     stagedImport,
     onblank,
+    onexample,
     onduplicate,
     onnamedsnapshot,
     onrestoresnapshot,
@@ -45,6 +47,7 @@
     overview: LibraryOverview | null;
     stagedImport: StagedLibraryImport | null;
     onblank: () => void;
+    onexample: () => void;
     onduplicate: (project: ProjectListing) => void;
     onnamedsnapshot: (project: ProjectListing) => void;
     onrestoresnapshot: (snapshotId: string) => void;
@@ -189,10 +192,20 @@
         aria-label="Import exchange file"
         onchange={selectImport}
       />
-      <button type="button" disabled aria-describedby="example-explanation">
-        <strong>Copy illustrative example</strong>
+      <button
+        type="button"
+        disabled={!ready}
+        aria-describedby="example-explanation"
+        onclick={onexample}
+      >
+        <strong
+          >{state === 'copying-example'
+            ? 'Copying illustrative example…'
+            : 'Copy illustrative example'}</strong
+        >
         <span id="example-explanation"
-          >Available when the verified example fixture is complete.</span
+          >Illustrative assumptions and unknowns remain explicit. This is not a safety endorsement
+          or recommended vehicle design.</span
         >
       </button>
     </div>

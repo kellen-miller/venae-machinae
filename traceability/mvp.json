@@ -494,8 +494,12 @@
     {
       "id": "MVP-FLUID-014",
       "milestone": 6,
-      "status": "planned",
-      "workPaths": ["src/lib/fluid/fluid.ts"],
+      "status": "implemented",
+      "workPaths": [
+        "src/lib/fluid/fluid.ts",
+        "src/lib/calculation/screen-candidates.ts",
+        "src/lib/reporting/generate-output.ts"
+      ],
       "proofPaths": [
         "tests/e2e/fuel-boundary.spec.ts",
         "tests/e2e/rx7-screening.spec.ts",

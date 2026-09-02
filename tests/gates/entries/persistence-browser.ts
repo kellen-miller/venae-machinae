@@ -1,9 +1,12 @@
 import { PROJECT_LIBRARY_DATABASE_NAME } from '../../../src/lib/persistence/database-schema';
 import { openProjectLibrary } from '../../../src/lib/persistence/project-library';
 import { projectDocumentSchema } from '../../../src/lib/persistence/project-document';
-import { generateCapacityProject } from '../../fixtures/capacity-project';
+import {
+  generateRx7CapacityProject,
+  RX7_CAPACITY_ASSETS
+} from '../../fixtures/rx7-capacity-project';
 
-import type { CapacityScale } from '../../fixtures/capacity-project';
+import type { Rx7CapacityScale } from '../../fixtures/rx7-capacity-project';
 
 function deleteProjectLibrary(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -17,14 +20,9 @@ export async function runPersistenceGate() {
   await deleteProjectLibrary();
   let library = await openProjectLibrary();
   const measurements = [];
-  const asset = {
-    sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-    mimeType: 'image/png',
-    bytes: new Uint8Array([137, 80, 78, 71])
-  };
 
-  for (const scale of [1, 2, 5] as const satisfies readonly CapacityScale[]) {
-    const snapshot = generateCapacityProject(scale);
+  for (const scale of [1, 2, 5] as const satisfies readonly Rx7CapacityScale[]) {
+    const snapshot = generateRx7CapacityProject(scale);
     const serializationStartedAt = performance.now();
     const serialized = JSON.stringify(snapshot);
     const serializationMs = performance.now() - serializationStartedAt;
@@ -39,7 +37,7 @@ export async function runPersistenceGate() {
       projectId: snapshot.project.id,
       expectedRevision: null,
       snapshot,
-      newAssets: [asset]
+      newAssets: RX7_CAPACITY_ASSETS
     });
     const saveMs = performance.now() - saveStartedAt;
     library.close();
@@ -68,7 +66,7 @@ export async function runPersistenceGate() {
     });
   }
 
-  const firstProject = generateCapacityProject(1);
+  const firstProject = generateRx7CapacityProject(1);
   const checkpoint = await library.createCheckpoint({
     projectId: firstProject.project.id,
     reason: 'gate-browser-baseline'

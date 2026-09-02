@@ -83,6 +83,21 @@
     await openCreatedProject(outcome.snapshot.id);
   }
 
+  async function copyIllustrativeExample(): Promise<void> {
+    if (!application || libraryState !== 'ready') return;
+
+    libraryState = 'copying-example';
+    operationFailure = null;
+    const outcome = await application.copyIllustrativeExample();
+    if (!outcome.copied) {
+      operationFailure = `Illustrative example copy failed: ${outcome.reason}.`;
+      libraryState = 'ready';
+      return;
+    }
+
+    await openCreatedProject(outcome.projectId);
+  }
+
   async function duplicateProject(project: ProjectListing): Promise<void> {
     if (!application || libraryState !== 'ready') return;
 
@@ -246,6 +261,7 @@
   {overview}
   {stagedImport}
   onblank={createBlankProject}
+  onexample={copyIllustrativeExample}
   onduplicate={duplicateProject}
   onnamedsnapshot={createNamedSnapshot}
   onrestoresnapshot={restoreNamedSnapshot}

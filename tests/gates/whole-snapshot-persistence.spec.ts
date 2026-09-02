@@ -5,7 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PROJECT_LIBRARY_DATABASE_NAME } from '../../src/lib/persistence/database-schema';
 import { openProjectLibrary } from '../../src/lib/persistence/project-library';
 import { projectDocumentSchema } from '../../src/lib/persistence/project-document';
-import { CAPACITY_COUNTS, generateCapacityProject } from '../fixtures/capacity-project';
+import { generateCapacityProject } from '../fixtures/capacity-project';
+import {
+  generateRx7CapacityProject,
+  RX7_CAPACITY_ASSETS,
+  RX7_CAPACITY_COUNTS
+} from '../fixtures/rx7-capacity-project';
 
 function deleteProjectLibrary(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -22,24 +27,24 @@ beforeEach(async () => {
 
 describe('MVP-GATE-003 whole-snapshot persistence', () => {
   it.each([1, 2, 5] as const)('validates the generated %sx fixture', (scale) => {
-    const snapshot = projectDocumentSchema.parse(generateCapacityProject(scale));
-    expect(snapshot.topology.components).toHaveLength(CAPACITY_COUNTS[scale].components);
+    const snapshot = projectDocumentSchema.parse(generateRx7CapacityProject(scale));
+    expect(snapshot.topology.components).toHaveLength(RX7_CAPACITY_COUNTS[scale].components);
     expect(snapshot.topology.components.flatMap((component) => component.ports)).toHaveLength(
-      CAPACITY_COUNTS[scale].ports
+      RX7_CAPACITY_COUNTS[scale].ports
     );
-    expect(snapshot.topology.connections).toHaveLength(CAPACITY_COUNTS[scale].connections);
+    expect(snapshot.topology.connections).toHaveLength(RX7_CAPACITY_COUNTS[scale].connections);
   });
 
   it.each([1, 2, 5] as const)('saves and recovers the whole %sx snapshot', async (scale) => {
-    const snapshot = generateCapacityProject(scale);
+    const snapshot = generateRx7CapacityProject(scale);
     const library = await openProjectLibrary();
     const outcome = await library.saveProject({
       projectId: snapshot.project.id,
       expectedRevision: null,
       snapshot,
-      newAssets: []
+      newAssets: RX7_CAPACITY_ASSETS
     });
-    expect(outcome).toEqual({ saved: true, revision: 1, assetWrites: 0 });
+    expect(outcome).toEqual({ saved: true, revision: 42, assetWrites: 1 });
     library.close();
 
     const reopened = await openProjectLibrary();

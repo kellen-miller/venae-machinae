@@ -58,6 +58,8 @@ function collectProjectOwnedIds(project: ProjectDocument): ReadonlySet<string> {
     ]),
     ...project.partDefinitions.map((subject) => subject.id),
     ...project.partRequirements.map((subject) => subject.id),
+    ...project.build.procurementChoices.map((subject) => subject.id),
+    ...project.build.installations.map((subject) => subject.id),
     ...project.evidence.map((subject) => subject.id),
     ...project.results.flatMap((result) => {
       if (result.detail?.type === 'overlay') {
@@ -140,6 +142,12 @@ export function rekeyProjectCopy(project: ProjectDocument): ProjectDocument {
   const identities = new Map(
     [...collectProjectOwnedIds(sourceProject)].map((identity) => [identity, crypto.randomUUID()])
   );
+  for (const result of sourceProject.results) {
+    if (result.detail?.type !== 'calculation') continue;
+    const calculationId = identities.get(result.detail.outcome.trace.calculationId);
+    if (calculationId) identities.set(result.id, `result-${calculationId}`);
+  }
+
   const provenanceMarker = `Imported as copy from ${sourceProject.project.id}`;
   const rekeyed = rekeyProjectOwnedValue(
     sourceProject,

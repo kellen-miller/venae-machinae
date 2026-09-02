@@ -5,6 +5,8 @@ import { isSemanticQuantity, isUnitId } from './unit-registry';
 
 import type { SemanticQuantity, UnitId } from './unit-registry';
 
+z.config({ jitless: true });
+
 const decimalString = z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/);
 const identity = z.string().min(1).max(160);
 const unitId = z.custom<UnitId>(isUnitId, { error: 'Unknown unit identity' });

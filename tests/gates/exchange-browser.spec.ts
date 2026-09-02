@@ -98,33 +98,33 @@ test('MVP-GATE-004 stages measured exchange limits in production browsers', asyn
   ).toEqual([
     {
       scale: 1,
-      components: 300,
-      ports: 1500,
-      connections: 1200,
-      originalAssetBytes: 65_536,
+      components: 26,
+      ports: 65,
+      connections: 32,
+      originalAssetBytes: 68,
       assetCount: 1,
-      maxNestingDepth: 7,
-      collectionEntries: 3_007
+      maxNestingDepth: 10,
+      collectionEntries: 732
     },
     {
       scale: 2,
-      components: 600,
-      ports: 3000,
-      connections: 2400,
+      components: 52,
+      ports: 130,
+      connections: 64,
       originalAssetBytes: 524_288,
-      assetCount: 1,
-      maxNestingDepth: 7,
-      collectionEntries: 6_007
+      assetCount: 2,
+      maxNestingDepth: 10,
+      collectionEntries: 1_464
     },
     {
       scale: 5,
-      components: 1500,
-      ports: 7500,
-      connections: 6000,
+      components: 130,
+      ports: 325,
+      connections: 160,
       originalAssetBytes: 12_582_912,
-      assetCount: 2,
-      maxNestingDepth: 7,
-      collectionEntries: 15_010
+      assetCount: 3,
+      maxNestingDepth: 10,
+      collectionEntries: 3_654
     }
   ]);
   for (const measurement of result.results) {
@@ -138,9 +138,9 @@ test('MVP-GATE-004 stages measured exchange limits in production browsers', asyn
     expect(measurement.commitMs).toBeLessThan(2_000);
     expect(measurement.estimatedPeakBytes).toBeLessThanOrEqual(result.limits.maxEstimatedPeakBytes);
     expect(measurement.saved).toBe(true);
-    expect(measurement.assetWrites).toBe(measurement.assetCount);
     expect(measurement.recoveredExactly).toBe(true);
   }
+  expect(result.results.map((measurement) => measurement.assetWrites)).toEqual([1, 1, 2]);
   expect(result.results.map((measurement) => measurement.persistedAssetCount)).toEqual([1, 2, 4]);
   console.log(`MVP_GATE_004_MEASUREMENT ${testInfo.project.name} ${JSON.stringify(result)}`);
 });

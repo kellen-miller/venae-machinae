@@ -3,6 +3,8 @@ import { z } from 'zod';
 import type { ProjectSnapshot } from '../project/project';
 import type { SubjectId } from '../topology/topology';
 
+z.config({ jitless: true });
+
 export const OVERLAY_CHANNELS = [
   'potential',
   'current',

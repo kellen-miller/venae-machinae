@@ -3,6 +3,13 @@
   import { onMount } from 'svelte';
 
   import { createProjectExchange } from '../../exchange/project-exchange';
+  import {
+    captureOutputRevision,
+    createCsvTables,
+    createExportAllZip,
+    createPrintableReport,
+    createValidationReport
+  } from '../../reporting/generate-output';
   import { projectSnapshotToDocument } from '../../persistence/project-document';
   import { projectSnapshotToRendererProjection } from '../../renderer/projection';
   import { createProjectComponentFromPrimitive, PRIMITIVES } from '../../reference/primitives';
@@ -12,6 +19,7 @@
   import CommandPalette from './CommandPalette.svelte';
   import Inspector from './Inspector.svelte';
   import LensStack from './LensStack.svelte';
+  import OutputPreview from './OutputPreview.svelte';
   import VehicleBackgroundControls from './VehicleBackgroundControls.svelte';
   import ViewLauncher from './ViewLauncher.svelte';
   import WorkspaceStatus from './WorkspaceStatus.svelte';
@@ -24,6 +32,7 @@
   import type { FluidComponentRole } from '../../fluid/fluid';
   import type { ImpactPreview, ProjectAction } from '../../project/action';
   import type { PartDefinition, VehicleBackground } from '../../project/project';
+  import type { PrintableReport, ProjectOutputKind } from '../../reporting/generate-output';
   import type { ProjectAsset } from '../../session/session-backing';
   import type { ProjectSession } from '../../session/project-session.svelte';
   import type {
@@ -53,6 +62,7 @@
   > | null>(null);
   let branchPreview = $state<ImpactPreview | null>(null);
   let prefersReducedMotion = $state(false);
+  let printableReport = $state<PrintableReport | null>(null);
   const canAuthor = $derived(session.view.capability.mode === 'author');
   const rendererCapability = $derived(canAuthor ? ('author' as const) : ('review' as const));
   const motionPaused = $derived(presentation.motionPaused || prefersReducedMotion);
@@ -171,6 +181,75 @@
     anchor.click();
     URL.revokeObjectURL(url);
     interactionStatus = `Exported revision ${output.snapshot.revision} as ${envelope.exportMetadata.revisionState}.`;
+  }
+
+  function downloadOutput(filename: string, contents: BlobPart, mimeType: string): void {
+    const url = URL.createObjectURL(new Blob([contents], { type: mimeType }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function generateOutput(kind: ProjectOutputKind): Promise<void> {
+    const acquired = await session.acquireOutputRevision({ allowUnsavedWorkingState: false });
+    if (!acquired.acquired) {
+      interactionStatus = 'Output blocked: the current Project revision could not be saved.';
+      return;
+    }
+    const output = captureOutputRevision(acquired.snapshot, {
+      source: acquired.source,
+      generatedAt: new Date().toISOString(),
+      view: presentation.activeView,
+      operatingStateId: presentation.operatingStateId,
+      domainFilter: presentation.domainFilter,
+      systemFilterId: presentation.systemFilterId,
+      overlayChannels: presentation.overlayChannels,
+      legend: [
+        'Solid trace: known evidence',
+        'Hatched trace: unknown or conflicting evidence',
+        'Orange mark: visible Finding'
+      ],
+      pagination: 'A4 portrait · repeat table headers'
+    });
+    const prefix = `${output.document.project.id}.r${output.document.project.revision}`;
+    if (kind === 'print') {
+      printableReport = createPrintableReport(output);
+    } else if (kind === 'csv') {
+      downloadOutput(
+        `${prefix}.bom.csv`,
+        createCsvTables(output)['bom.csv'] ?? '',
+        'text/csv;charset=utf-8'
+      );
+    } else if (kind === 'zip') {
+      downloadOutput(
+        `${prefix}.outputs.zip`,
+        new Uint8Array(createExportAllZip(output)).buffer,
+        'application/zip'
+      );
+    } else if (kind === 'validation') {
+      downloadOutput(
+        `${prefix}.validation.json`,
+        JSON.stringify(createValidationReport(output), null, 2),
+        'application/json'
+      );
+    } else {
+      const envelope = await createProjectExchange({
+        project: output.document,
+        assets: session.view.assets.map((asset) => ({
+          mimeType: asset.mimeType,
+          bytes: new Uint8Array(asset.bytes)
+        })),
+        exportedAt: output.context.generatedAt,
+        revisionState:
+          output.context.source === 'unsaved-working-state'
+            ? 'Unsaved working state'
+            : 'Durable revision'
+      });
+      downloadOutput(`${prefix}.venae.json`, JSON.stringify(envelope, null, 2), 'application/json');
+    }
+    interactionStatus = `Generated ${kind} from immutable revision ${output.document.project.revision}.`;
   }
 
   function select(subject: WorkspaceSubject): void {
@@ -622,6 +701,7 @@
           interactionStatus =
             'Validation requested; prior evidence remains visible until publication.';
         }}
+        onoutput={generateOutput}
         onpreviewbranch={previewBranch}
         onconfirmbranch={confirmBranch}
         oncancelbranch={cancelBranch}
@@ -756,6 +836,10 @@
         presentation.searchQuery = '';
       }}
     />
+  {/if}
+
+  {#if printableReport}
+    <OutputPreview report={printableReport} onclose={() => (printableReport = null)} />
   {/if}
 </main>
 

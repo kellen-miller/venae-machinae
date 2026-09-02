@@ -10,6 +10,7 @@ import { operatingStateOverlaySchema } from '../operating-state/evaluate-overlay
 import { validateTopology } from '../topology/topology';
 import { APPLICATION_VERSIONS } from '../version/version-registry';
 import { validateCalculationModel } from '../project/project';
+import { validateBuildRecord } from '../build/build-record';
 import {
   validationApplicabilityDecisionSchema,
   validationHistorySchema
@@ -89,9 +90,59 @@ const partDefinitionSchema = z.strictObject({
 const partRequirementSchema = z.strictObject({
   id: identity,
   subjectId: identity,
+  partDefinitionId: identity.optional(),
+  variant: z.string().min(1).max(240).optional(),
   label: z.string().min(1).max(160),
-  quantity: decimalString
+  quantity: decimalString,
+  unit: z.string().min(1).max(80).optional(),
+  domain: domain.optional(),
+  systemId: identity.optional()
 });
+
+const procurementChoiceSchema = z.strictObject({
+  id: identity,
+  partDefinitionId: identity,
+  variant: z.string().min(1).max(240),
+  unit: z.string().min(1).max(80),
+  purchasedQuantity: decimalString,
+  method: z.enum(['exact', 'package', 'spool', 'spares', 'waste', 'consumable']),
+  packageSize: decimalString.nullable(),
+  sparePercent: decimalString.nullable(),
+  wasteQuantity: decimalString.nullable(),
+  consumableQuantity: decimalString.nullable(),
+  note: z.string().min(1).max(4_000),
+  provenance: z.string().min(1).max(4_000)
+});
+
+const installationRecordSchema = z.strictObject({
+  id: identity,
+  subjectId: identity,
+  status: z.enum(['planned', 'installed', 'removed']),
+  installedPartDefinitionId: identity.nullable(),
+  installedVariant: z.string().min(1).max(240).nullable(),
+  quantity: decimalString,
+  unit: z.string().min(1).max(80),
+  measuredEvidenceIds: z.array(identity),
+  observationEvidenceIds: z.array(identity),
+  substitution: z
+    .strictObject({
+      intendedPartDefinitionId: identity,
+      installedPartDefinitionId: identity,
+      reason: z.string().min(1).max(4_000)
+    })
+    .nullable(),
+  photoAssetHashes: z.array(z.string().regex(/^[a-f0-9]{64}$/)),
+  notes: z.string().max(4_000),
+  recordedAt: z.iso.datetime({ offset: true }),
+  provenance: z.string().min(1).max(4_000)
+});
+
+const buildRecordSchema = z
+  .strictObject({
+    procurementChoices: z.array(procurementChoiceSchema),
+    installations: z.array(installationRecordSchema)
+  })
+  .default({ procurementChoices: [], installations: [] });
 
 const evidenceSchema = z.strictObject({
   id: identity,
@@ -407,6 +458,7 @@ export const projectDocumentSchema = z.strictObject({
   screenings: z.array(candidateScreenRequestSchema),
   partDefinitions: z.array(partDefinitionSchema),
   partRequirements: z.array(partRequirementSchema),
+  build: buildRecordSchema,
   evidence: z.array(evidenceSchema),
   results: z.array(projectResultSchema),
   validationApplicabilityDecisions: z.array(validationApplicabilityDecisionSchema),
@@ -460,6 +512,7 @@ export function projectSnapshotToDocument(snapshot: ProjectSnapshot): ProjectDoc
     screenings: snapshot.screenings,
     partDefinitions: snapshot.partDefinitions,
     partRequirements: snapshot.partRequirements,
+    build: snapshot.build,
     evidence: snapshot.evidence,
     results: snapshot.results,
     validationApplicabilityDecisions: snapshot.validationApplicabilityDecisions,
@@ -486,6 +539,7 @@ export function projectDocumentToSnapshot(document: ProjectDocument): ProjectSna
     screenings: parsed.screenings,
     partDefinitions: parsed.partDefinitions,
     partRequirements: parsed.partRequirements,
+    build: parsed.build,
     evidence: parsed.evidence,
     results: parsed.results,
     validationApplicabilityDecisions: parsed.validationApplicabilityDecisions,
@@ -528,6 +582,10 @@ export function projectDocumentToSnapshot(document: ProjectDocument): ProjectSna
     throw new Error(
       `Persisted Project calculation model is invalid: ${calculationRejection.message}`
     );
+  }
+  const buildRecordRejection = validateBuildRecord(snapshot);
+  if (buildRecordRejection) {
+    throw new Error(`Persisted Project build record is invalid: ${buildRecordRejection.message}`);
   }
   return snapshot;
 }

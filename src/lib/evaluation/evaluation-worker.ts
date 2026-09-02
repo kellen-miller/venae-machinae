@@ -9,6 +9,7 @@ import { screenCandidates } from '../calculation/screen-candidates';
 import { evaluateOperatingStateOverlay } from '../operating-state/evaluate-overlay';
 import { createEmptyElectricalModel } from '../electrical/electrical';
 import { createEmptyFluidModel } from '../fluid/fluid';
+import { createEmptyBuildRecord } from '../build/build-record';
 import { evaluateValidation, publishValidationRun } from '../validation/evaluate-validation';
 
 import type {
@@ -150,6 +151,23 @@ async function evaluate(token: ActiveEvaluation): Promise<void> {
     ...result,
     sourceRevision: evaluating.projectRevision
   }));
+  const derivedResultIds = new Set(overlayResults.map((result) => result.id));
+  for (const calculationResultId of new Set(
+    evaluating.operatingStates.flatMap((state) =>
+      state.bindings.flatMap((binding) =>
+        binding.calculationResultId ? [binding.calculationResultId] : []
+      )
+    )
+  )) {
+    if (derivedResultIds.has(calculationResultId)) continue;
+    overlayResults.push({
+      id: calculationResultId,
+      sourceRevision: evaluating.projectRevision,
+      status: 'stale',
+      kind: 'calculation-reference',
+      detail: null
+    });
+  }
   const overlaySnapshot: ProjectSnapshot = {
     id: evaluating.projectId,
     name: 'Evaluation mirror',
@@ -191,6 +209,7 @@ async function evaluate(token: ActiveEvaluation): Promise<void> {
     screenings: evaluating.screenings,
     partDefinitions: [],
     partRequirements: [],
+    build: createEmptyBuildRecord(),
     evidence: evaluating.evidence,
     results: overlayResults,
     validationApplicabilityDecisions: evaluating.validationApplicabilityDecisions,
