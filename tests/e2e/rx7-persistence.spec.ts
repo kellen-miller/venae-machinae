@@ -44,7 +44,7 @@ test('MVP-ACC-011 autosaves, reopens, duplicates, snapshots, trashes, and restor
   ).toBeVisible();
 });
 
-test('MVP-ACC-011 checkpoints the RX-7 session and transfers its authoring lease', async ({
+test('MVP-DATA-003 MVP-ACC-011 checkpoints the RX-7 session and transfers its authoring lease', async ({
   page,
   context
 }) => {

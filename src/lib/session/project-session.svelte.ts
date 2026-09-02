@@ -1,3 +1,5 @@
+import { SvelteDate } from 'svelte/reactivity';
+
 import { applyProjectAction, previewProjectActionImpact } from '../project/apply-action';
 import { retainStaleProjectResult } from '../project/project';
 import { resolveAuthoringCapability } from './authoring-capability';
@@ -94,6 +96,7 @@ export type ProjectSessionView = Readonly<{
   save: Readonly<{
     status: 'saved' | 'queued' | 'saving' | 'failed' | 'not-durable';
     durableRevision: number | null;
+    savedAt: string | null;
     message: string | null;
   }>;
   evaluation: Readonly<{
@@ -154,10 +157,16 @@ export function createProjectSession(dependencies: {
   let assets = $state.raw<readonly ProjectAsset[]>(dependencies.initialAssets);
   let save = $state.raw<ProjectSessionView['save']>(
     dependencies.backing.kind === 'transient-review'
-      ? { status: 'not-durable', durableRevision: null, message: 'transient-review' }
+      ? {
+          status: 'not-durable',
+          durableRevision: null,
+          savedAt: null,
+          message: 'transient-review'
+        }
       : {
           status: 'saved',
           durableRevision: dependencies.backing.durableRevision,
+          savedAt: null,
           message: null
         }
   );
@@ -221,7 +230,12 @@ export function createProjectSession(dependencies: {
       return;
     }
 
-    save = { status: 'queued', durableRevision: save.durableRevision, message: null };
+    save = {
+      status: 'queued',
+      durableRevision: save.durableRevision,
+      savedAt: save.savedAt,
+      message: null
+    };
     if (autosaveTimer !== null) clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(() => {
       autosaveTimer = null;
@@ -404,7 +418,12 @@ export function createProjectSession(dependencies: {
 
     while (save.durableRevision !== snapshot.revision) {
       const savingSnapshot = snapshot;
-      save = { status: 'saving', durableRevision: save.durableRevision, message: null };
+      save = {
+        status: 'saving',
+        durableRevision: save.durableRevision,
+        savedAt: save.savedAt,
+        message: null
+      };
       const savingAssets = pendingAssets.filter((asset) =>
         savingSnapshot.assetHashes.includes(asset.sha256)
       );
@@ -413,6 +432,7 @@ export function createProjectSession(dependencies: {
         save = {
           status: 'failed',
           durableRevision: save.durableRevision,
+          savedAt: save.savedAt,
           message: outcome.reason
         };
         return outcome;
@@ -421,6 +441,7 @@ export function createProjectSession(dependencies: {
         save = {
           status: 'failed',
           durableRevision: save.durableRevision,
+          savedAt: save.savedAt,
           message: 'storage-error'
         };
         return { saved: false, reason: 'storage-error' };
@@ -429,7 +450,12 @@ export function createProjectSession(dependencies: {
       pendingAssets = pendingAssets.filter(
         (asset) => !savingAssets.some((savedAsset) => savedAsset.sha256 === asset.sha256)
       );
-      save = { status: 'saved', durableRevision: outcome.revision, message: null };
+      save = {
+        status: 'saved',
+        durableRevision: outcome.revision,
+        savedAt: new SvelteDate().toISOString(),
+        message: null
+      };
     }
 
     return { saved: true, revision: snapshot.revision };

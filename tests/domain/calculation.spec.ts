@@ -40,7 +40,7 @@ function quantity(
   });
 }
 
-describe('MVP-CALC-001 MVP-CALC-004 MVP-CALC-006 MVP-CALC-007 calculation core', () => {
+describe('MVP-CALC-001 MVP-CALC-004 MVP-CALC-005 MVP-CALC-006 MVP-CALC-007 calculation core', () => {
   it('uses 34 significant digits and half-even rounding while preserving entered text', () => {
     const entered = quantity('value-current', 'electric-current', '12.500', 'ampere', {
       lower: '12.400',

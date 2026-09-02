@@ -33,7 +33,7 @@ async function installGate(page: Page) {
   await page.goto('/');
 }
 
-test('MVP-GATE-006 automates storage, lease, upgrade, and restore lifecycle', async ({
+test('MVP-DATA-003 MVP-DATA-005 MVP-GATE-006 automates storage, lease, upgrade, and restore lifecycle', async ({
   page,
   context
 }, testInfo) => {
@@ -101,9 +101,18 @@ test('MVP-GATE-006 automates storage, lease, upgrade, and restore lifecycle', as
     window.VenaeStorageLifecycleGate.storeLifecycleSnapshot()
   );
   expect(saved.saved).toBe(true);
+  expect(
+    await page.evaluate(() => window.VenaeStorageLifecycleGate.holdProjectLease('crash-gate'))
+  ).toEqual({ acquired: true, reason: null });
   await contender.bringToFront();
   const backgroundVisibility = await page.evaluate(() => document.visibilityState);
   await page.close();
+  expect(
+    await contender.evaluate(() => window.VenaeStorageLifecycleGate.holdProjectLease('crash-gate'))
+  ).toEqual({ acquired: true, reason: null });
+  expect(
+    await contender.evaluate(() => window.VenaeStorageLifecycleGate.releaseProjectLease())
+  ).toBe(true);
 
   const restored = await context.newPage();
   await installGate(restored);

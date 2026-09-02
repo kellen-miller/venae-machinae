@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { openBundledRx7Example } from '../fixtures/rx7-example';
 
-test('MVP-NFR-001/002/004 MVP-ACC-015 crosses desktop, tablet, and mobile live', async ({
+test('MVP-NFR-001 MVP-NFR-002 MVP-NFR-004 MVP-ACC-015 crosses desktop, tablet, and mobile live', async ({
   page
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });

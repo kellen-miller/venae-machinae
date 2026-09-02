@@ -33,7 +33,7 @@ test('MVP-ACC-012 round-trips the complete RX-7 envelope through cancel, copy, a
         routes: unknown[];
       };
       operatingStates: unknown[];
-      results: unknown[];
+      results: Array<{ detail: { type: string } | null }>;
       evidence: unknown[];
       build: { installations: unknown[] };
       assetHashes: string[];
@@ -47,7 +47,11 @@ test('MVP-ACC-012 round-trips the complete RX-7 envelope through cancel, copy, a
   expect(envelope.payload.topology.connections).toHaveLength(32);
   expect(envelope.payload.topology.routes).toHaveLength(32);
   expect(envelope.payload.operatingStates).toHaveLength(5);
-  expect(envelope.payload.results.length).toBeGreaterThan(20);
+  expect(envelope.payload.results.length).toBeGreaterThan(12);
+  expect(envelope.payload.results.some((result) => result.detail?.type === 'validation')).toBe(
+    true
+  );
+  expect(envelope.payload.results.some((result) => result.detail?.type === 'overlay')).toBe(false);
   expect(envelope.payload.evidence).toHaveLength(12);
   expect(envelope.payload.build.installations).toHaveLength(2);
   expect(envelope.payload.assetHashes).toHaveLength(1);

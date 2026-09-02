@@ -1,7 +1,17 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 1,
+  "source": "traceability/mvp.json",
   "normativeSource": "docs/mvp-specification.md",
-  "generatedBy": "scripts/generate-mvp-traceability.mjs",
+  "verdict": "pass",
+  "counts": {
+    "normative": 163,
+    "mapped": 163,
+    "implemented": 163,
+    "missing": 0,
+    "extra": 0,
+    "duplicate": 0,
+    "orphanedTags": 0
+  },
   "requirements": [
     {
       "id": "MVP-PROD-001",

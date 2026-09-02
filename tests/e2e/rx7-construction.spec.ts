@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { openBundledRx7Example } from '../fixtures/rx7-example';
 
-test('MVP-ACC-001 through MVP-ACC-004 copies the bundled RX-7 construction record', async ({
+test('MVP-ACC-001 MVP-ACC-002 MVP-ACC-003 MVP-ACC-004 copies the bundled RX-7 construction record', async ({
   page
 }) => {
   await page.goto('/');

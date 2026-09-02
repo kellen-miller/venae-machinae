@@ -4,7 +4,28 @@ import { expect, test } from '@playwright/test';
 
 import { seedWorkspaceProject, WORKSPACE_PROJECT_ID } from '../fixtures/workspace-project';
 
-test('MVP-DATA-001 through MVP-DATA-010 exposes recovery, Trash, and Library Backup lifecycle', async ({
+test('MVP-DATA-002 flushes pending autosave with Cmd/Ctrl+S', async ({ page }) => {
+  await seedWorkspaceProject(page);
+  await page.addInitScript(() => {
+    const schedule = window.setTimeout.bind(window);
+    window.setTimeout = ((handler: TimerHandler, timeout?: number, ...arguments_: unknown[]) =>
+      schedule(
+        handler,
+        timeout === 350 ? 60_000 : timeout,
+        ...arguments_
+      )) as typeof window.setTimeout;
+  });
+  await page.goto(`/projects/${WORKSPACE_PROJECT_ID}`);
+
+  await page.getByRole('button', { name: 'Apply project edit' }).click();
+  await expect(page.locator('[data-evaluation-status="current"]')).toBeVisible();
+  await expect(page.locator('[data-save-status="queued"]')).toBeVisible();
+  await page.keyboard.press('Control+s');
+  await expect(page.locator('[data-save-status="saved"]')).toBeVisible({ timeout: 1_000 });
+  await expect(page.getByLabel('Project status')).toContainText('Saved at');
+});
+
+test('MVP-DATA-005 MVP-DATA-008 MVP-DATA-009 MVP-DATA-010 MVP-DATA-019 exposes recovery, Trash, and Library Backup lifecycle', async ({
   page
 }, testInfo) => {
   await seedWorkspaceProject(page);
@@ -36,7 +57,7 @@ test('MVP-DATA-001 through MVP-DATA-010 exposes recovery, Trash, and Library Bac
   await expect(page.getByRole('heading', { name: /Last Library Backup: just now/i })).toBeVisible();
 });
 
-test('MVP-DATA-007 checkpoints session open and yields a held authoring lease', async ({
+test('MVP-DATA-003 MVP-DATA-007 checkpoints session open and yields a held authoring lease', async ({
   page,
   context
 }) => {

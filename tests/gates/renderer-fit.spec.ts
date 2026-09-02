@@ -6,7 +6,7 @@ import { validateRendererProjection } from '../../src/lib/renderer/projection';
 import { createSVGModel } from '../../src/lib/renderer/svg/adapter';
 import { rendererGateProjection } from '../fixtures/renderer-projection';
 
-describe('MVP-GATE-001 renderer fit', () => {
+describe('MVP-UX-005 MVP-ARCH-010 MVP-GATE-001 renderer fit', () => {
   it('maps app-owned Ports, route points, physical language, and additive Overlays', () => {
     expect(validateRendererProjection(rendererGateProjection)).toBe(rendererGateProjection);
 

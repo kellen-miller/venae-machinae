@@ -51,7 +51,7 @@ class ControlledPreparationWorker extends EventTarget {
   }
 }
 
-describe('MVP-ARCH-004 Project evaluation adapter', () => {
+describe('MVP-CALC-003 MVP-ARCH-004 Project evaluation adapter', () => {
   it('defers preparation-worker startup until the local server reconnects', async () => {
     const snapshot = createBlankProject({
       id: 'project-offline-preparation',

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import { expect, test } from '@playwright/test';
 
-test('MVP-ARCH-005/006/009 keeps delivery strict, local, and project-stateless', async ({
+test('MVP-DATA-001 MVP-ARCH-005 MVP-ARCH-006 MVP-ARCH-009 keeps delivery strict, local, and project-stateless', async ({
   page
 }) => {
   const cspViolations: string[] = [];

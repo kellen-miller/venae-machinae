@@ -58,7 +58,7 @@ beforeEach(async () => {
 });
 
 describe('MVP-ARCH-003 persisted and live project boundaries', () => {
-  it('round-trips the complete current aggregate through the strict document mapper', () => {
+  it('MVP-DATA-006 persists the complete aggregate without generated Overlay marks', () => {
     let snapshot = createBlankProject({
       id: 'project-round-trip',
       name: 'Round-trip fixture',
@@ -118,6 +118,30 @@ describe('MVP-ARCH-003 persisted and live project boundaries', () => {
         conflictValues: []
       }
     });
+    snapshot = {
+      ...snapshot,
+      results: [
+        {
+          id: 'result-generated-overlay',
+          sourceRevision: snapshot.revision,
+          status: 'current',
+          kind: 'overlay',
+          detail: {
+            type: 'overlay',
+            overlay: {
+              id: 'overlay-generated',
+              operatingStateId: 'state-transient',
+              operatingStateName: 'Transient state',
+              sourceRevision: snapshot.revision,
+              inputFingerprint: 'a'.repeat(64),
+              status: 'current',
+              systems: [],
+              marks: []
+            }
+          }
+        }
+      ]
+    };
 
     const document = projectSnapshotToDocument(snapshot);
     expect(document).not.toBe(snapshot);
@@ -128,9 +152,13 @@ describe('MVP-ARCH-003 persisted and live project boundaries', () => {
         systems: [{ id: 'system-coolant', mediumId: 'medium-coolant' }],
         components: [{ id: 'component-pump', position: { x: '12.5', y: '-4' } }]
       },
-      evidence: [{ id: 'evidence-pump-label', state: 'known' }]
+      evidence: [{ id: 'evidence-pump-label', state: 'known' }],
+      results: []
     });
-    expect(projectDocumentToSnapshot(structuredClone(document))).toEqual(snapshot);
+    expect(projectDocumentToSnapshot(structuredClone(document))).toEqual({
+      ...snapshot,
+      results: []
+    });
   });
 
   it('creates, lists, and reopens a blank project through the concrete browser library', async () => {
@@ -328,7 +356,7 @@ describe('Milestone 5 Project Library recovery records', () => {
     library.close();
   });
 
-  it('MVP-DATA-017 keeps template revisions immutable and project copies independent', async () => {
+  it('MVP-DATA-001 MVP-DATA-017 keeps template revisions immutable and project copies independent', async () => {
     const library = await openProjectLibrary();
     try {
       const created = await library.createBlankProject({

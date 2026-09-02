@@ -176,6 +176,44 @@ describe('MVP-PROD-003 MVP-ARCH-002 Project Session revision lifecycle', () => {
 });
 
 describe('MVP-ARCH-003 Project Session durability', () => {
+  it('MVP-DATA-002 debounces autosave and reports completion only after persistence', async () => {
+    vi.useFakeTimers();
+    const records = writableBacking();
+    const session = createWritableSession({ backing: records.backing });
+    try {
+      session.execute({ type: 'rename-project', causationId: 'cause-autosave', name: 'Queued' });
+      expect(session.view.save).toMatchObject({
+        status: 'queued',
+        durableRevision: null,
+        savedAt: null
+      });
+
+      await vi.advanceTimersByTimeAsync(30_000);
+      session.execute({
+        type: 'rename-project',
+        causationId: 'cause-autosave-second',
+        name: 'Debounced'
+      });
+      await vi.advanceTimersByTimeAsync(59_999);
+      expect(records.saved).toEqual([]);
+      await vi.advanceTimersByTimeAsync(1);
+
+      expect(records.saved).toEqual([
+        {
+          snapshot: expect.objectContaining({ revision: 2, name: 'Debounced' }),
+          expectedRevision: null
+        }
+      ]);
+      expect(session.view.save).toMatchObject({
+        status: 'saved',
+        durableRevision: 2,
+        savedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/)
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('serializes whole-snapshot saves and keeps a failed edit visibly unsaved', async () => {
     let failNext = false;
     const records = writableBacking({
@@ -191,7 +229,13 @@ describe('MVP-ARCH-003 Project Session durability', () => {
     expect(records.saved).toEqual([
       { snapshot: expect.objectContaining({ revision: 1 }), expectedRevision: null }
     ]);
-    expect(session.view.save).toEqual({ status: 'saved', durableRevision: 1, message: null });
+    const savedAt = session.view.save.savedAt;
+    expect(session.view.save).toEqual({
+      status: 'saved',
+      durableRevision: 1,
+      savedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+      message: null
+    });
 
     failNext = true;
     session.execute({ type: 'rename-project', causationId: 'cause-second', name: 'Unsaved edit' });
@@ -206,6 +250,7 @@ describe('MVP-ARCH-003 Project Session durability', () => {
     expect(session.view.save).toEqual({
       status: 'failed',
       durableRevision: 1,
+      savedAt,
       message: 'quota-exceeded'
     });
 
@@ -230,12 +275,23 @@ describe('MVP-ARCH-003 Project Session durability', () => {
     session.execute({ type: 'rename-project', causationId: 'cause-one', name: 'One' });
     const flushing = session.flush('autosave');
     await vi.waitFor(() => expect(records.saved).toHaveLength(1));
+    expect(session.view.save).toEqual({
+      status: 'saving',
+      durableRevision: null,
+      savedAt: null,
+      message: null
+    });
 
     session.execute({ type: 'rename-project', causationId: 'cause-two', name: 'Two' });
     releaseFirst();
     await expect(flushing).resolves.toEqual({ saved: true, revision: 2 });
     expect(records.saved.map((record) => record.snapshot.revision)).toEqual([1, 2]);
     expect(records.saved.map((record) => record.expectedRevision)).toEqual([null, 1]);
+    expect(session.view.save).toMatchObject({
+      status: 'saved',
+      durableRevision: 2,
+      savedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/)
+    });
   });
 
   it('MVP-DATA-007 checkpoints after 50 actions, five active minutes, and session close', async () => {

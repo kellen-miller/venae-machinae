@@ -44,7 +44,21 @@ jobs:
           pnpm lint
           pnpm check
           pnpm test:unit
+          pnpm test:property
+          pnpm test:migration
           pnpm test:component
+          pnpm test:exchange
           pnpm build
+          pnpm test:e2e
+          pnpm test:security
+          pnpm test:accessibility
+          pnpm test:visual
+          pnpm bundle:check
+          pnpm gate:numeric
+          pnpm gate:persistence
+          pnpm gate:storage-lifecycle
+          pnpm gate:worker
+          pnpm gate:exchange
+          pnpm gate:renderer
           pnpm traceability
           pnpm verify

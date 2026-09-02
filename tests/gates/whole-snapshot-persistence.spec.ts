@@ -25,7 +25,7 @@ beforeEach(async () => {
   await deleteProjectLibrary();
 });
 
-describe('MVP-GATE-003 whole-snapshot persistence', () => {
+describe('MVP-DATA-006 MVP-GATE-003 whole-snapshot persistence', () => {
   it.each([1, 2, 5] as const)('validates the generated %sx fixture', (scale) => {
     const snapshot = projectDocumentSchema.parse(generateRx7CapacityProject(scale));
     expect(snapshot.topology.components).toHaveLength(RX7_CAPACITY_COUNTS[scale].components);

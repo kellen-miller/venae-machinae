@@ -108,3 +108,46 @@ describe('MVP-ARCH-004 typed runtime boundaries', () => {
     ).not.toContain('Renderer');
   });
 });
+
+describe('MVP-HANDOFF-002 pinned CI acceptance', () => {
+  it('runs each production browser in an isolated Playwright lifecycle', () => {
+    const packageMetadata = JSON.parse(readFileSync('package.json', 'utf8'));
+
+    expect(packageMetadata.scripts['test:e2e']).toBe(
+      'playwright test tests/e2e --project=chromium && playwright test tests/e2e --project=firefox && playwright test tests/e2e --project=webkit'
+    );
+  });
+
+  it('runs the complete final repository gate and every non-capacity evidence gate', () => {
+    const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+    for (const command of [
+      'pnpm install --frozen-lockfile',
+      'pnpm format:check',
+      'pnpm lint',
+      'pnpm check',
+      'pnpm test:unit',
+      'pnpm test:property',
+      'pnpm test:migration',
+      'pnpm test:component',
+      'pnpm test:exchange',
+      'pnpm build',
+      'pnpm test:e2e',
+      'pnpm test:security',
+      'pnpm test:accessibility',
+      'pnpm test:visual',
+      'pnpm bundle:check',
+      'pnpm gate:numeric',
+      'pnpm gate:persistence',
+      'pnpm gate:storage-lifecycle',
+      'pnpm gate:worker',
+      'pnpm gate:exchange',
+      'pnpm gate:renderer',
+      'pnpm traceability',
+      'pnpm verify'
+    ]) {
+      expect(workflow).toContain(command);
+    }
+    expect(workflow).not.toContain('pnpm gate:capacity');
+    expect(workflow).not.toContain('pnpm gate:all');
+  });
+});

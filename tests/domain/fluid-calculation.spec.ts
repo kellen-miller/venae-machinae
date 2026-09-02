@@ -50,7 +50,7 @@ function request(
   };
 }
 
-describe('MVP-FLUID-007 MVP-FLUID-008 MVP-CALC-009 bounded fluid calculations', () => {
+describe('MVP-FLUID-007 MVP-FLUID-008 MVP-FLUID-009 MVP-CALC-009 bounded fluid calculations', () => {
   it('calculates circular area only from explicit actual inside diameter', () => {
     const result = evaluateFluidCalculation(
       request('fluid.circular-area.v1', [

@@ -26,7 +26,7 @@ async function loadReference(): Promise<ProjectExchangeEnvelope> {
 }
 
 describe('MVP-UX-010 MVP-ACC-001 through MVP-ACC-010 bundled RX-7 example', () => {
-  it('uses one strict envelope for construction, states, evidence, results, and as-built history', async () => {
+  it('MVP-DATA-006 uses one strict envelope for construction, states, evidence, results, and as-built history', async () => {
     const envelope = await loadReference();
     const snapshot = projectDocumentToSnapshot(envelope.payload);
 

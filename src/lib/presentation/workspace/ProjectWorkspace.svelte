@@ -185,6 +185,13 @@
       : `Retry failed: ${outcome.reason}. Unsaved changes remain in memory.`;
   }
 
+  async function flushPendingSave(): Promise<void> {
+    const outcome = await session.flush('explicit');
+    interactionStatus = outcome.saved
+      ? `Saved durable revision ${outcome.revision}.`
+      : `Save unavailable: ${outcome.reason}.`;
+  }
+
   async function exportUnsavedWorkingState(): Promise<void> {
     if (
       !window.confirm(
@@ -598,6 +605,11 @@
       presentation.searchOpen = false;
       presentation.searchQuery = '';
       setMode('select');
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 's') {
+      event.preventDefault();
+      void flushPendingSave();
       return;
     }
     const target = event.target;

@@ -8,7 +8,9 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator('[data-workspace-mode="select"]')).toBeVisible();
 });
 
-test('MVP-UX-001/002 keeps one full-bleed canvas under all eleven views', async ({ page }) => {
+test('MVP-UX-001 MVP-UX-002 keeps one full-bleed canvas under all eleven views', async ({
+  page
+}) => {
   const launcher = page.getByRole('navigation', { name: 'View Launcher' });
   await expect(launcher.getByRole('button')).toHaveCount(11);
   await expect(launcher.getByRole('button', { name: 'Canvas view' })).toHaveAttribute(
@@ -79,7 +81,7 @@ test('MVP-UX-003 synchronizes selection, preview, Follow, Reveal, and exact Retu
   await expect(workspace).toHaveAttribute('data-canvas-viewport', beforeReveal!);
 });
 
-test('MVP-UX-003/004 keeps explicit modes and independent projection viewports', async ({
+test('MVP-UX-003 MVP-UX-004 keeps explicit modes and independent projection viewports', async ({
   page
 }) => {
   const modeToolbar = page.getByRole('toolbar', { name: 'Workspace modes' });

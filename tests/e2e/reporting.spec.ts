@@ -14,7 +14,7 @@ function zipEntryNames(bytes: Buffer): string[] {
   return names;
 }
 
-test('MVP-BUILD-004 through MVP-BUILD-007 produces one durable revision across outputs', async ({
+test('MVP-BUILD-004 MVP-BUILD-005 MVP-BUILD-006 MVP-BUILD-007 produces one durable revision across outputs', async ({
   page
 }, testInfo) => {
   await seedWorkspaceProject(page);

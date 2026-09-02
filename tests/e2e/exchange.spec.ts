@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 
 import { seedWorkspaceProject } from '../fixtures/workspace-project';
 
-test('MVP-DATA-011 through MVP-DATA-016 stages project exchange before explicit copy commit', async ({
+test('MVP-DATA-011 MVP-DATA-012 MVP-DATA-013 MVP-DATA-014 MVP-DATA-015 MVP-DATA-016 stages project exchange before explicit copy commit', async ({
   page
 }, testInfo) => {
   await seedWorkspaceProject(page);

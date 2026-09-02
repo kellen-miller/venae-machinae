@@ -17,7 +17,7 @@ const cases = [
   { scale: 5 as const, components: 1_500, ports: 7_500, connections: 6_000, overlays: 600 }
 ];
 
-describe('MVP-GATE-002 graph capacity', () => {
+describe('MVP-NFR-006 MVP-GATE-002 graph capacity', () => {
   for (const fixture of cases) {
     it(`preserves the exact ${fixture.scale}x project through the selected renderer`, () => {
       const document = generateRendererCapacityProject(fixture.scale);

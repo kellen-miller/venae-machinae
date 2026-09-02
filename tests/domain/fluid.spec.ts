@@ -302,7 +302,7 @@ describe('MVP-FLUID-001 MVP-FLUID-003 MVP-FLUID-005 fluid systems and behaviors'
   });
 });
 
-describe('MVP-FLUID-002 MVP-FLUID-004 fluid lines and routes', () => {
+describe('MVP-MODEL-007 MVP-FLUID-002 MVP-FLUID-004 fluid lines and routes', () => {
   it('uses explicit fitting topology and distinct hose/tube length evidence on shared Segments', () => {
     let snapshot = createBlankProject({
       id: 'project-coolant-line',

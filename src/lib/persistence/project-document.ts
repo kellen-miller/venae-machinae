@@ -514,7 +514,7 @@ export function projectSnapshotToDocument(snapshot: ProjectSnapshot): ProjectDoc
     partRequirements: snapshot.partRequirements,
     build: snapshot.build,
     evidence: snapshot.evidence,
-    results: snapshot.results,
+    results: snapshot.results.filter((result) => result.detail?.type !== 'overlay'),
     validationApplicabilityDecisions: snapshot.validationApplicabilityDecisions,
     tombstones: snapshot.tombstones,
     engineeringValues: snapshot.engineeringValues,

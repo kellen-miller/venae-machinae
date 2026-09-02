@@ -32,7 +32,9 @@ test('MVP-UX-008 exposes loading, empty guidance, and honest creation affordance
   await expect(page.getByText('Strictly validate and stage before confirmation')).toBeVisible();
 });
 
-test('MVP-UX-008 duplicates a whole browser-local project without a wizard', async ({ page }) => {
+test('MVP-UX-008 MVP-DATA-001 duplicates a whole browser-local project without a wizard', async ({
+  page
+}) => {
   await seedWorkspaceProject(page);
   await page.goto('/');
   await expect(page.locator('[data-library-state="ready"]')).toBeVisible();

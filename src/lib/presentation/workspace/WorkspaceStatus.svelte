@@ -13,7 +13,29 @@
 </script>
 
 <div class="workspace-status" aria-label="Project status">
-  <span data-status={view.save.status}>Save <strong>{view.save.status}</strong></span>
+  <span data-status={view.save.status}>
+    {#if view.save.status === 'saved' && view.save.savedAt}
+      <strong>
+        Saved at
+        <time datetime={view.save.savedAt} title={view.save.savedAt}>
+          {new Date(view.save.savedAt).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+        </time>
+      </strong>
+    {:else if view.save.status === 'saved'}
+      <strong>Saved</strong>
+    {:else if view.save.status === 'queued'}
+      <strong>Saving queued</strong>
+    {:else if view.save.status === 'saving'}
+      <strong>Saving</strong>
+    {:else if view.save.status === 'failed'}
+      <strong>Save failed</strong>
+    {:else}
+      <strong>Not durable</strong>
+    {/if}
+  </span>
   <span data-status={view.evaluation.status}
     >Evaluation <strong>{view.evaluation.status}</strong></span
   >

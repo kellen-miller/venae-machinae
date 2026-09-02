@@ -16,7 +16,7 @@ async function activateState(page: Page, label: string): Promise<void> {
   await expect(page.locator('[data-overlay-status="current"]')).toBeVisible({ timeout: 15_000 });
 }
 
-test('MVP-STATE-001 MVP-STATE-002 MVP-STATE-003 MVP-STATE-004 MVP-STATE-006 MVP-STATE-007 MVP-STATE-008 MVP-STATE-009 MVP-STATE-010 MVP-STATE-011 evaluates traced channels', async ({
+test('MVP-FLUID-006 MVP-FLUID-010 MVP-STATE-001 MVP-STATE-002 MVP-STATE-003 MVP-STATE-004 MVP-STATE-006 MVP-STATE-007 MVP-STATE-008 MVP-STATE-009 MVP-STATE-010 MVP-STATE-011 evaluates traced channels', async ({
   page
 }) => {
   await openOperatingStateProject(page);
@@ -272,21 +272,50 @@ test('MVP-STATE-013 preserves stale overlays and topology when evaluation fails'
   await page.getByRole('checkbox', { name: 'Pause direction motion' }).uncheck();
   await expect(page.locator('[data-motion-paused="true"]')).toBeVisible();
 
-  await page.addInitScript(() => {
-    Object.defineProperty(window, 'Worker', {
-      configurable: true,
-      value: class BrokenEvaluationWorker {
-        constructor() {
-          throw new Error('intentional operating-state worker failure');
-        }
+  await page.evaluate(() => {
+    const postMessage = Worker.prototype.postMessage;
+    Worker.prototype.postMessage = function (
+      message: unknown,
+      transferOrOptions?: Transferable[] | StructuredSerializeOptions
+    ) {
+      const request = message as {
+        type?: unknown;
+        requestId?: unknown;
+        projectRevision?: unknown;
+        inputFingerprint?: unknown;
+        formulaCatalogVersion?: unknown;
+        validationRuleCatalogVersion?: unknown;
+        schemaVersion?: unknown;
+      };
+      if (request.type === 'initialize-evaluation' || request.type === 'evaluate-change-set') {
+        queueMicrotask(() => {
+          this.dispatchEvent(
+            new MessageEvent('message', {
+              data: {
+                type: 'evaluation-failed',
+                requestId: request.requestId,
+                projectRevision: request.projectRevision,
+                inputFingerprint: request.inputFingerprint,
+                formulaCatalogVersion: request.formulaCatalogVersion,
+                validationRuleCatalogVersion: request.validationRuleCatalogVersion,
+                schemaVersion: request.schemaVersion,
+                reason: 'evaluation-error',
+                message: 'intentional operating-state worker failure',
+                requiresInitialization: false
+              }
+            })
+          );
+        });
+        return;
       }
-    });
+
+      if (transferOrOptions === undefined) postMessage.call(this, message);
+      else if (Array.isArray(transferOrOptions)) {
+        postMessage.call(this, message, { transfer: transferOrOptions });
+      } else postMessage.call(this, message, transferOrOptions);
+    };
   });
-  await page.reload();
-  await expect(page.locator('[data-workspace-mode="select"]')).toBeVisible();
-  await page
-    .getByLabel('Operating State', { exact: true })
-    .selectOption({ label: 'Run Hot / Fan On' });
+  await page.getByRole('button', { name: 'Apply project edit' }).click();
   await expect(page.locator('[data-overlay-status="failed"]')).toBeVisible({ timeout: 15_000 });
 
   const retainedMark = page.locator(

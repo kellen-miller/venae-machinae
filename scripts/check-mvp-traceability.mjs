@@ -8,6 +8,7 @@ const normativeIds = [...specification.matchAll(/^\| `(MVP-[A-Z]+-\d{3})`/gm)].m
 const trace = JSON.parse(readFileSync('traceability/mvp.json', 'utf8'));
 const mappings = trace.requirements ?? [];
 const mappedIds = mappings.map((entry) => entry.id);
+const implementedCount = mappings.filter((entry) => entry.status === 'implemented').length;
 
 function duplicateCount(values) {
   const counts = new Map();
@@ -36,8 +37,28 @@ for (const entry of mappings) {
     throw new Error(`${entry.id} has no proof paths`);
   }
 
+  if (!Array.isArray(entry.evidencePaths) || entry.evidencePaths.length === 0) {
+    throw new Error(`${entry.id} has no evidence paths`);
+  }
+
+  if (typeof entry.command !== 'string' || entry.command.length === 0) {
+    throw new Error(`${entry.id} has no proof command`);
+  }
+
+  if (!/^(?:pnpm|node)\b/.test(entry.command) || entry.command.includes('manual evidence review')) {
+    throw new Error(`${entry.id} has a non-executable proof command: ${entry.command}`);
+  }
+
+  if (
+    JSON.stringify([...entry.evidencePaths].sort()) !== JSON.stringify([...entry.proofPaths].sort())
+  ) {
+    throw new Error(`${entry.id} evidence paths do not match its proof paths`);
+  }
+
   if (entry.status !== 'planned') {
-    for (const path of [...entry.workPaths, ...entry.proofPaths]) {
+    for (const path of [
+      ...new Set([...entry.workPaths, ...entry.proofPaths, ...entry.evidencePaths])
+    ]) {
       if (!existsSync(path)) throw new Error(`${entry.id} maps missing path ${path}`);
     }
 
@@ -91,6 +112,28 @@ if (missing.length || extra.length || duplicate || orphaned.size) {
   );
 }
 
+const finalTracePath = 'evidence/traceability/mvp-trace.json';
+if (!existsSync(finalTracePath)) throw new Error(`Missing final trace evidence ${finalTracePath}`);
+const finalTrace = JSON.parse(readFileSync(finalTracePath, 'utf8'));
+if (
+  trace.schemaVersion !== 2 ||
+  finalTrace.schemaVersion !== 1 ||
+  finalTrace.source !== 'traceability/mvp.json' ||
+  finalTrace.normativeSource !== 'docs/mvp-specification.md' ||
+  finalTrace.verdict !== 'pass' ||
+  implementedCount !== normativeIds.length ||
+  finalTrace.counts?.normative !== normativeIds.length ||
+  finalTrace.counts?.mapped !== mappings.length ||
+  finalTrace.counts?.implemented !== implementedCount ||
+  finalTrace.counts?.missing !== 0 ||
+  finalTrace.counts?.extra !== 0 ||
+  finalTrace.counts?.duplicate !== 0 ||
+  finalTrace.counts?.orphanedTags !== 0 ||
+  JSON.stringify(finalTrace.requirements) !== JSON.stringify(mappings)
+) {
+  throw new Error('Final trace evidence is stale or not fully implemented');
+}
+
 console.log(
-  `${normativeIds.length} normative IDs; ${mappings.length} mappings; 0 missing; 0 extra; 0 duplicate; 0 orphaned tags`
+  `${normativeIds.length} normative IDs; ${mappings.length} mappings; ${implementedCount} implemented; 0 missing; 0 extra; 0 duplicate; 0 orphaned tags`
 );

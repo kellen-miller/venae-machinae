@@ -7,7 +7,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('MVP-GATE-006 browser storage lifecycle', () => {
+describe('MVP-DATA-005 MVP-GATE-006 browser storage lifecycle', () => {
   it.each([
     {
       granted: true,

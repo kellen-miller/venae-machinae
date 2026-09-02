@@ -22,7 +22,7 @@
     "test:migration": "vitest run --config vitest.config.ts tests/migration --passWithNoTests",
     "test:component": "vitest run --config vitest.config.ts tests/component",
     "test:exchange": "vitest run --config vitest.config.ts tests/exchange --passWithNoTests",
-    "test:e2e": "playwright test tests/e2e",
+    "test:e2e": "playwright test tests/e2e --project=chromium && playwright test tests/e2e --project=firefox && playwright test tests/e2e --project=webkit",
     "test:security": "vitest run --config vitest.config.ts tests/security",
     "test:accessibility": "playwright test tests/accessibility",
     "test:visual": "playwright test tests/visual",

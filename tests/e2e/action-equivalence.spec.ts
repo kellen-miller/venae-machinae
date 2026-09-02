@@ -42,7 +42,7 @@ test('MVP-UX-012 sends direct manipulation and Inspector edits through one actio
   );
 });
 
-test('MVP-UX-009/011 creates project-owned primitives and exposes keyboard-visible actions', async ({
+test('MVP-UX-009 MVP-UX-011 creates project-owned primitives and exposes keyboard-visible actions', async ({
   page
 }) => {
   const fan = page.locator('[data-renderer-node="fan"] .node-shell');

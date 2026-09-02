@@ -150,8 +150,19 @@ test('records Project Library empty, loading, and persistent error states', asyn
 
 test('records save-failed and lease-held review states', async ({ page, context }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.clock.setFixedTime(new Date('2026-09-02T09:00:00Z'));
   await seedWorkspaceProject(page);
   await page.goto(`/projects/${WORKSPACE_PROJECT_ID}`);
+  await page.getByRole('button', { name: 'Apply project edit' }).click();
+  await expect(page.locator('[data-evaluation-status="current"]')).toBeVisible();
+  await expect(page.locator('[data-save-status="saved"]')).toBeVisible();
+  await expect(page.getByLabel('Project status')).toContainText('Saved at');
+  await page.screenshot({
+    path: 'evidence/frontend/M8-saved-at-desktop.png',
+    animations: 'disabled',
+    scale: 'css'
+  });
+
   await page.evaluate(() => {
     const originalPut = IDBObjectStore.prototype.put;
     IDBObjectStore.prototype.put = function (...args) {
