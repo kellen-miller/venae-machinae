@@ -106,7 +106,7 @@
     {:else if activeView === 'harnesses-bundles'}
       <HarnessesBundlesLens {snapshot} {canAuthor} {onaction} />
     {:else if activeView === 'calculations'}
-      <CalculationsLens {snapshot} />
+      <CalculationsLens {snapshot} {canAuthor} {onaction} />
     {:else if activeView === 'evidence'}
       <EvidenceLens {snapshot} />
     {:else if activeView === 'bom'}

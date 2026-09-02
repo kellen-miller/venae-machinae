@@ -118,7 +118,7 @@ export function generateRendererCapacityProject(scale: CapacityScale): ProjectDo
   const connections = routedConnections.map((entry) => entry.connection);
 
   return projectDocumentSchema.parse({
-    schemaVersion: 5,
+    schemaVersion: 6,
     project: {
       id: `renderer-capacity-project-${scale}x`,
       name: `Renderer capacity ${scale}x`,
@@ -175,6 +175,8 @@ export function generateRendererCapacityProject(scale: CapacityScale): ProjectDo
       behaviors: [],
       boundaryConditions: []
     },
+    calculations: [],
+    screenings: [],
     partDefinitions: [],
     partRequirements: [],
     evidence: [],

@@ -25,7 +25,7 @@ function createInitialization(
     inputFingerprint: fingerprint,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 5,
+    schemaVersion: 6,
     project
   };
 }
@@ -38,7 +38,7 @@ function createIncrementalChange(requestId: string): EvaluateChangeSet {
     inputFingerprint: fingerprintTwo,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 5,
+    schemaVersion: 6,
     changeSet: {
       baseRevision: 1,
       upsertComponents: [],
@@ -50,7 +50,11 @@ function createIncrementalChange(requestId: string): EvaluateChangeSet {
       ],
       removeEngineeringValueIds: [],
       upsertOperatingStates: [],
-      removeOperatingStateIds: []
+      removeOperatingStateIds: [],
+      upsertCalculations: [],
+      removeCalculationIds: [],
+      upsertScreenings: [],
+      removeScreeningIds: []
     }
   };
 }
@@ -138,7 +142,7 @@ export async function runWorkerGate(productionWorkerSource: string) {
   await cooperativePublication.promise;
   cooperativeClient.close();
 
-  const staleSource = `${productionWorkerSource}\nself.addEventListener('message', (event) => { const message = event.data; if (message.type !== 'initialize-evaluation') return; self.postMessage({ type: 'evaluation-succeeded', requestId: message.requestId, projectRevision: message.projectRevision, inputFingerprint: '${'9'.repeat(64)}', formulaCatalogVersion: message.formulaCatalogVersion, validationRuleCatalogVersion: message.validationRuleCatalogVersion, schemaVersion: message.schemaVersion, summary: { componentCount: 0, connectionCount: 0, engineeringValueCount: 0, operatingStateCount: 0 } }); }, { once: true });`;
+  const staleSource = `${productionWorkerSource}\nself.addEventListener('message', (event) => { const message = event.data; if (message.type !== 'initialize-evaluation') return; self.postMessage({ type: 'evaluation-succeeded', requestId: message.requestId, projectRevision: message.projectRevision, inputFingerprint: '${'9'.repeat(64)}', formulaCatalogVersion: message.formulaCatalogVersion, validationRuleCatalogVersion: message.validationRuleCatalogVersion, schemaVersion: message.schemaVersion, summary: { componentCount: 0, connectionCount: 0, engineeringValueCount: 0, operatingStateCount: 0 }, results: [] }); }, { once: true });`;
   const stalePublications: ProjectSystemAction[] = [];
   const stalePublication = nextPublication();
   const staleClient = new EvaluationClient({

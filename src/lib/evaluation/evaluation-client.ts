@@ -1,5 +1,6 @@
 import {
   cancelEvaluationSchema,
+  createEvaluationChangeSet,
   createEvaluationProject,
   evaluationIdentityMatches,
   initializeEvaluationSchema,
@@ -10,7 +11,12 @@ import { canonicalJson, sha256Hex } from '../exchange/canonical-json';
 import { projectSnapshotToDocument } from '../persistence/project-document';
 import { APPLICATION_VERSIONS } from '../version/version-registry';
 
-import type { EvaluationRequest, InitializeEvaluation, ProjectSystemAction } from './protocol';
+import type {
+  EvaluationProject,
+  EvaluationRequest,
+  InitializeEvaluation,
+  ProjectSystemAction
+} from './protocol';
 import type {
   ProjectEvaluationRequest,
   ProjectEvaluationScheduler
@@ -39,6 +45,7 @@ export class EvaluationClient {
   #latest: ScheduledEvaluation | null = null;
   #cancellationTimer: ReturnType<typeof setTimeout> | null = null;
   #automaticRestartUsed = false;
+  #automaticInitializationUsed = false;
   #closed = false;
 
   constructor(dependencies: EvaluationClientDependencies) {
@@ -75,14 +82,16 @@ export class EvaluationClient {
 
     const candidate = { request, initialization };
     this.#latest = candidate;
+    this.#automaticInitializationUsed = false;
     if (this.#active) {
       this.#queued = candidate;
       this.cancel();
       return;
     }
 
+    const requiresInitialization = !this.#worker && request.type === 'evaluate-change-set';
     if (!this.#worker && !this.#isServerConnected()) return;
-    this.#dispatch(candidate, false);
+    this.#dispatch(candidate, requiresInitialization);
   }
 
   cancel(): void {
@@ -122,6 +131,7 @@ export class EvaluationClient {
 
     this.#terminateWorker();
     this.#automaticRestartUsed = false;
+    this.#automaticInitializationUsed = false;
     this.#ensureWorker();
     this.#dispatch(this.#latest, true);
     return true;
@@ -147,9 +157,17 @@ export class EvaluationClient {
     this.#clearCancellationTimer();
     const completed = this.#active;
     this.#active = null;
-    if (result.type !== 'evaluation-canceled') {
+    const canAutomaticallyInitialize =
+      result.type === 'evaluation-failed' &&
+      result.requiresInitialization &&
+      this.#isServerConnected() &&
+      !this.#automaticInitializationUsed;
+    if (result.type !== 'evaluation-canceled' && !canAutomaticallyInitialize) {
       this.#publish({ type: 'publish-evaluation', outcome: result });
-      if (result.type === 'evaluation-succeeded') this.#automaticRestartUsed = false;
+      if (result.type === 'evaluation-succeeded') {
+        this.#automaticRestartUsed = false;
+        this.#automaticInitializationUsed = false;
+      }
     }
 
     const next = this.#queued;
@@ -161,6 +179,11 @@ export class EvaluationClient {
 
     if (result.type === 'evaluation-failed' && result.requiresInitialization) {
       this.#latest = completed;
+      if (canAutomaticallyInitialize) {
+        this.#automaticInitializationUsed = true;
+        this.#terminateWorker();
+        this.#dispatch(completed, true);
+      }
     }
   };
 
@@ -216,6 +239,7 @@ export class EvaluationClient {
 export class BrowserProjectEvaluationScheduler implements ProjectEvaluationScheduler {
   readonly #client: EvaluationClient;
   readonly #requests = new Map<string, ProjectEvaluationRequest>();
+  #mirror: EvaluationProject | null = null;
   #sequence = 0;
   #closed = false;
 
@@ -236,7 +260,8 @@ export class BrowserProjectEvaluationScheduler implements ProjectEvaluationSched
           id: 'result-evaluation-summary',
           sourceRevision: request.sourceRevision,
           status: 'failed',
-          kind: 'evaluation-summary'
+          kind: 'evaluation-summary',
+          detail: null
         }
       ]);
     });
@@ -247,6 +272,7 @@ export class BrowserProjectEvaluationScheduler implements ProjectEvaluationSched
     this.#closed = true;
     this.#sequence += 1;
     this.#requests.clear();
+    this.#mirror = null;
     this.#client.close();
   }
 
@@ -256,32 +282,50 @@ export class BrowserProjectEvaluationScheduler implements ProjectEvaluationSched
     const inputFingerprint = await sha256Hex(canonicalJson(project));
     if (this.#closed || sequence !== this.#sequence) return;
 
-    const initialization: InitializeEvaluation = {
-      type: 'initialize-evaluation',
+    const requestIdentity = {
       requestId: crypto.randomUUID(),
       projectRevision: request.sourceRevision,
       inputFingerprint,
       formulaCatalogVersion: APPLICATION_VERSIONS.formulaCatalog,
       validationRuleCatalogVersion: APPLICATION_VERSIONS.validationRuleCatalog,
-      schemaVersion: APPLICATION_VERSIONS.projectDocumentSchema,
+      schemaVersion: APPLICATION_VERSIONS.projectDocumentSchema
+    };
+    const initialization: InitializeEvaluation = {
+      type: 'initialize-evaluation',
+      ...requestIdentity,
       project
     };
+    const evaluationRequest = this.#mirror
+      ? createEvaluationChangeSet(this.#mirror, project, requestIdentity)
+      : initialization;
+    this.#mirror = project;
     this.#requests.clear();
     this.#requests.set(initialization.requestId, request);
-    this.#client.schedule({ request: initialization, initialization });
+    this.#client.schedule({ request: evaluationRequest, initialization });
   }
 
   #publish(action: ProjectSystemAction): void {
     const request = this.#requests.get(action.outcome.requestId);
     if (!request) return;
     this.#requests.delete(action.outcome.requestId);
-    request.publish([
-      {
-        id: 'result-evaluation-summary',
-        sourceRevision: request.sourceRevision,
-        status: action.outcome.type === 'evaluation-succeeded' ? 'current' : 'failed',
-        kind: 'evaluation-summary'
-      }
-    ]);
+    const results =
+      action.outcome.type === 'evaluation-succeeded' && action.outcome.results.length > 0
+        ? action.outcome.results.map((result) => ({
+            ...result,
+            sourceRevision: request.sourceRevision
+          }))
+        : [
+            {
+              id: 'result-evaluation-summary',
+              sourceRevision: request.sourceRevision,
+              status:
+                action.outcome.type === 'evaluation-succeeded'
+                  ? ('current' as const)
+                  : ('failed' as const),
+              kind: 'evaluation-summary',
+              detail: null
+            }
+          ];
+    request.publish(results);
   }
 }

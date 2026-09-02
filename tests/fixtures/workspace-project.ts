@@ -29,7 +29,7 @@ export async function seedWorkspaceProject(page: Page): Promise<void> {
     {
       projectId: WORKSPACE_PROJECT_ID,
       snapshot: {
-        schemaVersion: 5,
+        schemaVersion: 6,
         project: {
           id: WORKSPACE_PROJECT_ID,
           name: 'RX-7 workshop study',
@@ -314,6 +314,8 @@ export async function seedWorkspaceProject(page: Page): Promise<void> {
           behaviors: [],
           boundaryConditions: []
         },
+        calculations: [],
+        screenings: [],
         partDefinitions: [],
         partRequirements: [],
         evidence: [
@@ -363,7 +365,8 @@ export async function seedWorkspaceProject(page: Page): Promise<void> {
             id: 'finding-tube-interface',
             sourceRevision: 7,
             status: 'current',
-            kind: 'finding:tube-return'
+            kind: 'finding:tube-return',
+            detail: null
           }
         ],
         tombstones: [],

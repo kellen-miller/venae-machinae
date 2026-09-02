@@ -6,7 +6,7 @@ describe('application version registry', () => {
   it('publishes independent version identities', () => {
     expect(APPLICATION_VERSIONS).toEqual({
       application: '0.1.0',
-      projectDocumentSchema: 5,
+      projectDocumentSchema: 6,
       indexedDbStructure: 1,
       formulaCatalog: 1,
       validationRuleCatalog: 1,

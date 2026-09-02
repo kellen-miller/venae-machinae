@@ -1,8 +1,15 @@
 import { APPLICATION_VERSIONS } from '../version/version-registry';
-import { applyEvaluationChangeSet, workerRequestSchema } from './protocol';
+import {
+  applyEvaluationChangeSet,
+  evaluationDerivedResultSchema,
+  workerRequestSchema
+} from './protocol';
+import { evaluateCalculation } from '../calculation/evaluate-calculation';
+import { screenCandidates } from '../calculation/screen-candidates';
 
 import type {
   CancelEvaluation,
+  EvaluationDerivedResult,
   EvaluationFailed,
   EvaluationProject,
   EvaluationRequest,
@@ -79,6 +86,61 @@ async function evaluate(token: ActiveEvaluation): Promise<void> {
     return;
   }
 
+  const evaluatedAt = new Date().toISOString();
+  const results: EvaluationDerivedResult[] = [];
+  for (let index = 0; index < evaluating.calculations.length; index += 1) {
+    if (index > 0 && index % 25 === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      if (token.canceled) {
+        workerScope.postMessage({
+          type: 'evaluation-canceled',
+          ...resultIdentity(token.request)
+        });
+        return;
+      }
+    }
+
+    const calculation = evaluating.calculations[index];
+    if (!calculation) continue;
+    const outcome = evaluateCalculation(calculation, evaluatedAt);
+    results.push(
+      evaluationDerivedResultSchema.parse({
+        id: `result-${calculation.id}`,
+        kind: 'calculation',
+        status:
+          outcome.status === 'calculated'
+            ? 'current'
+            : outcome.status === 'unknown'
+              ? 'unknown'
+              : 'unsupported',
+        detail: { type: 'calculation', outcome }
+      })
+    );
+  }
+  for (let index = 0; index < evaluating.screenings.length; index += 1) {
+    if (index > 0 && index % 25 === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      if (token.canceled) {
+        workerScope.postMessage({
+          type: 'evaluation-canceled',
+          ...resultIdentity(token.request)
+        });
+        return;
+      }
+    }
+
+    const screening = evaluating.screenings[index];
+    if (!screening) continue;
+    results.push(
+      evaluationDerivedResultSchema.parse({
+        id: `result-${screening.id}`,
+        kind: 'screening',
+        status: 'current',
+        detail: { type: 'screening', result: screenCandidates(screening) }
+      })
+    );
+  }
+
   workerScope.postMessage({
     type: 'evaluation-succeeded',
     ...resultIdentity(token.request),
@@ -87,7 +149,8 @@ async function evaluate(token: ActiveEvaluation): Promise<void> {
       connectionCount: evaluating.connections.length,
       engineeringValueCount: evaluating.engineeringValues.length,
       operatingStateCount: evaluating.operatingStates.length
-    }
+    },
+    results
   });
   if (active === token) active = null;
 }

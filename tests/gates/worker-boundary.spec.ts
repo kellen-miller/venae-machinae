@@ -35,7 +35,7 @@ function createInitialization(
     inputFingerprint: fingerprint,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 5,
+    schemaVersion: 6,
     project
   };
 }
@@ -54,7 +54,8 @@ function createSuccess(request: InitializeEvaluation | EvaluateChangeSet): Evalu
       connectionCount: 1200,
       engineeringValueCount: 0,
       operatingStateCount: 0
-    }
+    },
+    results: []
   };
 }
 
@@ -147,7 +148,7 @@ describe('MVP-GATE-005 worker boundary', () => {
       inputFingerprint: fingerprintTwo,
       formulaCatalogVersion: 1,
       validationRuleCatalogVersion: 1,
-      schemaVersion: 5,
+      schemaVersion: 6,
       changeSet: {
         baseRevision: 1,
         upsertComponents: [],
@@ -159,7 +160,11 @@ describe('MVP-GATE-005 worker boundary', () => {
         ],
         removeEngineeringValueIds: [],
         upsertOperatingStates: [],
-        removeOperatingStateIds: []
+        removeOperatingStateIds: [],
+        upsertCalculations: [],
+        removeCalculationIds: [],
+        upsertScreenings: [],
+        removeScreeningIds: []
       }
     };
 
@@ -201,7 +206,7 @@ describe('MVP-GATE-005 worker boundary', () => {
       inputFingerprint: fingerprintOne,
       formulaCatalogVersion: 1,
       validationRuleCatalogVersion: 1,
-      schemaVersion: 5
+      schemaVersion: 6
     });
     expect(harness.workers[0]?.sent.map((message) => message.requestId)).toEqual([
       'first',
@@ -259,6 +264,71 @@ describe('MVP-GATE-005 worker boundary', () => {
     expect(harness.client.retry()).toBe(true);
     expect(harness.workers).toHaveLength(3);
     expect(harness.workers[2]?.sent).toEqual([request]);
+    harness.client.close();
+  });
+
+  it('reinitializes once after a revision or catalog mismatch', () => {
+    const harness = createHarness();
+    const first = createInitialization(1, 'initial-mirror', fingerprintOne);
+    harness.client.schedule({ request: first, initialization: first });
+    harness.workers[0]?.respond(createSuccess(first));
+
+    const fallback: InitializeEvaluation = {
+      ...createInitialization(1, 'changed-revision', fingerprintTwo),
+      projectRevision: 2,
+      project: { ...first.project, projectRevision: 2 }
+    };
+    const change: EvaluateChangeSet = {
+      type: 'evaluate-change-set',
+      requestId: fallback.requestId,
+      projectRevision: fallback.projectRevision,
+      inputFingerprint: fallback.inputFingerprint,
+      formulaCatalogVersion: fallback.formulaCatalogVersion,
+      validationRuleCatalogVersion: fallback.validationRuleCatalogVersion,
+      schemaVersion: fallback.schemaVersion,
+      changeSet: {
+        baseRevision: 1,
+        upsertComponents: [],
+        removeComponentIds: [],
+        upsertConnections: [],
+        removeConnectionIds: [],
+        upsertEngineeringValues: [],
+        removeEngineeringValueIds: [],
+        upsertOperatingStates: [],
+        removeOperatingStateIds: [],
+        upsertCalculations: [],
+        removeCalculationIds: [],
+        upsertScreenings: [],
+        removeScreeningIds: []
+      }
+    };
+    harness.client.schedule({ request: change, initialization: fallback });
+    expect(harness.workers[0]?.sent.at(-1)).toEqual(change);
+
+    harness.workers[0]?.respond({
+      type: 'evaluation-failed',
+      requestId: change.requestId,
+      projectRevision: change.projectRevision,
+      inputFingerprint: change.inputFingerprint,
+      formulaCatalogVersion: change.formulaCatalogVersion,
+      validationRuleCatalogVersion: change.validationRuleCatalogVersion,
+      schemaVersion: change.schemaVersion,
+      reason: 'revision-gap',
+      message: 'independent mismatch fixture',
+      requiresInitialization: true
+    });
+
+    expect(harness.publications).toEqual([
+      { type: 'publish-evaluation', outcome: createSuccess(first) }
+    ]);
+    expect(harness.workers).toHaveLength(2);
+    expect(harness.workers[0]?.terminated).toBe(true);
+    expect(harness.workers[1]?.sent).toEqual([fallback]);
+    harness.workers[1]?.respond(createSuccess(fallback));
+    expect(harness.publications.at(-1)).toEqual({
+      type: 'publish-evaluation',
+      outcome: createSuccess(fallback)
+    });
     harness.client.close();
   });
 

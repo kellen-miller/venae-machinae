@@ -126,7 +126,8 @@ describe('MVP-PROD-003 MVP-ARCH-002 Project Session revision lifecycle', () => {
         id: 'result-evaluation',
         sourceRevision: 1,
         status: 'current',
-        kind: 'evaluation-summary'
+        kind: 'evaluation-summary',
+        detail: null
       }
     ];
     expect(request?.publish(results)).toEqual({ published: true, revision: 2 });

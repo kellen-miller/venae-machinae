@@ -1,7 +1,14 @@
 import { createEmptyTopology } from '../topology/topology';
 import { createEmptyElectricalModel } from '../electrical/electrical';
 import { createEmptyFluidModel } from '../fluid/fluid';
+import { getFormulaDefinition } from '../calculation/formula-catalog';
+import { createEngineeringQuantity } from '../calculation/quantity';
+import { unitSemantic } from '../calculation/unit-registry';
 
+import type { CalculationRequest } from '../calculation/evaluate-calculation';
+import type { CalculationOutcome } from '../calculation/evaluate-calculation';
+import type { EngineeringQuantity } from '../calculation/quantity';
+import type { CandidateScreenRequest, ScreeningResult } from '../calculation/screen-candidates';
 import type { ElectricalModel } from '../electrical/electrical';
 import type { EngineeringEvidence } from '../evidence/evidence';
 import type { FluidModel } from '../fluid/fluid';
@@ -28,6 +35,10 @@ export type ProjectResult = Readonly<{
   sourceRevision: number;
   status: 'current' | 'stale' | 'unknown' | 'unsupported' | 'failed';
   kind: string;
+  detail:
+    | Readonly<{ type: 'calculation'; outcome: CalculationOutcome }>
+    | Readonly<{ type: 'screening'; result: ScreeningResult }>
+    | null;
 }>;
 
 export type SubjectTombstone = Readonly<{
@@ -71,6 +82,8 @@ export type ProjectSnapshot = Readonly<{
   topology: Topology;
   electrical: ElectricalModel;
   fluid: FluidModel;
+  calculations: readonly CalculationRequest[];
+  screenings: readonly CandidateScreenRequest[];
   partDefinitions: readonly PartDefinition[];
   partRequirements: readonly PartRequirement[];
   evidence: readonly EngineeringEvidence[];
@@ -96,6 +109,8 @@ export function createBlankProject(input: {
     topology: createEmptyTopology(),
     electrical: createEmptyElectricalModel(),
     fluid: createEmptyFluidModel(),
+    calculations: [],
+    screenings: [],
     partDefinitions: [],
     partRequirements: [],
     evidence: [],
@@ -107,4 +122,209 @@ export function createBlankProject(input: {
     assetHashes: [],
     vehicleBackground: null
   };
+}
+
+export type CalculationModelRejection = Readonly<{
+  code: 'invalid-calculation' | 'invalid-screening';
+  message: string;
+}>;
+
+function invalidQuantityMessage(quantity: EngineeringQuantity): string | null {
+  try {
+    createEngineeringQuantity(quantity);
+  } catch (error) {
+    return error instanceof Error ? error.message : 'Engineering Quantity is invalid';
+  }
+  if (
+    unitSemantic(quantity.unit) !== quantity.semantic ||
+    (quantity.uncertainty !== null && unitSemantic(quantity.uncertainty.unit) !== quantity.semantic)
+  ) {
+    return `Unit ${quantity.unit} does not represent ${quantity.semantic}`;
+  }
+
+  return null;
+}
+
+export function validateCalculationModel(
+  snapshot: ProjectSnapshot
+): CalculationModelRejection | null {
+  const calculationIds = new Set<string>();
+  const quantityIds = new Set<string>();
+  for (const calculation of snapshot.calculations) {
+    const formula = getFormulaDefinition(calculation.formulaId);
+    if (!formula) {
+      return {
+        code: 'invalid-calculation',
+        message: `Formula ${calculation.formulaId} is not executable`
+      };
+    }
+    if (!calculation.id.trim() || calculationIds.has(calculation.id)) {
+      return {
+        code: 'invalid-calculation',
+        message: `Calculation identity ${calculation.id} is absent or duplicated`
+      };
+    }
+    calculationIds.add(calculation.id);
+    if (!projectSubjectExists(snapshot, calculation.subjectId)) {
+      return {
+        code: 'invalid-calculation',
+        message: `Calculation ${calculation.id} references an absent subject`
+      };
+    }
+    if (
+      !snapshot.operatingStates.some(
+        (operatingState) => operatingState.id === calculation.operatingStateId
+      )
+    ) {
+      return {
+        code: 'invalid-calculation',
+        message: `Calculation ${calculation.id} references an absent Operating State`
+      };
+    }
+    if (
+      calculation.pathId !== null &&
+      !snapshot.topology.routes.some((route) => route.id === calculation.pathId)
+    ) {
+      return {
+        code: 'invalid-calculation',
+        message: `Calculation ${calculation.id} references an absent Route`
+      };
+    }
+    if (
+      (formula.output === null && calculation.desiredOutputUnit !== null) ||
+      (formula.output !== null &&
+        calculation.desiredOutputUnit !== null &&
+        unitSemantic(calculation.desiredOutputUnit) !== formula.output.semantic)
+    ) {
+      return {
+        code: 'invalid-calculation',
+        message: `Calculation ${calculation.id} requests an incompatible output unit`
+      };
+    }
+    for (const input of calculation.inputs) {
+      const invalidQuantity = invalidQuantityMessage(input.quantity);
+      if (
+        !input.quantity.id.trim() ||
+        quantityIds.has(input.quantity.id) ||
+        invalidQuantity !== null
+      ) {
+        return {
+          code: 'invalid-calculation',
+          message: `Calculation ${calculation.id} contains an invalid or duplicate input identity${
+            invalidQuantity ? `: ${invalidQuantity}` : ''
+          }`
+        };
+      }
+      quantityIds.add(input.quantity.id);
+    }
+  }
+
+  const screeningIds = new Set<string>();
+  for (const screening of snapshot.screenings) {
+    if (!screening.id.trim() || screeningIds.has(screening.id)) {
+      return {
+        code: 'invalid-screening',
+        message: `Screening identity ${screening.id} is absent or duplicated`
+      };
+    }
+    screeningIds.add(screening.id);
+    if (!projectSubjectExists(snapshot, screening.subjectId)) {
+      return {
+        code: 'invalid-screening',
+        message: `Screening ${screening.id} references an absent subject`
+      };
+    }
+    if (
+      !snapshot.operatingStates.some(
+        (operatingState) => operatingState.id === screening.operatingStateId
+      )
+    ) {
+      return {
+        code: 'invalid-screening',
+        message: `Screening ${screening.id} references an absent Operating State`
+      };
+    }
+    const candidateIds = screening.selectedCandidates.map((candidate) => candidate.id);
+    const criterionIds = screening.criteria.map((criterion) => criterion.id);
+    if (
+      candidateIds.length === 0 ||
+      criterionIds.length === 0 ||
+      new Set(candidateIds).size !== candidateIds.length ||
+      new Set(criterionIds).size !== criterionIds.length
+    ) {
+      return {
+        code: 'invalid-screening',
+        message: `Screening ${screening.id} requires unique selected Part Definitions and criteria`
+      };
+    }
+    const absentCandidateId = candidateIds.find(
+      (candidateId) => !snapshot.partDefinitions.some((definition) => definition.id === candidateId)
+    );
+    if (absentCandidateId) {
+      return {
+        code: 'invalid-screening',
+        message: `Screening ${screening.id} references absent Part Definition ${absentCandidateId}`
+      };
+    }
+    for (const criterion of screening.criteria) {
+      if (criterion.comparison.kind === 'includes') continue;
+      const invalidLimit = invalidQuantityMessage(criterion.comparison.limit);
+      if (invalidLimit) {
+        return {
+          code: 'invalid-screening',
+          message: `Screening ${screening.id} contains an invalid criterion: ${invalidLimit}`
+        };
+      }
+    }
+    for (const candidate of screening.selectedCandidates) {
+      for (const evidence of Object.values(candidate.evidence)) {
+        if (!evidence || evidence.kind !== 'quantity') continue;
+        const invalidEvidence = invalidQuantityMessage(evidence.quantity);
+        if (invalidEvidence) {
+          return {
+            code: 'invalid-screening',
+            message: `Screening ${screening.id} contains invalid candidate evidence: ${invalidEvidence}`
+          };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+export function projectSubjectExists(snapshot: ProjectSnapshot, subjectId: SubjectId): boolean {
+  return (
+    snapshot.id === subjectId ||
+    snapshot.topology.systems.some((subject) => subject.id === subjectId) ||
+    snapshot.topology.components.some(
+      (subject) => subject.id === subjectId || subject.ports.some((port) => port.id === subjectId)
+    ) ||
+    snapshot.topology.connections.some((subject) => subject.id === subjectId) ||
+    snapshot.topology.routes.some((subject) => subject.id === subjectId) ||
+    snapshot.topology.segments.some((subject) => subject.id === subjectId) ||
+    snapshot.electrical.circuits.some((subject) => subject.id === subjectId) ||
+    snapshot.electrical.harnesses.some((subject) => subject.id === subjectId) ||
+    snapshot.electrical.bundles.some(
+      (subject) =>
+        subject.id === subjectId || subject.twistedPairs.some((pair) => pair.id === subjectId)
+    ) ||
+    snapshot.fluid.media.some((subject) => subject.id === subjectId) ||
+    snapshot.fluid.behaviors.some((subject) => subject.id === subjectId) ||
+    snapshot.fluid.boundaryConditions.some((subject) => subject.id === subjectId) ||
+    snapshot.calculations.some(
+      (subject) =>
+        subject.id === subjectId || subject.inputs.some((input) => input.quantity.id === subjectId)
+    ) ||
+    snapshot.screenings.some((subject) => subject.id === subjectId) ||
+    snapshot.partDefinitions.some((subject) => subject.id === subjectId) ||
+    snapshot.partRequirements.some((subject) => subject.id === subjectId) ||
+    snapshot.evidence.some((subject) => subject.id === subjectId) ||
+    snapshot.engineeringValues.some((subject) => subject.id === subjectId) ||
+    snapshot.operatingStates.some((subject) => subject.id === subjectId) ||
+    snapshot.results.some((subject) => subject.id === subjectId) ||
+    snapshot.tombstones.some(
+      (subject) => subject.subjectId === subjectId || subject.successorId === subjectId
+    )
+  );
 }

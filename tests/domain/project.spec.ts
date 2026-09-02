@@ -363,7 +363,8 @@ describe('MVP-PROD-003 derived result revision behavior', () => {
           id: 'result-summary',
           sourceRevision: 1,
           status: 'current',
-          kind: 'evaluation-summary'
+          kind: 'evaluation-summary',
+          detail: null
         }
       ]
     });
@@ -381,7 +382,8 @@ describe('MVP-PROD-003 derived result revision behavior', () => {
           id: 'result-summary',
           sourceRevision: 0,
           status: 'current',
-          kind: 'evaluation-summary'
+          kind: 'evaluation-summary',
+          detail: null
         }
       ]
     });
@@ -391,7 +393,8 @@ describe('MVP-PROD-003 derived result revision behavior', () => {
         id: 'result-summary',
         sourceRevision: 0,
         status: 'current',
-        kind: 'evaluation-summary'
+        kind: 'evaluation-summary',
+        detail: null
       }
     ]);
 

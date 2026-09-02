@@ -69,11 +69,11 @@ describe('MVP-ARCH-004 Project evaluation adapter', () => {
     expect(request).toMatchObject({
       type: 'initialize-evaluation',
       projectRevision: 1,
-      schemaVersion: 5,
+      schemaVersion: 6,
       formulaCatalogVersion: 1,
       validationRuleCatalogVersion: 1,
       project: {
-        schemaVersion: 5,
+        schemaVersion: 6,
         projectRevision: 1,
         components: [{ id: 'component-load', ports: [] }]
       }
@@ -96,14 +96,118 @@ describe('MVP-ARCH-004 Project evaluation adapter', () => {
         connectionCount: 0,
         engineeringValueCount: 0,
         operatingStateCount: 0
-      }
+      },
+      results: []
     });
     expect(publish).toHaveBeenCalledWith([
       {
         id: 'result-evaluation-summary',
         sourceRevision: 1,
         status: 'current',
-        kind: 'evaluation-summary'
+        kind: 'evaluation-summary',
+        detail: null
+      }
+    ]);
+
+    const withState = applyProjectAction(changed.snapshot, {
+      type: 'add-operating-state',
+      causationId: 'cause-state',
+      state: { id: 'state-run-hot', name: 'Run Hot / Fan On', description: 'Static fixture' }
+    });
+    if (!withState.accepted) throw new Error(withState.rejection.message);
+    const withCalculation = applyProjectAction(withState.snapshot, {
+      type: 'configure-calculation',
+      causationId: 'cause-calculation',
+      calculation: {
+        id: 'calculation-voltage-drop',
+        subjectId: 'component-load',
+        operatingStateId: 'state-run-hot',
+        formulaId: 'electrical.voltage-drop.v1',
+        pathId: null,
+        inputs: [
+          {
+            name: 'current',
+            quantity: {
+              id: 'value-current',
+              semantic: 'electric-current',
+              decimal: '12.5',
+              unit: 'ampere',
+              applicability: 'Run Hot / Fan On',
+              uncertainty: null,
+              bounds: null,
+              origin: 'entered',
+              provenance: 'independent scheduler fixture'
+            }
+          },
+          {
+            name: 'resistance',
+            quantity: {
+              id: 'value-resistance',
+              semantic: 'electrical-resistance',
+              decimal: '0.032',
+              unit: 'ohm',
+              applicability: 'Run Hot / Fan On',
+              uncertainty: null,
+              bounds: null,
+              origin: 'entered',
+              provenance: 'independent scheduler fixture'
+            }
+          }
+        ],
+        assumptions: ['steady DC'],
+        conditions: { currentClass: 'continuous' },
+        omissions: [],
+        desiredOutputUnit: 'volt'
+      }
+    });
+    if (!withCalculation.accepted) throw new Error(withCalculation.rejection.message);
+    const incrementalPublish = vi.fn(() => ({ published: true as const, revision: 4 }));
+    scheduler.schedule({
+      sourceRevision: withCalculation.snapshot.revision,
+      causationId: 'cause-calculation',
+      snapshot: withCalculation.snapshot,
+      scope: { kind: 'changed-subjects', subjectIds: ['calculation-voltage-drop'] },
+      publish: incrementalPublish
+    });
+
+    await vi.waitFor(() => expect(workers[0]?.sent).toHaveLength(2));
+    const incremental = workers[0]?.sent[1];
+    expect(incremental).toMatchObject({
+      type: 'evaluate-change-set',
+      projectRevision: 3,
+      changeSet: {
+        baseRevision: 1,
+        upsertComponents: [],
+        upsertOperatingStates: [{ id: 'state-run-hot' }],
+        upsertCalculations: [{ id: 'calculation-voltage-drop' }]
+      }
+    });
+    if (!incremental || incremental.type !== 'evaluate-change-set') {
+      throw new Error('Expected incremental evaluation request');
+    }
+    workers[0]?.respond({
+      type: 'evaluation-succeeded',
+      requestId: incremental.requestId,
+      projectRevision: incremental.projectRevision,
+      inputFingerprint: incremental.inputFingerprint,
+      formulaCatalogVersion: incremental.formulaCatalogVersion,
+      validationRuleCatalogVersion: incremental.validationRuleCatalogVersion,
+      schemaVersion: incremental.schemaVersion,
+      summary: {
+        componentCount: 1,
+        connectionCount: 0,
+        engineeringValueCount: 0,
+        operatingStateCount: 1
+      },
+      results: []
+    });
+    expect(incrementalPublish).toHaveBeenCalledWith([
+      {
+        id: 'result-evaluation-summary',
+        sourceRevision: 3,
+        status: 'current',
+        kind: 'evaluation-summary',
+        detail: null
       }
     ]);
 

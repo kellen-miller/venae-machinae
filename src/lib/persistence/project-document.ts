@@ -4,7 +4,13 @@ import { validateElectricalModel } from '../electrical/electrical';
 import { validateFluidModel } from '../fluid/fluid';
 import { validateTopology } from '../topology/topology';
 import { APPLICATION_VERSIONS } from '../version/version-registry';
-
+import { validateCalculationModel } from '../project/project';
+import {
+  calculationOutcomeSchema,
+  calculationRequestSchema,
+  candidateScreenRequestSchema,
+  screeningResultSchema
+} from '../calculation/calculation-schema';
 import type { ProjectSnapshot } from '../project/project';
 
 z.config({ jitless: true });
@@ -93,7 +99,13 @@ const projectResultSchema = z.strictObject({
   id: identity,
   sourceRevision: z.number().int().nonnegative(),
   status: z.enum(['current', 'stale', 'unknown', 'unsupported', 'failed']),
-  kind: z.string().min(1)
+  kind: z.string().min(1),
+  detail: z
+    .discriminatedUnion('type', [
+      z.strictObject({ type: z.literal('calculation'), outcome: calculationOutcomeSchema }),
+      z.strictObject({ type: z.literal('screening'), result: screeningResultSchema })
+    ])
+    .nullable()
 });
 
 const tombstoneSchema = z.strictObject({
@@ -380,6 +392,8 @@ export const projectDocumentSchema = z.strictObject({
   }),
   electrical: electricalModelSchema,
   fluid: fluidModelSchema,
+  calculations: z.array(calculationRequestSchema),
+  screenings: z.array(candidateScreenRequestSchema),
   partDefinitions: z.array(partDefinitionSchema),
   partRequirements: z.array(partRequirementSchema),
   evidence: z.array(evidenceSchema),
@@ -432,6 +446,8 @@ export function projectSnapshotToDocument(snapshot: ProjectSnapshot): ProjectDoc
     topology: snapshot.topology,
     electrical: snapshot.electrical,
     fluid: snapshot.fluid,
+    calculations: snapshot.calculations,
+    screenings: snapshot.screenings,
     partDefinitions: snapshot.partDefinitions,
     partRequirements: snapshot.partRequirements,
     evidence: snapshot.evidence,
@@ -455,6 +471,8 @@ export function projectDocumentToSnapshot(document: ProjectDocument): ProjectSna
     topology: parsed.topology,
     electrical: parsed.electrical,
     fluid: parsed.fluid,
+    calculations: parsed.calculations,
+    screenings: parsed.screenings,
     partDefinitions: parsed.partDefinitions,
     partRequirements: parsed.partRequirements,
     evidence: parsed.evidence,
@@ -486,6 +504,12 @@ export function projectDocumentToSnapshot(document: ProjectDocument): ProjectSna
   );
   if (fluidRejection) {
     throw new Error(`Persisted Project fluid model is invalid: ${fluidRejection.message}`);
+  }
+  const calculationRejection = validateCalculationModel(snapshot);
+  if (calculationRejection) {
+    throw new Error(
+      `Persisted Project calculation model is invalid: ${calculationRejection.message}`
+    );
   }
   return snapshot;
 }

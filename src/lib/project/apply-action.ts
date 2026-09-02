@@ -1,6 +1,9 @@
 import { validateTopology } from '../topology/topology';
 import { validateElectricalModel } from '../electrical/electrical';
 import { validateFluidModel } from '../fluid/fluid';
+import { getFormulaDefinition } from '../calculation/formula-catalog';
+import { unitSemantic } from '../calculation/unit-registry';
+import { projectSubjectExists as projectIdentityExists, validateCalculationModel } from './project';
 
 import type {
   DestructiveProjectAction,
@@ -20,6 +23,8 @@ export type ActionRejectionCode =
   | 'invalid-electrical-reference'
   | 'invalid-fluid-record'
   | 'invalid-fluid-reference'
+  | 'invalid-calculation'
+  | 'invalid-screening'
   | 'missing-asset'
   | 'invalid-result'
   | 'stale-system-action';
@@ -716,6 +721,149 @@ export function applyProjectAction(
       undoLabel = `Add ${action.state.name}`;
       break;
 
+    case 'configure-calculation': {
+      const calculation = action.calculation;
+      const formula = getFormulaDefinition(calculation.formulaId);
+      if (!formula) {
+        return reject('invalid-calculation', `Formula ${calculation.formulaId} is not executable`);
+      }
+      const existing = snapshot.calculations.find((candidate) => candidate.id === calculation.id);
+      if (
+        !calculation.id.trim() ||
+        (!existing && projectIdentityExists(snapshot, calculation.id))
+      ) {
+        return reject('duplicate-identity', `Subject identity ${calculation.id} is already in use`);
+      }
+      if (!projectIdentityExists(snapshot, calculation.subjectId)) {
+        return reject(
+          'invalid-calculation',
+          `Calculation ${calculation.id} references an absent subject`
+        );
+      }
+      if (
+        !snapshot.operatingStates.some(
+          (operatingState) => operatingState.id === calculation.operatingStateId
+        )
+      ) {
+        return reject(
+          'invalid-calculation',
+          `Calculation ${calculation.id} references an absent Operating State`
+        );
+      }
+      if (
+        calculation.pathId !== null &&
+        !snapshot.topology.routes.some((route) => route.id === calculation.pathId)
+      ) {
+        return reject(
+          'invalid-calculation',
+          `Calculation ${calculation.id} references an absent Route`
+        );
+      }
+      if (
+        (formula.output === null && calculation.desiredOutputUnit !== null) ||
+        (formula.output !== null &&
+          calculation.desiredOutputUnit !== null &&
+          unitSemantic(calculation.desiredOutputUnit) !== formula.output.semantic)
+      ) {
+        return reject(
+          'invalid-calculation',
+          `Calculation ${calculation.id} requests an incompatible output unit`
+        );
+      }
+      const inputIds = calculation.inputs.map((input) => input.quantity.id);
+      const otherInputIds = new Set(
+        snapshot.calculations
+          .filter((candidate) => candidate.id !== calculation.id)
+          .flatMap((candidate) => candidate.inputs.map((input) => input.quantity.id))
+      );
+      if (
+        new Set(inputIds).size !== inputIds.length ||
+        inputIds.some(
+          (inputId) =>
+            !inputId.trim() ||
+            otherInputIds.has(inputId) ||
+            (projectIdentityExists(snapshot, inputId) &&
+              !existing?.inputs.some((input) => input.quantity.id === inputId))
+        ) ||
+        calculation.inputs.some(
+          (input) => unitSemantic(input.quantity.unit) !== input.quantity.semantic
+        )
+      ) {
+        return reject(
+          'invalid-calculation',
+          `Calculation ${calculation.id} contains an invalid or duplicate input identity`
+        );
+      }
+      next = {
+        ...snapshot,
+        calculations: [
+          ...snapshot.calculations.filter((candidate) => candidate.id !== calculation.id),
+          calculation
+        ],
+        results: staleResults
+      };
+      changedSubjects = [calculation.id, calculation.subjectId, ...inputIds];
+      undoLabel = `${existing ? 'Update' : 'Configure'} calculation`;
+      break;
+    }
+
+    case 'configure-screening': {
+      const screening = action.screening;
+      const existing = snapshot.screenings.find((candidate) => candidate.id === screening.id);
+      if (!screening.id.trim() || (!existing && projectIdentityExists(snapshot, screening.id))) {
+        return reject('duplicate-identity', `Subject identity ${screening.id} is already in use`);
+      }
+      if (!projectIdentityExists(snapshot, screening.subjectId)) {
+        return reject(
+          'invalid-screening',
+          `Screening ${screening.id} references an absent subject`
+        );
+      }
+      if (
+        !snapshot.operatingStates.some(
+          (operatingState) => operatingState.id === screening.operatingStateId
+        )
+      ) {
+        return reject(
+          'invalid-screening',
+          `Screening ${screening.id} references an absent Operating State`
+        );
+      }
+      const candidateIds = screening.selectedCandidates.map((candidate) => candidate.id);
+      const criterionIds = screening.criteria.map((criterion) => criterion.id);
+      if (
+        candidateIds.length === 0 ||
+        criterionIds.length === 0 ||
+        new Set(candidateIds).size !== candidateIds.length ||
+        new Set(criterionIds).size !== criterionIds.length ||
+        candidateIds.some(
+          (candidateId) =>
+            !snapshot.partDefinitions.some((definition) => definition.id === candidateId)
+        ) ||
+        screening.criteria.some(
+          (criterion) =>
+            criterion.comparison.kind !== 'includes' &&
+            unitSemantic(criterion.comparison.limit.unit) !== criterion.comparison.limit.semantic
+        )
+      ) {
+        return reject(
+          'invalid-screening',
+          `Screening ${screening.id} requires unique selected Part Definitions and valid criteria`
+        );
+      }
+      next = {
+        ...snapshot,
+        screenings: [
+          ...snapshot.screenings.filter((candidate) => candidate.id !== screening.id),
+          screening
+        ],
+        results: staleResults
+      };
+      changedSubjects = [screening.id, screening.subjectId, ...candidateIds];
+      undoLabel = `${existing ? 'Update' : 'Configure'} candidate screening`;
+      break;
+    }
+
     case 'set-connection-route': {
       if (
         !snapshot.topology.connections.some((connection) => connection.id === action.connectionId)
@@ -954,6 +1102,9 @@ export function applyProjectAction(
   );
   if (fluidRejection) return { accepted: false, rejection: fluidRejection };
 
+  const calculationRejection = validateCalculationModel(next);
+  if (calculationRejection) return { accepted: false, rejection: calculationRejection };
+
   return {
     accepted: true,
     snapshot: { ...next, revision: snapshot.revision + 1 },
@@ -961,37 +1112,6 @@ export function applyProjectAction(
     invalidatedResults,
     undoLabel
   };
-}
-
-function projectIdentityExists(snapshot: ProjectSnapshot, subjectId: SubjectId): boolean {
-  return (
-    snapshot.id === subjectId ||
-    snapshot.topology.systems.some((subject) => subject.id === subjectId) ||
-    snapshot.topology.components.some(
-      (subject) => subject.id === subjectId || subject.ports.some((port) => port.id === subjectId)
-    ) ||
-    snapshot.topology.connections.some((subject) => subject.id === subjectId) ||
-    snapshot.topology.routes.some((subject) => subject.id === subjectId) ||
-    snapshot.topology.segments.some((subject) => subject.id === subjectId) ||
-    snapshot.electrical.circuits.some((subject) => subject.id === subjectId) ||
-    snapshot.electrical.harnesses.some((subject) => subject.id === subjectId) ||
-    snapshot.electrical.bundles.some(
-      (subject) =>
-        subject.id === subjectId || subject.twistedPairs.some((pair) => pair.id === subjectId)
-    ) ||
-    snapshot.fluid.media.some((subject) => subject.id === subjectId) ||
-    snapshot.fluid.behaviors.some((subject) => subject.id === subjectId) ||
-    snapshot.fluid.boundaryConditions.some((subject) => subject.id === subjectId) ||
-    snapshot.partDefinitions.some((subject) => subject.id === subjectId) ||
-    snapshot.partRequirements.some((subject) => subject.id === subjectId) ||
-    snapshot.evidence.some((subject) => subject.id === subjectId) ||
-    snapshot.engineeringValues.some((subject) => subject.id === subjectId) ||
-    snapshot.operatingStates.some((subject) => subject.id === subjectId) ||
-    snapshot.results.some((subject) => subject.id === subjectId) ||
-    snapshot.tombstones.some(
-      (subject) => subject.subjectId === subjectId || subject.successorId === subjectId
-    )
-  );
 }
 
 function reject(code: ActionRejectionCode, message: string): ActionOutcome {

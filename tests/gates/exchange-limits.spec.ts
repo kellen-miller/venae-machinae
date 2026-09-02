@@ -182,7 +182,8 @@ describe('MVP-GATE-004 exchange limits', () => {
       id: 'result-original',
       sourceRevision: 1,
       status: 'current',
-      kind: 'evaluation-summary'
+      kind: 'evaluation-summary',
+      detail: null
     });
     const envelope = await createProjectExchange({
       project,

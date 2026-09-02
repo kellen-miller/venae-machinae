@@ -1,4 +1,6 @@
 import type { EngineeringEvidence } from '../evidence/evidence';
+import type { CalculationRequest } from '../calculation/evaluate-calculation';
+import type { CandidateScreenRequest } from '../calculation/screen-candidates';
 import type {
   ElectricalBundle,
   ElectricalCableSpecification,
@@ -93,6 +95,8 @@ export type ProjectAction =
         boundary: FluidBoundaryCondition;
       }>)
   | (Causation & Readonly<{ type: 'add-operating-state'; state: OperatingState }>)
+  | (Causation & Readonly<{ type: 'configure-calculation'; calculation: CalculationRequest }>)
+  | (Causation & Readonly<{ type: 'configure-screening'; screening: CandidateScreenRequest }>)
   | (Causation &
       Readonly<{
         type: 'set-connection-route';

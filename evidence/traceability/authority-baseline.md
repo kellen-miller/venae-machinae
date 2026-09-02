@@ -2,7 +2,7 @@
 
 MVP-HANDOFF-001
 
-- Verified HEAD: `5dbad0d0e71edcd297b2dfcff298917b6a904229`
+- Verified HEAD: `b6eadd28c0ba09f35e6b5a60efd01c022e9fbeb8`
 - Required specification commit: `63340c128589054307c04a3eeea47e453592f625`
 - ADR 0001 status: `Accepted`
 - Normative files: `CONTEXT.md`, `docs/mvp-specification.md`, `docs/adr/0001-local-first-sveltekit-architecture.md`
