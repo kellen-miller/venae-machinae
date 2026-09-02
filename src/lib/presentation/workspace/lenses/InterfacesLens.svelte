@@ -277,7 +277,7 @@
   summary,
   label span {
     margin: 0;
-    color: #6b7c7a;
+    color: #5d716f;
     font: 0.62rem var(--font-mono);
     text-transform: uppercase;
   }
@@ -364,7 +364,7 @@
     gap: 0.15rem;
   }
   .definition-identity small {
-    color: #6b7c7a;
+    color: #5d716f;
     font: 0.6rem var(--font-mono);
   }
   .template-action {

@@ -17,7 +17,7 @@ const COMPONENT_COLUMNS = 30;
 const COMPONENT_COLUMN_GAP = 210;
 const COMPONENT_ROW_GAP = 205;
 const PORT_OFFSETS = [0.3, 0.5, 0.7, 0.4, 0.65] as const;
-const CONNECTION_KINDS = ['electrical-wire', 'fluid-hose', 'fluid-tube', 'fluid-pipe'] as const;
+const FLUID_CONNECTION_KINDS = ['fluid-hose', 'fluid-tube', 'fluid-pipe'] as const;
 const OVERLAY_CHANNELS = [
   'potential',
   'current',
@@ -40,10 +40,11 @@ function portId(scale: CapacityScale, componentIndex: number, localPortIndex: nu
 
 export function generateRendererCapacityProject(scale: CapacityScale): ProjectDocument {
   const counts = CAPACITY_COUNTS[scale];
-  const componentsPerDomain = counts.components / 2;
+  const electricalComponentCount = (counts.components * 4) / 5;
   const components = Array.from({ length: counts.components }, (_, componentIndex) => {
     const position = componentPosition(componentIndex);
-    const domain = componentIndex % 2 === 0 ? ('electrical' as const) : ('fluid' as const);
+    const domain =
+      componentIndex < electricalComponentCount ? ('electrical' as const) : ('fluid' as const);
 
     return {
       id: `renderer-component-${scale}x-${componentIndex}`,
@@ -63,17 +64,44 @@ export function generateRendererCapacityProject(scale: CapacityScale): ProjectDo
       }))
     };
   });
-  const routedConnections = Array.from({ length: counts.connections }, (_, connectionIndex) => {
-    const kind = CONNECTION_KINDS[connectionIndex % CONNECTION_KINDS.length] ?? 'electrical-wire';
-    const domain = kind === 'electrical-wire' ? ('electrical' as const) : ('fluid' as const);
-    const domainOffset = kind === 'electrical-wire' ? 0 : 1;
-    const sourceDomainIndex =
-      Math.floor(connectionIndex / CONNECTION_KINDS.length) % componentsPerDomain;
-    const targetDomainIndex = (sourceDomainIndex + 1) % componentsPerDomain;
-    const sourceComponentIndex = sourceDomainIndex * 2 + domainOffset;
-    const targetComponentIndex = targetDomainIndex * 2 + domainOffset;
-    const sourceLocalPortIndex = connectionIndex % 3;
-    const targetLocalPortIndex = 3 + (connectionIndex % 2);
+  const electricalEndpointCount = electricalComponentCount * 5;
+  const fluidEndpointCount = (counts.components - electricalComponentCount) * 5;
+  const wireConnectionCount = electricalEndpointCount / 2;
+  const fluidConnectionCount = fluidEndpointCount / 2;
+  const mateConnectionCount = counts.connections - wireConnectionCount - fluidConnectionCount;
+  const descriptors = [
+    ...Array.from({ length: wireConnectionCount }, (_, index) => ({
+      kind: 'electrical-wire' as const,
+      sourceComponentIndex: Math.floor(index / 5),
+      sourceLocalPortIndex: index % 5,
+      targetComponentIndex: Math.floor((index + wireConnectionCount) / 5),
+      targetLocalPortIndex: (index + wireConnectionCount) % 5
+    })),
+    ...Array.from({ length: mateConnectionCount }, (_, index) => ({
+      kind: 'electrical-mate' as const,
+      sourceComponentIndex: Math.floor(index / 5),
+      sourceLocalPortIndex: index % 5,
+      targetComponentIndex: Math.floor((index + mateConnectionCount) / 5),
+      targetLocalPortIndex: (index + mateConnectionCount) % 5
+    })),
+    ...Array.from({ length: fluidConnectionCount }, (_, index) => ({
+      kind: FLUID_CONNECTION_KINDS[index % FLUID_CONNECTION_KINDS.length] ?? 'fluid-hose',
+      sourceComponentIndex: electricalComponentCount + Math.floor(index / 5),
+      sourceLocalPortIndex: index % 5,
+      targetComponentIndex:
+        electricalComponentCount + Math.floor((index + fluidConnectionCount) / 5),
+      targetLocalPortIndex: (index + fluidConnectionCount) % 5
+    }))
+  ];
+  const routedConnections = descriptors.map((descriptor, connectionIndex) => {
+    const {
+      kind,
+      sourceComponentIndex,
+      sourceLocalPortIndex,
+      targetComponentIndex,
+      targetLocalPortIndex
+    } = descriptor;
+    const domain = kind.startsWith('fluid-') ? ('fluid' as const) : ('electrical' as const);
     const sourcePosition = componentPosition(sourceComponentIndex);
     const targetPosition = componentPosition(targetComponentIndex);
     const sourceOffset = PORT_OFFSETS[sourceLocalPortIndex] ?? 0.5;
@@ -90,6 +118,7 @@ export function generateRendererCapacityProject(scale: CapacityScale): ProjectDo
     const connectionId = `renderer-connection-${scale}x-${connectionIndex}`;
     const routeId = `renderer-route-${scale}x-${connectionIndex}`;
     const segmentId = `renderer-segment-${scale}x-${connectionIndex}`;
+    const routed = kind !== 'electrical-mate';
     return {
       connection: {
         id: connectionId,
@@ -101,18 +130,20 @@ export function generateRendererCapacityProject(scale: CapacityScale): ProjectDo
         mediumId: domain === 'electrical' ? null : 'medium-renderer-fluid',
         kind,
         interfaceAssessment: 'unknown' as const,
-        routeId
+        routeId: routed ? routeId : null
       },
-      route: { id: routeId, segmentIds: [segmentId] },
-      segment: {
-        id: segmentId,
-        label: `Capacity route ${connectionIndex + 1}`,
-        start: { x: String(sourceCenter.x), y: String(sourceCenter.y) },
-        end: {
-          x: String((sourceCenter.x + targetCenter.x) / 2),
-          y: String((sourceCenter.y + targetCenter.y) / 2 + ((connectionIndex % 3) - 1) * 24)
-        }
-      }
+      route: routed ? { id: routeId, segmentIds: [segmentId] } : null,
+      segment: routed
+        ? {
+            id: segmentId,
+            label: `Capacity route ${connectionIndex + 1}`,
+            start: { x: String(sourceCenter.x), y: String(sourceCenter.y) },
+            end: {
+              x: String((sourceCenter.x + targetCenter.x) / 2),
+              y: String((sourceCenter.y + targetCenter.y) / 2 + ((connectionIndex % 3) - 1) * 24)
+            }
+          }
+        : null
     };
   });
   const connections = routedConnections.map((entry) => entry.connection);
@@ -142,11 +173,13 @@ export function generateRendererCapacityProject(scale: CapacityScale): ProjectDo
       ],
       components,
       connections,
-      routes: routedConnections.map((entry) => entry.route),
-      segments: routedConnections.map((entry) => entry.segment)
+      routes: routedConnections.flatMap((entry) => (entry.route ? [entry.route] : [])),
+      segments: routedConnections.flatMap((entry) => (entry.segment ? [entry.segment] : []))
     },
     electrical: {
-      components: [],
+      components: components
+        .slice(0, electricalComponentCount)
+        .map((component) => ({ componentId: component.id, role: 'connector' as const })),
       wires: [],
       circuits: [],
       connectors: [],
@@ -195,7 +228,7 @@ function physicalConnection(
   kind: ProjectDocument['topology']['connections'][number]['kind'],
   connectionIndex: number
 ): RendererPhysicalConnection {
-  if (kind === 'electrical-wire') {
+  if (kind === 'electrical-wire' || kind === 'electrical-mate') {
     return {
       kind: 'wire',
       conductorColor: connectionIndex % 2 === 0 ? '#b34d3d' : '#2d4950',

@@ -29,7 +29,6 @@ export function resolveAuthoringCapability(input: {
   if (input.backing.kind === 'transient-review') {
     return { mode: 'review', reason: 'transient-review' };
   }
-  if (input.backing.access === 'read-only') return { mode: 'review', reason: 'lease-held' };
   if (!input.runtimeCapabilities.indexedDb) {
     return { mode: 'review', reason: 'missing-indexeddb' };
   }
@@ -37,6 +36,7 @@ export function resolveAuthoringCapability(input: {
   if (!input.runtimeCapabilities.webLocks) {
     return { mode: 'review', reason: 'missing-web-locks' };
   }
+  if (input.backing.access === 'read-only') return { mode: 'review', reason: 'lease-held' };
 
   return { mode: 'author', reason: null };
 }

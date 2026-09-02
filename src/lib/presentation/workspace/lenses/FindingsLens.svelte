@@ -59,12 +59,16 @@
     {#each REVIEW_PROFILES as profile (profile.id)}
       <button
         type="button"
+        disabled={!canAuthor}
         onclick={() => onvalidate({ kind: 'review-profile', profileId: profile.id })}
         title={profile.description}>Run {profile.label}</button
       >
     {/each}
-    <button type="button" class="validate-project" onclick={() => onvalidate({ kind: 'all' })}
-      >Validate Project</button
+    <button
+      type="button"
+      class="validate-project"
+      disabled={!canAuthor}
+      onclick={() => onvalidate({ kind: 'all' })}>Validate Project</button
     >
   </div>
 

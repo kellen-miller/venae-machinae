@@ -274,6 +274,50 @@ describe('MVP-ARCH-003 Project Session durability', () => {
 });
 
 describe('MVP-ARCH-004 Project Session authoring capability', () => {
+  it('MVP-NFR-002 flushes before live mobile review and restores authoring with the lease', async () => {
+    const records = writableBacking();
+    const evaluation = recordingEvaluation();
+    const session = createWritableSession({
+      backing: records.backing,
+      evaluation: evaluation.evaluation
+    });
+
+    session.execute({
+      type: 'rename-project',
+      causationId: 'responsive-edit',
+      name: 'Responsive edit'
+    });
+    expect(session.view.save.status).toBe('queued');
+
+    await expect(session.setPresentation('mobile')).resolves.toEqual({
+      changed: true,
+      presentation: 'mobile',
+      save: { saved: true, revision: 1 }
+    });
+    expect(session.view.capability).toEqual({ mode: 'review', reason: 'mobile-review' });
+    expect(records.saved).toHaveLength(1);
+    expect(
+      session.execute({
+        type: 'rename-project',
+        causationId: 'blocked-mobile-edit',
+        name: 'Must not change'
+      })
+    ).toMatchObject({
+      accepted: false,
+      rejection: { code: 'capability-denied', reason: 'mobile-review' }
+    });
+    const scheduledBeforeReviewRequest = evaluation.requests.length;
+    session.requestEvaluation({ kind: 'all' });
+    expect(evaluation.requests).toHaveLength(scheduledBeforeReviewRequest);
+
+    await expect(session.setPresentation('tablet')).resolves.toEqual({
+      changed: true,
+      presentation: 'tablet',
+      save: null
+    });
+    expect(session.view.capability).toEqual({ mode: 'author', reason: null });
+  });
+
   it.each([
     [
       'read-only lease',

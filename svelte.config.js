@@ -22,11 +22,13 @@ const config = {
         'object-src': ['none'],
         'script-src': ['self'],
         'style-src': ['self'],
+        'style-src-attr': ['unsafe-hashes', 'sha256-S8qMpvofolR8Mpjy4kQvEm7m1q8clzU4dfDH0AmvZjo='],
         'worker-src': ['self', 'blob:']
       }
     },
     version: {
-      name: packageMetadata.version
+      name: packageMetadata.version,
+      pollInterval: 60_000
     }
   }
 };

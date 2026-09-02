@@ -133,9 +133,9 @@
   .background-controls {
     position: absolute;
     z-index: 9;
-    right: 0.75rem;
+    right: 21.5rem;
     bottom: 3.9rem;
-    width: min(31rem, calc(100% - 6rem));
+    width: min(31rem, calc(100% - 27rem));
     border: 1px solid rgb(35 73 72 / 36%);
     border-radius: 0.6rem 0.2rem 0.6rem 0.2rem;
     background: rgb(246 249 244 / 94%);
@@ -254,5 +254,16 @@
   summary:focus-visible {
     outline: 2px solid #d3612f;
     outline-offset: 2px;
+  }
+
+  @media (max-width: 43.75rem) {
+    .background-controls {
+      right: 0.5rem;
+      width: 12rem;
+    }
+
+    .background-controls[open] {
+      width: calc(100% - 1rem);
+    }
   }
 </style>

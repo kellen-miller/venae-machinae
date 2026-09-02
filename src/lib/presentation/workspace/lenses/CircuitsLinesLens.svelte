@@ -496,7 +496,7 @@
   label span,
   .branch-preview > p {
     margin: 0;
-    color: #6b7c7a;
+    color: #5d716f;
     font: 0.62rem var(--font-mono);
     text-transform: uppercase;
   }
@@ -614,7 +614,7 @@
     border-left: 3px solid #c56a3c;
   }
   dt {
-    color: #6b7c7a;
+    color: #5d716f;
     font-size: 0.62rem;
   }
   dd {

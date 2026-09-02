@@ -213,6 +213,12 @@
     await refreshLibrary(application);
   }
 
+  async function downloadRedactedDiagnostics(): Promise<void> {
+    if (!application) return;
+    startDownload(await application.createDiagnosticsDownload(new Date().toISOString()));
+    operationStatus = 'Downloaded bounded diagnostics with project values omitted.';
+  }
+
   async function stageLibraryImport(file: File): Promise<void> {
     if (!application) return;
     operationFailure = null;
@@ -270,6 +276,7 @@
   onexportproject={exportProject}
   onexporttemplates={exportTemplates}
   onbackup={downloadLibraryBackup}
+  ondiagnostics={downloadRedactedDiagnostics}
   onstageimport={stageLibraryImport}
   oncommitimport={commitLibraryImport}
 />

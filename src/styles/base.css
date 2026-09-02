@@ -23,6 +23,10 @@ body {
   color: var(--color-text);
 }
 
+.sveltekit-body {
+  display: contents;
+}
+
 button,
 a {
   font: inherit;
@@ -225,6 +229,13 @@ h2 {
   text-align: right;
 }
 
+.boundary-note {
+  margin: 1rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
 .empty-library {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -321,6 +332,16 @@ h2 {
 
   .boundary-card {
     max-width: 34rem;
+  }
+}
+
+@media (max-width: 70rem) {
+  button,
+  select,
+  summary,
+  input:not([type='hidden']) {
+    min-width: 44px !important;
+    min-height: 44px !important;
   }
 }
 

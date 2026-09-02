@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { projectDocumentSchema } from '../../src/lib/persistence/project-document';
+import {
+  projectDocumentSchema,
+  projectDocumentToSnapshot
+} from '../../src/lib/persistence/project-document';
 import { validateRendererProjection } from '../../src/lib/renderer/projection';
 import { createSVGModel, cullSVGModel } from '../../src/lib/renderer/svg/adapter';
 import {
@@ -19,6 +22,7 @@ describe('MVP-GATE-002 graph capacity', () => {
     it(`preserves the exact ${fixture.scale}x project through the selected renderer`, () => {
       const document = generateRendererCapacityProject(fixture.scale);
       const parsed = projectDocumentSchema.parse(document);
+      expect(projectDocumentToSnapshot(parsed).id).toBe(parsed.project.id);
       const projection = projectRendererCapacityDocument(parsed);
       const model = createSVGModel(projection, 'author');
       const documentPortIds = parsed.topology.components.flatMap((component) =>
@@ -59,9 +63,14 @@ describe('MVP-GATE-002 graph capacity', () => {
       expect(new Set(model.connections.map(({ connection }) => connection.physical.kind))).toEqual(
         new Set(['wire', 'hose', 'tube', 'pipe'])
       );
-      expect(model.connections.every(({ connection }) => connection.routePoints.length === 1)).toBe(
-        true
-      );
+      expect(
+        model.connections.every(({ connection }) => {
+          const kind = parsed.topology.connections.find(
+            (candidate) => candidate.id === connection.id
+          )?.kind;
+          return connection.routePoints.length === (kind === 'electrical-mate' ? 0 : 1);
+        })
+      ).toBe(true);
     });
   }
 
@@ -81,7 +90,7 @@ describe('MVP-GATE-002 graph capacity', () => {
       completeNodes: 1_500,
       completeConnections: 6_000,
       visibleNodes: 20,
-      visibleConnections: 94,
+      visibleConnections: 160,
       firstNodeVisible: true
     });
   });

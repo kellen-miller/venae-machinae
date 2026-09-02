@@ -1,24 +1,16 @@
 import {
   cancelEvaluationSchema,
-  createEvaluationChangeSet,
-  createEvaluationProject,
   evaluationIdentityMatches,
   initializeEvaluationSchema,
   workerRequestSchema,
   workerResultSchema
 } from './protocol';
-import { canonicalJson, sha256Hex } from '../exchange/canonical-json';
-import { projectSnapshotToDocument } from '../persistence/project-document';
-import { APPLICATION_VERSIONS } from '../version/version-registry';
+import { canonicalJson } from '../exchange/canonical-json';
 import { recordValidationRunFailure } from '../validation/evaluate-validation';
 import { EMPTY_VALIDATION_HISTORY } from '../validation/finding';
 
-import type {
-  EvaluationProject,
-  EvaluationRequest,
-  InitializeEvaluation,
-  ProjectSystemAction
-} from './protocol';
+import type { EvaluationPreparationResult } from './evaluation-preparation';
+import type { EvaluationRequest, InitializeEvaluation, ProjectSystemAction } from './protocol';
 import type {
   ProjectEvaluationRequest,
   ProjectEvaluationScheduler
@@ -251,33 +243,72 @@ export class EvaluationClient {
 
 export class BrowserProjectEvaluationScheduler implements ProjectEvaluationScheduler {
   readonly #client: EvaluationClient;
+  readonly #createPreparationWorker: () => Worker;
+  readonly #isServerConnected: () => boolean;
   readonly #requests = new Map<string, ProjectEvaluationRequest>();
-  #mirror: EvaluationProject | null = null;
+  #preparationWorker: Worker | null = null;
+  #preparingRequestId: string | null = null;
+  #preparationPosted = false;
   #sequence = 0;
   #closed = false;
+  readonly #stopServerReconnect: () => void;
 
-  constructor(dependencies: { createWorker: () => Worker; isServerConnected: () => boolean }) {
+  constructor(dependencies: {
+    createWorker: () => Worker;
+    createPreparationWorker: () => Worker;
+    isServerConnected: () => boolean;
+    onServerReconnect: (listener: () => void) => () => void;
+  }) {
+    this.#createPreparationWorker = dependencies.createPreparationWorker;
+    this.#isServerConnected = dependencies.isServerConnected;
     this.#client = new EvaluationClient({
-      ...dependencies,
+      createWorker: dependencies.createWorker,
+      isServerConnected: dependencies.isServerConnected,
       publish: (action) => this.#publish(action)
+    });
+    this.#stopServerReconnect = dependencies.onServerReconnect(() => {
+      if (this.#preparingRequestId !== null) {
+        if (!this.#preparationPosted) this.#dispatchPreparation();
+        return;
+      }
+
+      this.#client.retry();
     });
   }
 
   schedule(request: ProjectEvaluationRequest): void {
     if (this.#closed) throw new Error('Project evaluation scheduler is closed');
-    const sequence = ++this.#sequence;
-    void this.#prepare(request, sequence).catch(() => {
-      if (this.#closed || sequence !== this.#sequence) return;
-      request.publish([
-        {
-          id: 'result-evaluation-summary',
-          sourceRevision: request.sourceRevision,
-          status: 'failed',
-          kind: 'evaluation-summary',
-          detail: null
-        }
-      ]);
-    });
+    this.#sequence += 1;
+    const requestId = crypto.randomUUID();
+    this.#requests.clear();
+    this.#requests.set(requestId, request);
+    this.#preparingRequestId = requestId;
+    this.#preparationPosted = false;
+    if (!this.#preparationWorker && !this.#isServerConnected()) return;
+    this.#dispatchPreparation();
+  }
+
+  #dispatchPreparation(): void {
+    const requestId = this.#preparingRequestId;
+    if (!requestId || this.#preparationPosted) return;
+    const request = this.#requests.get(requestId);
+    if (!request) return;
+
+    try {
+      this.#ensurePreparationWorker().postMessage({
+        type: 'prepare-evaluation',
+        sequence: this.#sequence,
+        requestId,
+        sourceRevision: request.sourceRevision,
+        snapshot: request.snapshot,
+        scope: request.scope
+      });
+      this.#preparationPosted = true;
+    } catch {
+      this.#terminatePreparationWorker();
+      if (!this.#isServerConnected()) return;
+      this.#publishPreparationFailure(requestId);
+    }
   }
 
   close(): void {
@@ -285,39 +316,94 @@ export class BrowserProjectEvaluationScheduler implements ProjectEvaluationSched
     this.#closed = true;
     this.#sequence += 1;
     this.#requests.clear();
-    this.#mirror = null;
+    this.#preparingRequestId = null;
+    this.#preparationPosted = false;
+    this.#terminatePreparationWorker();
+    this.#stopServerReconnect();
     this.#client.close();
   }
 
-  async #prepare(request: ProjectEvaluationRequest, sequence: number): Promise<void> {
-    const document = projectSnapshotToDocument(request.snapshot);
-    const project = createEvaluationProject(document);
-    const scope = validationScopeForEvaluation(request.scope);
-    const inputFingerprint = await sha256Hex(canonicalJson({ project, scope }));
-    if (this.#closed || sequence !== this.#sequence) return;
+  readonly #onPreparationMessage = (event: MessageEvent<unknown>): void => {
+    const candidate = event.data as {
+      type?: unknown;
+      sequence?: unknown;
+      requestId?: unknown;
+    };
+    if (
+      (candidate.type !== 'evaluation-prepared' &&
+        candidate.type !== 'evaluation-preparation-failed') ||
+      typeof candidate.sequence !== 'number' ||
+      typeof candidate.requestId !== 'string' ||
+      this.#closed ||
+      candidate.sequence !== this.#sequence ||
+      !this.#requests.has(candidate.requestId)
+    ) {
+      return;
+    }
+    const result = event.data as EvaluationPreparationResult;
 
-    const requestIdentity = {
-      requestId: crypto.randomUUID(),
-      projectRevision: request.sourceRevision,
-      inputFingerprint,
-      formulaCatalogVersion: APPLICATION_VERSIONS.formulaCatalog,
-      validationRuleCatalogVersion: APPLICATION_VERSIONS.validationRuleCatalog,
-      schemaVersion: APPLICATION_VERSIONS.projectDocumentSchema,
-      scope
-    };
-    const initialization: InitializeEvaluation = {
-      type: 'initialize-evaluation',
-      ...requestIdentity,
-      project
-    };
-    const evaluationRequest =
-      this.#mirror && project.projectRevision > this.#mirror.projectRevision
-        ? createEvaluationChangeSet(this.#mirror, project, requestIdentity)
-        : initialization;
-    this.#mirror = project;
-    this.#requests.clear();
-    this.#requests.set(initialization.requestId, request);
-    this.#client.schedule({ request: evaluationRequest, initialization });
+    if (result.type === 'evaluation-preparation-failed') {
+      this.#publishPreparationFailure(result.requestId);
+      return;
+    }
+
+    this.#preparingRequestId = null;
+    this.#preparationPosted = false;
+    try {
+      this.#client.schedule({
+        request: result.request!,
+        initialization: result.initialization!
+      });
+    } catch {
+      this.#publishPreparationFailure(result.requestId);
+    }
+  };
+
+  readonly #onPreparationError = (event: Event): void => {
+    event.preventDefault();
+    const requestId = this.#preparingRequestId;
+    this.#terminatePreparationWorker();
+    this.#preparationPosted = false;
+    if (requestId === null || !this.#isServerConnected()) return;
+    this.#publishPreparationFailure(requestId);
+  };
+
+  #ensurePreparationWorker(): Worker {
+    if (this.#preparationWorker) return this.#preparationWorker;
+    if (this.#closed) throw new Error('Project evaluation scheduler is closed');
+
+    const worker = this.#createPreparationWorker();
+    worker.addEventListener('message', this.#onPreparationMessage);
+    worker.addEventListener('error', this.#onPreparationError);
+    this.#preparationWorker = worker;
+    return worker;
+  }
+
+  #terminatePreparationWorker(): void {
+    if (!this.#preparationWorker) return;
+    this.#preparationWorker.removeEventListener('message', this.#onPreparationMessage);
+    this.#preparationWorker.removeEventListener('error', this.#onPreparationError);
+    this.#preparationWorker.terminate();
+    this.#preparationWorker = null;
+  }
+
+  #publishPreparationFailure(requestId: string): void {
+    const request = this.#requests.get(requestId);
+    if (!request) return;
+    this.#requests.delete(requestId);
+    if (this.#preparingRequestId === requestId) {
+      this.#preparingRequestId = null;
+      this.#preparationPosted = false;
+    }
+    request.publish([
+      {
+        id: 'result-evaluation-summary',
+        sourceRevision: request.sourceRevision,
+        status: 'failed',
+        kind: 'evaluation-summary',
+        detail: null
+      }
+    ]);
   }
 
   #publish(action: ProjectSystemAction): void {

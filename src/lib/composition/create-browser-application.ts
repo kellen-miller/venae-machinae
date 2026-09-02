@@ -1,4 +1,5 @@
 import { BrowserProjectEvaluationScheduler } from '../evaluation/evaluation-client';
+import { browserDeliveryState } from '../delivery/browser-delivery-state';
 import {
   commitStagedExchange,
   commitStagedLibraryBackupExchange,
@@ -143,6 +144,7 @@ export type BrowserApplication = Readonly<{
   createLibraryBackupDownload(
     exportedAt: string
   ): Promise<{ created: true; artifact: DownloadArtifact } | { created: false; reason: string }>;
+  createDiagnosticsDownload(generatedAt: string): Promise<DownloadArtifact>;
   stageLibraryImport(file: File): Promise<StageLibraryImportOutcome>;
   commitLibraryImport(
     staged: StagedLibraryImport,
@@ -348,6 +350,13 @@ export async function createBrowserApplication(): Promise<BrowserApplication> {
         }
       };
     },
+    async createDiagnosticsDownload(generatedAt) {
+      const diagnostics = await library.createRedactedDiagnostics(generatedAt);
+      return {
+        filename: 'venae-machinae-diagnostics.json',
+        json: JSON.stringify(diagnostics, null, 2)
+      };
+    },
     async stageLibraryImport(file) {
       const outcome = file.name.endsWith('.venae-templates.json')
         ? await stageTemplateExchange(file, MEASURED_EXCHANGE_LIMITS)
@@ -410,6 +419,10 @@ export async function createBrowserApplication(): Promise<BrowserApplication> {
     async openProject(projectId, presentation) {
       const snapshot = await library.openProject(projectId);
       if (!snapshot) return { opened: false, reason: 'missing-project' };
+      performance.clearMarks('venae:snapshot-returned');
+      performance.clearMarks('venae:workspace-interactive');
+      performance.clearMeasures('venae:snapshot-to-interactive');
+      performance.mark('venae:snapshot-returned');
       if (openSession) await openSession.close();
       const initialAssets = (await library.loadAssets(snapshot.assetHashes)).flatMap((asset) =>
         asset.mimeType === 'image/png' ||
@@ -458,7 +471,13 @@ export async function createBrowserApplication(): Promise<BrowserApplication> {
               new Worker(new URL('../evaluation/evaluation-worker.ts', import.meta.url), {
                 type: 'module'
               }),
-            isServerConnected: () => true
+            createPreparationWorker: () =>
+              new Worker(
+                new URL('../evaluation/evaluation-preparation-worker.ts', import.meta.url),
+                { type: 'module' }
+              ),
+            isServerConnected: () => browserDeliveryState.current === 'connected',
+            onServerReconnect: (listener) => browserDeliveryState.onReconnect(listener)
           })
         : new UnavailableProjectEvaluationScheduler();
       const session = createProjectSession({

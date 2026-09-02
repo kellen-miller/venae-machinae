@@ -3,6 +3,7 @@ import { openDB } from 'idb';
 import { createBlankProject as createBlankProjectSnapshot } from '../project/project';
 import {
   libraryBackupPayloadSchema,
+  libraryDiagnosticSchema,
   librarySettingsSchema,
   namedSnapshotSchema,
   PROJECT_LIBRARY_DATABASE_NAME,
@@ -28,6 +29,7 @@ import type { IDBPDatabase } from 'idb';
 import type { PartDefinition, ProjectSnapshot } from '../project/project';
 import type {
   LibraryBackupPayload,
+  LibraryDiagnostic,
   LibrarySettings,
   NamedSnapshot,
   ProjectLibraryDatabase,
@@ -50,6 +52,15 @@ export type SaveOutcome =
   | { saved: false; reason: 'quota-exceeded' | 'storage-error' };
 
 export const SUBSTANTIAL_EDIT_ACTION_COUNT = 100;
+
+export type RedactedLibraryDiagnostics = Readonly<{
+  schemaVersion: 1;
+  generatedAt: string;
+  redaction: 'project-values-omitted';
+  retainedEntryLimit: 200;
+  omittedEntryCount: number;
+  entries: readonly Readonly<Pick<LibraryDiagnostic, 'kind' | 'recordedAt'>>[];
+}>;
 
 function initialLibrarySettings(): LibrarySettings {
   return librarySettingsSchema.parse({
@@ -1021,6 +1032,24 @@ export class BrowserProjectLibrary {
         (left, right) =>
           left.quarantinedAt.localeCompare(right.quarantinedAt) || left.id.localeCompare(right.id)
       );
+  }
+
+  async createRedactedDiagnostics(generatedAt: string): Promise<RedactedLibraryDiagnostics> {
+    const diagnostics = (await this.database.getAll('diagnostics'))
+      .map((diagnostic) => libraryDiagnosticSchema.parse(diagnostic))
+      .sort(
+        (left, right) =>
+          left.recordedAt.localeCompare(right.recordedAt) || left.id.localeCompare(right.id)
+      );
+    const retained = diagnostics.slice(-200);
+    return {
+      schemaVersion: 1,
+      generatedAt,
+      redaction: 'project-values-omitted',
+      retainedEntryLimit: 200,
+      omittedEntryCount: diagnostics.length - retained.length,
+      entries: retained.map(({ kind, recordedAt }) => ({ kind, recordedAt }))
+    };
   }
 
   async quarantineImport(input: {

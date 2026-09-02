@@ -4,6 +4,11 @@ import { expect, test } from '@playwright/test';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { build } from 'vite';
 
+import { generateRendererCapacityProject } from '../fixtures/renderer-capacity';
+
+import type { Page } from '@playwright/test';
+import type { ProjectDocument } from '../../src/lib/persistence/project-document';
+
 type CapacityScale = 1 | 2 | 5;
 
 type CapacityState = Readonly<{
@@ -42,6 +47,66 @@ const lockedThresholds = {
 
 let browserBundle = '';
 let browserStyles = '';
+
+async function seedProductionCapacityProject(page: Page, document: ProjectDocument): Promise<void> {
+  await page.goto('/health');
+  await page.evaluate(async (snapshot) => {
+    await new Promise<void>((resolveDelete, rejectDelete) => {
+      const request = indexedDB.deleteDatabase('venae-machinae');
+      request.onsuccess = () => resolveDelete();
+      request.onerror = () => rejectDelete(request.error);
+      request.onblocked = () => rejectDelete(new Error('Capacity database deletion was blocked'));
+    });
+
+    const database = await new Promise<IDBDatabase>((resolveDatabase, rejectDatabase) => {
+      const request = indexedDB.open('venae-machinae', 2);
+      request.onupgradeneeded = () => {
+        const projects = request.result.createObjectStore('projects', { keyPath: 'projectId' });
+        request.result.createObjectStore('assets', { keyPath: 'sha256' });
+        const checkpoints = request.result.createObjectStore('checkpoints', { keyPath: 'id' });
+        checkpoints.createIndex('by-project', 'projectId');
+        const namedSnapshots = request.result.createObjectStore('namedSnapshots', {
+          keyPath: 'id'
+        });
+        namedSnapshots.createIndex('by-project', 'projectId');
+        const templates = request.result.createObjectStore('templates', { keyPath: 'key' });
+        templates.createIndex('by-template', 'templateId');
+        const trash = request.result.createObjectStore('trash', { keyPath: 'id' });
+        trash.createIndex('by-kind', 'kind');
+        const quarantine = request.result.createObjectStore('quarantine', { keyPath: 'id' });
+        quarantine.createIndex('by-source-kind', 'sourceKind');
+        request.result.createObjectStore('settings', { keyPath: 'key' });
+        const diagnostics = request.result.createObjectStore('diagnostics', { keyPath: 'id' });
+        diagnostics.createIndex('by-kind', 'kind');
+        request.result.createObjectStore('generations', { keyPath: 'id' });
+        void projects;
+      };
+      request.onsuccess = () => resolveDatabase(request.result);
+      request.onerror = () => rejectDatabase(request.error);
+    });
+    const transaction = database.transaction(['projects', 'settings'], 'readwrite');
+    transaction.objectStore('projects').put({
+      projectId: snapshot.project.id,
+      revision: snapshot.project.revision,
+      snapshot
+    });
+    transaction.objectStore('settings').put({
+      key: 'library',
+      activeGenerationId: crypto.randomUUID(),
+      rollbackGenerationId: null,
+      lastLibraryBackupAt: null,
+      lastProjectExports: [],
+      acceptedActionsSinceExport: 0,
+      migrationPending: false
+    });
+    await new Promise<void>((resolveTransaction, rejectTransaction) => {
+      transaction.oncomplete = () => resolveTransaction();
+      transaction.onerror = () => rejectTransaction(transaction.error);
+      transaction.onabort = () => rejectTransaction(transaction.error);
+    });
+    database.close();
+  }, document);
+}
 
 test.beforeAll(async () => {
   const result = await build({
@@ -137,6 +202,15 @@ test('MVP-GATE-002 exercises selected-renderer capacity locally', async ({
       connectionCount: fixture.connections,
       overlayCount: fixture.overlays
     });
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const renderer = document.querySelector('[data-rendered-connection-count]');
+          const declared = Number(renderer?.getAttribute('data-rendered-connection-count'));
+          return declared === document.querySelectorAll('[data-renderer-connection]').length;
+        })
+      )
+      .toBe(true);
 
     const renderedCounts = await page.evaluate(() => ({
       visibleNodeLabels: document.querySelectorAll('.node-label').length,
@@ -151,11 +225,12 @@ test('MVP-GATE-002 exercises selected-renderer capacity locally', async ({
     expect(renderedCounts).toMatchObject({
       visibleNodeLabels: 20,
       visiblePortLabels: 100,
-      visibleConnections: 94,
-      visibleRoutePoints: 94,
+      visibleRoutePoints: 80,
       semanticComponents: 40,
       semanticConnections: 60
     });
+    expect(renderedCounts.visibleConnections).toBeGreaterThanOrEqual(155);
+    expect(renderedCounts.visibleConnections).toBeLessThanOrEqual(160);
     expect(renderedCounts.visibleOverlays).toBeGreaterThan(0);
     expect(renderedCounts.domElements).toBeLessThan(10_000);
 
@@ -403,5 +478,92 @@ test('MVP-GATE-002 exercises selected-renderer capacity locally', async ({
       thresholds: lockedThresholds,
       measurements
     })}`
+  );
+});
+
+test('MVP-NFR-007 measures the final persistence, session, renderer, and worker stack', async ({
+  browser
+}) => {
+  test.setTimeout(300_000);
+  const productionMeasurements = [];
+
+  for (const fixture of cases) {
+    const context = await browser.newContext({ viewport: { width: 1_280, height: 900 } });
+    const page = await context.newPage();
+    const projectDocument = generateRendererCapacityProject(fixture.scale);
+    await seedProductionCapacityProject(page, projectDocument);
+    await page.goto(`/projects/${projectDocument.project.id}`);
+    const workspace = page.locator('[data-project-revision]');
+    await expect(workspace).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-renderer-adapter="svg"]')).toBeVisible();
+
+    const snapshotToInteractiveMs = await page.evaluate(() => {
+      const measure = performance.getEntriesByName('venae:snapshot-to-interactive').at(-1);
+      return measure?.duration ?? null;
+    });
+    expect(snapshotToInteractiveMs).not.toBeNull();
+    if (fixture.scale !== 5) {
+      expect(snapshotToInteractiveMs).toBeLessThan(
+        lockedThresholds.oneAndTwoTimesSnapshotToInteractiveMsExclusive
+      );
+    }
+
+    let evaluationDispatchAndEdit: Readonly<{
+      dispatchMs: number;
+      editMs: number;
+      totalMs: number;
+    }> | null = null;
+    if (fixture.scale === 5) {
+      await page.getByRole('button', { name: 'Findings view' }).click();
+      await expect(page.getByRole('button', { name: 'Validate Project' })).toBeVisible();
+      evaluationDispatchAndEdit = await page.evaluate(async () => {
+        const workspace = document.querySelector('[data-project-revision]');
+        const buttons = [...document.querySelectorAll('button')];
+        const validate = buttons.find(
+          (button) => button.textContent?.trim() === 'Validate Project'
+        );
+        const edit = buttons.find((button) => button.textContent?.trim() === 'Apply project edit');
+        if (!(workspace instanceof HTMLElement) || !validate || !edit) {
+          throw new Error('Final-stack evaluation controls are absent');
+        }
+
+        const revision = Number(workspace.dataset.projectRevision);
+        const startedAt = performance.now();
+        validate.click();
+        const dispatchedAt = performance.now();
+        edit.click();
+        const editedAt = performance.now();
+        await Promise.resolve();
+        if (Number(workspace.dataset.projectRevision) !== revision + 1) {
+          throw new Error('Editing waited for final-stack evaluation');
+        }
+        if (workspace.dataset.evaluationStatus !== 'queued') {
+          throw new Error('Final-stack evaluation completed before the edit boundary was observed');
+        }
+        return {
+          dispatchMs: dispatchedAt - startedAt,
+          editMs: editedAt - dispatchedAt,
+          totalMs: performance.now() - startedAt
+        };
+      });
+    }
+
+    productionMeasurements.push({
+      scale: fixture.scale,
+      snapshotToInteractiveMs,
+      evaluationDispatchAndEdit,
+      projectRevision: Number(await workspace.getAttribute('data-project-revision')),
+      productionStack: [
+        'IndexedDB v2',
+        'Project Session',
+        'production evaluation worker',
+        'raw SVG'
+      ]
+    });
+    await context.close();
+  }
+
+  console.log(
+    `MVP_GATE_002_FINAL_STACK_MEASUREMENT ${JSON.stringify({ measurements: productionMeasurements })}`
   );
 });

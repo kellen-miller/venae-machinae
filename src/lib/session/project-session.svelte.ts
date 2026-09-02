@@ -106,6 +106,7 @@ export type ProjectSessionView = Readonly<{
 
 export interface ProjectSession {
   readonly view: ProjectSessionView;
+  setPresentation(presentation: PresentationMode): Promise<PresentationChangeOutcome>;
   registerAsset(asset: ProjectAsset): RegisterAssetOutcome;
   execute(action: ProjectAction): ExecuteResult;
   previewImpact(action: DestructiveProjectAction): ImpactPreview;
@@ -117,6 +118,12 @@ export interface ProjectSession {
   requestTakeover(): Promise<TakeoverOutcome>;
   close(): Promise<CloseOutcome>;
 }
+
+export type PresentationChangeOutcome = Readonly<{
+  changed: boolean;
+  presentation: PresentationMode;
+  save: SaveOutcome | null;
+}>;
 
 type UndoFrame = Readonly<{
   causationId: string;
@@ -142,7 +149,7 @@ export function createProjectSession(dependencies: {
     throw new Error('Project Session autosave delay must be a nonnegative finite duration');
   }
 
-  const capability = resolveAuthoringCapability(dependencies);
+  let presentation = $state.raw(dependencies.presentation);
   let snapshot = $state.raw(dependencies.initialSnapshot);
   let assets = $state.raw<readonly ProjectAsset[]>(dependencies.initialAssets);
   let save = $state.raw<ProjectSessionView['save']>(
@@ -175,7 +182,13 @@ export function createProjectSession(dependencies: {
     get assets() {
       return assets;
     },
-    capability,
+    get capability() {
+      return resolveAuthoringCapability({
+        backing: dependencies.backing,
+        presentation,
+        runtimeCapabilities: dependencies.runtimeCapabilities
+      });
+    },
     get save() {
       return save;
     },
@@ -192,6 +205,7 @@ export function createProjectSession(dependencies: {
 
   function capabilityRejection(): ExecuteRejection | null {
     if (closed) return { accepted: false, rejection: { code: 'session-closed' } };
+    const capability = view.capability;
     if (capability.mode === 'review') {
       return {
         accepted: false,
@@ -436,7 +450,7 @@ export function createProjectSession(dependencies: {
   };
 
   function requestEvaluation(scope: EvaluationScope): void {
-    if (closed) return;
+    if (closed || view.capability.mode === 'review') return;
     scheduleEvaluation(scope, `explicit-evaluation:${snapshot.revision}`);
   }
 
@@ -463,6 +477,18 @@ export function createProjectSession(dependencies: {
     }
 
     return dependencies.backing.requestTakeover();
+  }
+
+  async function setPresentation(
+    nextPresentation: PresentationMode
+  ): Promise<PresentationChangeOutcome> {
+    if (presentation === nextPresentation) {
+      return { changed: false, presentation, save: null };
+    }
+
+    presentation = nextPresentation;
+    const save = nextPresentation === 'mobile' ? await flush('explicit') : null;
+    return { changed: true, presentation, save };
   }
 
   async function close(): Promise<CloseOutcome> {
@@ -495,6 +521,7 @@ export function createProjectSession(dependencies: {
 
   return {
     view,
+    setPresentation,
     registerAsset(asset) {
       const rejected = capabilityRejection();
       if (rejected) {

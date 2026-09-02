@@ -234,14 +234,14 @@
   }
 
   th {
-    color: #6b7c7a;
+    color: #5d716f;
     font: 0.62rem var(--font-mono);
     text-transform: uppercase;
   }
 
   td small {
     display: block;
-    color: #6b7c7a;
+    color: #5d716f;
   }
 
   .compact-list,
@@ -285,7 +285,7 @@
   footer small {
     display: block;
     margin-top: 2rem;
-    color: #6b7c7a;
+    color: #5d716f;
   }
 
   @media (max-width: 46rem) {

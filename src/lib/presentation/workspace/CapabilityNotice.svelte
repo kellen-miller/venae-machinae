@@ -17,7 +17,13 @@
     if (capability.reason === 'transient-review') {
       return 'Transient review: this Project is not durable and cannot mutate the browser Project Library.';
     }
-    return 'Authoring APIs are unavailable. Review remains available without silent mutation.';
+    if (capability.reason === 'missing-indexeddb') {
+      return 'IndexedDB is unavailable. Authoring is blocked; transient review and export remain available without silent persistence.';
+    }
+    if (capability.reason === 'missing-worker') {
+      return 'Web Worker evaluation is unavailable. Authoring is blocked; review and durable export remain available.';
+    }
+    return 'Web Locks are unavailable. Authoring is blocked; review and durable export remain available without an unsafe write lease.';
   });
 </script>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { PRIMITIVES } from '../../reference/primitives';
+  import ContextualHelp from '../help/ContextualHelp.svelte';
 
   import type { ProjectSnapshot } from '../../project/project';
   import type { WorkspaceMode, WorkspaceSubject } from './workspace-presentation.svelte';
@@ -145,6 +146,11 @@
           <dd>{selectedConnection.routeId ?? 'Unrouted'}</dd>
         </div>
       </dl>
+      <ContextualHelp
+        topic={selectedConnection.domain === 'electrical'
+          ? 'electrical-connection'
+          : 'fluid-connection'}
+      />
     </section>
   {:else}
     <section class="empty-inspector">
@@ -204,7 +210,7 @@
 
   header span,
   small {
-    color: #687b7b;
+    color: #5d716f;
   }
 
   .subject-inspector,
@@ -302,7 +308,7 @@
   }
 
   dt {
-    color: #687b7b;
+    color: #5d716f;
     font-size: 0.65rem;
   }
 

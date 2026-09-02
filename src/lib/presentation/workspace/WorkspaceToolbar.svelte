@@ -322,6 +322,15 @@
     }
 
     .projection-filters {
+      flex: 0 0 auto;
+      overflow: visible;
+    }
+
+    .projection-filters label {
+      grid-template-columns: minmax(7rem, 9rem);
+    }
+
+    .projection-filters label > span {
       display: none;
     }
 

@@ -181,3 +181,56 @@ test('records save-failed and lease-held review states', async ({ page, context 
   });
   await reviewPage.close();
 });
+
+test('records final M7 help, tablet authoring, mobile review, and server loss', async ({
+  page,
+  context
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await openBundledRx7Example(page);
+  await page.getByRole('button', { name: 'Battery to fuse, wire' }).focus();
+  await page.keyboard.press('Enter');
+  await page.getByRole('button', { name: 'Help for Wire' }).click();
+  await expect(page.getByRole('dialog', { name: 'Wire help' })).toBeVisible();
+  await page.screenshot({
+    path: 'evidence/frontend/M7-rx7-desktop-help.png',
+    animations: 'disabled',
+    scale: 'css'
+  });
+  await page.getByRole('button', { name: 'Close help' }).click();
+
+  await page.setViewportSize({ width: 1120, height: 900 });
+  await page.getByRole('button', { name: 'Add mode' }).click();
+  await expect(page.getByRole('button', { name: /^Add electrical source/ })).toBeEnabled();
+  await page.screenshot({
+    path: 'evidence/frontend/M7-rx7-tablet-authoring.png',
+    animations: 'disabled',
+    scale: 'css'
+  });
+
+  await page.setViewportSize({ width: 699, height: 900 });
+  await page.getByRole('combobox', { name: 'Operating State' }).selectOption({
+    label: 'Run Hot / Fan On'
+  });
+  await page.getByRole('button', { name: 'State Compare view' }).click();
+  await expect(page.locator('[data-capability-reason="mobile-review"]')).toBeVisible();
+  await expect(page.getByRole('main')).toHaveAttribute('data-motion-paused', 'true');
+  await page.screenshot({
+    path: 'evidence/frontend/M7-rx7-mobile-review.png',
+    animations: 'disabled',
+    scale: 'css'
+  });
+
+  await context.setOffline(true);
+  await expect(page.locator('[data-delivery-state="disconnected"]')).toBeVisible({
+    timeout: 10_000
+  });
+  await page.screenshot({
+    path: 'evidence/frontend/M7-rx7-server-loss.png',
+    animations: 'disabled',
+    scale: 'css'
+  });
+  await context.setOffline(false);
+  await expect(page.locator('[data-delivery-state="connected"]')).toBeVisible({ timeout: 10_000 });
+});

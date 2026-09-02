@@ -22,6 +22,21 @@ function currentGateRecord(gateId: string): Record<string, unknown> {
   return JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
 }
 
+function gateRecordChain(gateId: string): readonly Record<string, unknown>[] {
+  const records = [currentGateRecord(gateId)];
+  const visited = new Set<string>();
+  while (typeof records.at(-1)?.supersedes === 'string') {
+    const recordId = records.at(-1)!.supersedes as string;
+    if (visited.has(recordId)) throw new Error(`${gateId} evidence supersession has a cycle`);
+    visited.add(recordId);
+    const path = `evidence/gates/${recordId}.json`;
+    if (!existsSync(path)) throw new Error(`${gateId} supersedes missing record ${recordId}`);
+    records.push(JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>);
+  }
+
+  return records;
+}
+
 describe('approved gate evidence authority amendment', () => {
   it('keeps local delivery secure without claiming cross-device support', () => {
     const architecture = requirementRow('MVP-ARCH-008');
@@ -91,11 +106,9 @@ describe('approved gate evidence authority amendment', () => {
   ])(
     '%s has an authoritative Pass record superseding its historical blocker',
     (gateId, baseline) => {
-      expect(currentGateRecord(gateId)).toMatchObject({
-        gateId,
-        supersedes: baseline,
-        verdict: 'Pass'
-      });
+      const chain = gateRecordChain(gateId);
+      expect(chain[0]).toMatchObject({ gateId, verdict: 'Pass' });
+      expect(chain.map((record) => record.recordId)).toContain(baseline);
     }
   );
 });

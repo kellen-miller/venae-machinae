@@ -10,6 +10,10 @@
 <main class="route-error">
   <p class="eyebrow">Route error</p>
   <h1>{page.status}</h1>
-  <p>{page.error?.message ?? 'The requested view could not be opened.'}</p>
+  <p>
+    {page.status === 404
+      ? 'The requested local view could not be found.'
+      : 'The local application could not open this view.'}
+  </p>
   <a href={resolve('/')}>Return to the Project Library</a>
 </main>

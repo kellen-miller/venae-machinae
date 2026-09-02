@@ -36,6 +36,7 @@
     onexportproject,
     onexporttemplates,
     onbackup,
+    ondiagnostics,
     onstageimport,
     oncommitimport
   }: {
@@ -56,6 +57,7 @@
     onexportproject: (project: ProjectListing) => void;
     onexporttemplates: () => void;
     onbackup: () => void;
+    ondiagnostics: () => void;
     onstageimport: (file: File) => void;
     oncommitimport: (decision: 'replace' | 'import-copy' | 'cancel') => void;
   } = $props();
@@ -111,6 +113,10 @@
           <dd>None</dd>
         </div>
       </dl>
+      <p class="boundary-note">
+        Loopback-only delivery. Cross-device and plain-HTTP LAN editing are unsupported; each future
+        secure origin would own an independent browser library with no implicit sync.
+      </p>
     </aside>
   </section>
 
@@ -138,7 +144,12 @@
           <small>Reminder: {overview.backupHealth.reminders.join(', ')}.</small>
         {/if}
       </div>
-      <button type="button" disabled={!ready} onclick={onbackup}>Download Library Backup</button>
+      <div class="library-health-actions">
+        <button type="button" disabled={!ready} onclick={onbackup}>Download Library Backup</button>
+        <button type="button" disabled={!ready} onclick={ondiagnostics}
+          >Download redacted diagnostics</button
+        >
+      </div>
     </section>
   {/if}
 
@@ -466,6 +477,11 @@
     background: var(--color-surface-raised);
     color: var(--color-text);
     cursor: pointer;
+  }
+
+  .library-health-actions {
+    display: grid;
+    gap: 0.45rem;
   }
 
   .operation-status,

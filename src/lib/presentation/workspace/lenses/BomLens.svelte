@@ -472,7 +472,7 @@
   .bom-lens > p,
   .build-register p {
     margin: 0;
-    color: #6b7c7a;
+    color: #5d716f;
     font: 0.62rem var(--font-mono);
     text-transform: uppercase;
   }
@@ -519,7 +519,7 @@
   }
 
   small {
-    color: #6b7c7a;
+    color: #5d716f;
     font: 0.62rem var(--font-mono);
   }
 

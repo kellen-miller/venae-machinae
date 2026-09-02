@@ -15,13 +15,24 @@
   let failure = $state<string | null>(null);
   let application: BrowserApplication | null = null;
 
+  function presentationForWidth(width: number) {
+    return width < 700
+      ? ('mobile' as const)
+      : width <= 1120
+        ? ('tablet' as const)
+        : ('desktop' as const);
+  }
+
   onMount(() => {
     let canceled = false;
+    const updatePresentation = () => {
+      if (session) void session.setPresentation(presentationForWidth(window.innerWidth));
+    };
+    window.addEventListener('resize', updatePresentation);
     void (async () => {
       try {
         application = await createBrowserApplication();
-        const presentation =
-          window.innerWidth < 700 ? 'mobile' : window.innerWidth <= 1120 ? 'tablet' : 'desktop';
+        const presentation = presentationForWidth(window.innerWidth);
         const outcome = await application.openProject(params.projectId, presentation);
         if (canceled) {
           await application.close();
@@ -33,6 +44,7 @@
         }
 
         session = outcome.session;
+        updatePresentation();
       } catch (error) {
         failure = error instanceof Error ? error.message : 'The browser Project Library failed.';
       }
@@ -40,6 +52,7 @@
 
     return () => {
       canceled = true;
+      window.removeEventListener('resize', updatePresentation);
       if (application) void application.close();
     };
   });

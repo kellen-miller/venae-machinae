@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
 
   import { createProjectExchange } from '../../exchange/project-exchange';
   import {
@@ -117,12 +117,48 @@
       event.preventDefault();
       event.returnValue = '';
     };
+    const prepareApplicationReload = (event: Event) => {
+      event.preventDefault();
+      void (async () => {
+        const outcome = await session.flush('explicit');
+        if (
+          outcome.saved ||
+          outcome.reason === 'read-only' ||
+          outcome.reason === 'transient-review'
+        ) {
+          try {
+            await session.close();
+            window.location.reload();
+            return;
+          } catch {
+            interactionStatus =
+              'Application reload paused: the Project Session could not close cleanly.';
+            return;
+          }
+        }
+        interactionStatus = `Application reload paused: ${outcome.reason}. Export the working revision before retrying.`;
+      })();
+    };
     update();
+    void (async () => {
+      await tick();
+      await new Promise<void>((resolveFrame) => requestAnimationFrame(() => resolveFrame()));
+      await new Promise<void>((resolveFrame) => requestAnimationFrame(() => resolveFrame()));
+      if (performance.getEntriesByName('venae:snapshot-returned', 'mark').length === 0) return;
+      performance.mark('venae:workspace-interactive');
+      performance.measure(
+        'venae:snapshot-to-interactive',
+        'venae:snapshot-returned',
+        'venae:workspace-interactive'
+      );
+    })();
     preference.addEventListener('change', update);
     window.addEventListener('beforeunload', warnAboutUnsavedChanges);
+    window.addEventListener('venae:prepare-application-reload', prepareApplicationReload);
     return () => {
       preference.removeEventListener('change', update);
       window.removeEventListener('beforeunload', warnAboutUnsavedChanges);
+      window.removeEventListener('venae:prepare-application-reload', prepareApplicationReload);
     };
   });
 

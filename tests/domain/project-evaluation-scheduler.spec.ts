@@ -1,11 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { BrowserProjectEvaluationScheduler } from '../../src/lib/evaluation/evaluation-client';
+import { prepareEvaluation } from '../../src/lib/evaluation/evaluation-preparation';
 import { createOperatingState } from '../../src/lib/operating-state/operating-state';
 import { applyProjectAction } from '../../src/lib/project/apply-action';
 import { createBlankProject } from '../../src/lib/project/project';
 
-import type { WorkerRequest, WorkerResult } from '../../src/lib/evaluation/protocol';
+import type { PrepareEvaluationRequest } from '../../src/lib/evaluation/evaluation-preparation';
+import type {
+  EvaluationProject,
+  WorkerRequest,
+  WorkerResult
+} from '../../src/lib/evaluation/protocol';
 
 class ControlledWorker extends EventTarget {
   readonly sent: WorkerRequest[] = [];
@@ -24,7 +30,100 @@ class ControlledWorker extends EventTarget {
   }
 }
 
+class ControlledPreparationWorker extends EventTarget {
+  readonly sent: PrepareEvaluationRequest[] = [];
+  terminated = false;
+  #mirror: EvaluationProject | null = null;
+
+  postMessage(message: PrepareEvaluationRequest): void {
+    const request = structuredClone(message);
+    this.sent.push(request);
+    setTimeout(() => {
+      void prepareEvaluation(request, this.#mirror).then((prepared) => {
+        this.#mirror = prepared.project;
+        this.dispatchEvent(new MessageEvent('message', { data: structuredClone(prepared.result) }));
+      });
+    }, 0);
+  }
+
+  terminate(): void {
+    this.terminated = true;
+  }
+}
+
 describe('MVP-ARCH-004 Project evaluation adapter', () => {
+  it('defers preparation-worker startup until the local server reconnects', async () => {
+    const snapshot = createBlankProject({
+      id: 'project-offline-preparation',
+      name: 'Offline preparation',
+      createdAt: '2026-09-02T00:00:00Z'
+    });
+    const workers: ControlledWorker[] = [];
+    const preparationWorkers: ControlledPreparationWorker[] = [];
+    let connected = false;
+    let reconnect: () => void = () => undefined;
+    const scheduler = new BrowserProjectEvaluationScheduler({
+      createWorker() {
+        const worker = new ControlledWorker();
+        workers.push(worker);
+        return worker as unknown as Worker;
+      },
+      createPreparationWorker() {
+        const worker = new ControlledPreparationWorker();
+        preparationWorkers.push(worker);
+        return worker as unknown as Worker;
+      },
+      isServerConnected: () => connected,
+      onServerReconnect(listener) {
+        reconnect = listener;
+        return () => {
+          reconnect = () => undefined;
+        };
+      }
+    });
+    const publish = vi.fn(() => ({ published: true as const, revision: 1 }));
+
+    scheduler.schedule({
+      sourceRevision: snapshot.revision,
+      causationId: 'cause-offline-edit',
+      snapshot,
+      scope: { kind: 'changed-subjects', subjectIds: [snapshot.id] },
+      publish
+    });
+
+    expect(preparationWorkers).toHaveLength(0);
+    expect(workers).toHaveLength(0);
+    expect(publish).not.toHaveBeenCalled();
+
+    connected = true;
+    reconnect();
+    await vi.waitFor(() => expect(workers[0]?.sent).toHaveLength(1));
+    const request = workers[0]?.sent[0];
+    if (!request || request.type !== 'initialize-evaluation') {
+      throw new Error('Expected deferred initialization after reconnect');
+    }
+
+    workers[0]?.respond({
+      type: 'evaluation-succeeded',
+      requestId: request.requestId,
+      projectRevision: request.projectRevision,
+      inputFingerprint: request.inputFingerprint,
+      formulaCatalogVersion: request.formulaCatalogVersion,
+      validationRuleCatalogVersion: request.validationRuleCatalogVersion,
+      schemaVersion: request.schemaVersion,
+      summary: {
+        componentCount: 0,
+        connectionCount: 0,
+        engineeringValueCount: 0,
+        operatingStateCount: 0
+      },
+      results: []
+    });
+    expect(publish).toHaveBeenCalledOnce();
+
+    scheduler.close();
+  });
+
   it('schedules a versioned domain snapshot and maps one matching worker result', async () => {
     const initial = createBlankProject({
       id: 'project-evaluation-adapter',
@@ -48,13 +147,20 @@ describe('MVP-ARCH-004 Project evaluation adapter', () => {
     if (!changed.accepted) throw new Error(changed.rejection.message);
 
     const workers: ControlledWorker[] = [];
+    const preparationWorkers: ControlledPreparationWorker[] = [];
     const scheduler = new BrowserProjectEvaluationScheduler({
       createWorker() {
         const worker = new ControlledWorker();
         workers.push(worker);
         return worker as unknown as Worker;
       },
-      isServerConnected: () => true
+      createPreparationWorker() {
+        const worker = new ControlledPreparationWorker();
+        preparationWorkers.push(worker);
+        return worker as unknown as Worker;
+      },
+      isServerConnected: () => true,
+      onServerReconnect: () => () => undefined
     });
     const publish = vi.fn(() => ({ published: true as const, revision: 2 }));
     scheduler.schedule({
@@ -64,6 +170,9 @@ describe('MVP-ARCH-004 Project evaluation adapter', () => {
       scope: { kind: 'changed-subjects', subjectIds: ['component-load'] },
       publish
     });
+
+    expect(preparationWorkers[0]?.sent).toHaveLength(1);
+    expect(workers).toHaveLength(0);
 
     await vi.waitFor(() => expect(workers[0]?.sent).toHaveLength(1));
     const request = workers[0]?.sent[0];
@@ -218,5 +327,6 @@ describe('MVP-ARCH-004 Project evaluation adapter', () => {
 
     scheduler.close();
     expect(workers[0]?.terminated).toBe(true);
+    expect(preparationWorkers[0]?.terminated).toBe(true);
   });
 });
