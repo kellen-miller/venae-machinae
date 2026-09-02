@@ -5,6 +5,7 @@ type DeliveryListener = (connection: BrowserDeliveryConnection) => void;
 let connection: BrowserDeliveryConnection = 'connected';
 let monitorCount = 0;
 let interval: ReturnType<typeof setInterval> | null = null;
+let stopBrowserMonitor: (() => void) | null = null;
 const listeners = new Set<DeliveryListener>();
 const reconnectListeners = new Set<() => void>();
 
@@ -19,11 +20,6 @@ function publish(next: BrowserDeliveryConnection): void {
 }
 
 async function check(): Promise<BrowserDeliveryConnection> {
-  if (!navigator.onLine) {
-    publish('disconnected');
-    return connection;
-  }
-
   try {
     const response = await fetch('/health', {
       cache: 'no-store',
@@ -40,24 +36,27 @@ function start(): () => void {
   monitorCount += 1;
   if (monitorCount === 1) {
     const online = () => void check();
-    const offline = () => publish('disconnected');
+    const offline = () => void check();
     window.addEventListener('online', online);
     window.addEventListener('offline', offline);
     interval = setInterval(() => void check(), 2_000);
     void check();
-
-    return () => {
-      monitorCount -= 1;
-      if (monitorCount > 0) return;
+    stopBrowserMonitor = () => {
       window.removeEventListener('online', online);
       window.removeEventListener('offline', offline);
       if (interval !== null) clearInterval(interval);
       interval = null;
+      stopBrowserMonitor = null;
     };
   }
 
+  let stopped = false;
   return () => {
+    if (stopped) return;
+    stopped = true;
     monitorCount -= 1;
+    if (monitorCount > 0) return;
+    stopBrowserMonitor?.();
   };
 }
 

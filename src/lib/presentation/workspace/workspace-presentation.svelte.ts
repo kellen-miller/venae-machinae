@@ -90,6 +90,10 @@ export class WorkspacePresentation {
     this.preview = null;
   }
 
+  clearSelection(): void {
+    this.selection = null;
+  }
+
   setPreview(subject: WorkspaceSubject | null): void {
     this.preview = subject;
   }

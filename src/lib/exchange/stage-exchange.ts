@@ -240,6 +240,7 @@ async function stageKnownExchange(
   if (incompatibleSchema) return incompatibleSchema;
 
   let migratedEnvelope = unknownEnvelope;
+  let integrityPayload: unknown = null;
   if (
     unknownEnvelope !== null &&
     typeof unknownEnvelope === 'object' &&
@@ -247,6 +248,7 @@ async function stageKnownExchange(
   ) {
     const envelope = unknownEnvelope as Record<string, unknown>;
     if (envelope.format === 'venae-project') {
+      integrityPayload = envelope.payload;
       const migration = migrateProjectDocument(envelope.payload);
       if (!migration.migrated) {
         return blocked(migration.reason, 'The project payload cannot be migrated by this version');
@@ -336,7 +338,9 @@ async function stageKnownExchange(
     return blocked('asset-reference', 'Asset references and integrity metadata do not match');
   }
 
-  const canonicalPayload = canonicalJson(envelope.payload);
+  const canonicalPayload = canonicalJson(
+    envelope.format === 'venae-project' ? integrityPayload : envelope.payload
+  );
   if ((await sha256Hex(canonicalPayload)) !== envelope.integrity.payloadSha256) {
     return blocked('payload-integrity', 'The exchange payload failed corruption detection');
   }

@@ -173,7 +173,7 @@ const projectResultSchema = z.strictObject({
 const tombstoneSchema = z.strictObject({
   subjectId: identity,
   subjectKind: z.enum(['component', 'connection']),
-  successorId: identity
+  successorId: identity.nullable()
 });
 
 const electricalLengthSchema = z.strictObject({

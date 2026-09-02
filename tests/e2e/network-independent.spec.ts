@@ -2,6 +2,20 @@ import { expect, test } from '@playwright/test';
 
 import { seedWorkspaceProject, WORKSPACE_PROJECT_ID } from '../fixtures/workspace-project';
 
+test('MVP-PROD-001/MVP-ARCH-007 evaluates through loopback when navigator reports offline', async ({
+  page
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });
+  });
+  await seedWorkspaceProject(page);
+  await page.goto(`/projects/${WORKSPACE_PROJECT_ID}`);
+
+  await expect(page.locator('[data-delivery-state="connected"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Apply project edit' }).click();
+  await expect(page.locator('[data-evaluation-status="current"]')).toBeVisible();
+});
+
 test('MVP-PROD-001/MVP-ARCH-007 preserves loaded editing and persistence under network denial', async ({
   page,
   context

@@ -93,7 +93,7 @@ export function retainStaleProjectResult(result: ProjectResult): ProjectResult {
 export type SubjectTombstone = Readonly<{
   subjectId: SubjectId;
   subjectKind: 'component' | 'connection';
-  successorId: SubjectId;
+  successorId: SubjectId | null;
 }>;
 
 export type EngineeringValue = Readonly<{

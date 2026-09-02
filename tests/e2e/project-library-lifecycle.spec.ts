@@ -57,6 +57,65 @@ test('MVP-DATA-005 MVP-DATA-008 MVP-DATA-009 MVP-DATA-010 MVP-DATA-019 exposes r
   await expect(page.getByRole('heading', { name: /Last Library Backup: just now/i })).toBeVisible();
 });
 
+test('MVP-DATA-007 MVP-DATA-009 automatically enforces checkpoint retention', async ({ page }) => {
+  await seedWorkspaceProject(page);
+  await page.goto('/');
+  await expect(page.locator('[data-library-state="ready"]')).toBeVisible();
+  await page.evaluate(async (projectId) => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('venae-machinae', 2);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const transaction = database.transaction(['projects', 'checkpoints'], 'readwrite');
+    const projectRequest = transaction.objectStore('projects').get(projectId);
+    const project = await new Promise<{
+      revision: number;
+      snapshot: unknown;
+    }>((resolve, reject) => {
+      projectRequest.onsuccess = () => resolve(projectRequest.result);
+      projectRequest.onerror = () => reject(projectRequest.error);
+    });
+    for (let index = 0; index < 30; index += 1) {
+      transaction.objectStore('checkpoints').put({
+        id: `automatic-retention-${index.toString().padStart(2, '0')}`,
+        projectId,
+        projectRevision: project.revision,
+        reason: 'automatic-retention-fixture',
+        createdAt: `2026-07-01T12:${index.toString().padStart(2, '0')}:00.000Z`,
+        snapshot: project.snapshot
+      });
+    }
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    database.close();
+  }, WORKSPACE_PROJECT_ID);
+
+  await page.reload();
+  await expect(page.locator('[data-library-state="ready"]')).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(async (projectId) => {
+        const database = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open('venae-machinae', 2);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        const transaction = database.transaction('checkpoints', 'readonly');
+        const request = transaction.objectStore('checkpoints').index('by-project').count(projectId);
+        const count = await new Promise<number>((resolve, reject) => {
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        database.close();
+        return count;
+      }, WORKSPACE_PROJECT_ID)
+    )
+    .toBe(25);
+});
+
 test('MVP-DATA-003 MVP-DATA-007 checkpoints session open and yields a held authoring lease', async ({
   page,
   context
@@ -116,13 +175,25 @@ test('MVP-DATA-004 retains unsaved work for emergency export and safe retry', as
   const failure = page.getByRole('alert');
   await expect(failure).toContainText('Unsaved changes remain in memory and are not durable');
   await expect(failure.getByRole('button', { name: 'Retry save' })).toBeVisible();
+  const navigationDialogPromise = page.waitForEvent('dialog');
+  const navigationPromise = page.getByRole('link', { name: 'Back to Project Library' }).click();
+  const navigationDialog = await navigationDialogPromise;
+  await navigationDialog.dismiss();
+  await navigationPromise;
+  await expect(page).toHaveURL(new RegExp(`/projects/${WORKSPACE_PROJECT_ID}$`));
+  await expect(failure).toBeVisible();
   const workingRevision = Number(
     await page.locator('[data-project-revision]').getAttribute('data-project-revision')
   );
 
-  page.once('dialog', (dialog) => dialog.accept());
+  const exportDialogPromise = page.waitForEvent('dialog');
   const downloadPromise = page.waitForEvent('download');
-  await failure.getByRole('button', { name: 'Export unsaved working state' }).click();
+  const exportClickPromise = failure
+    .getByRole('button', { name: 'Export unsaved working state' })
+    .click();
+  const exportDialog = await exportDialogPromise;
+  await exportDialog.accept();
+  await exportClickPromise;
   const download = await downloadPromise;
   const emergencyPath = testInfo.outputPath(download.suggestedFilename());
   await download.saveAs(emergencyPath);
@@ -141,6 +212,21 @@ test('MVP-DATA-004 retains unsaved work for emergency export and safe retry', as
   });
   await failure.getByRole('button', { name: 'Retry save' }).click();
   await expect(page.locator('[data-save-status="saved"]')).toBeVisible();
+});
+
+test('MVP-MODEL-009 MVP-VAL-012 confirms connection deletion, retains a tombstone, and undoes', async ({
+  page
+}) => {
+  await seedWorkspaceProject(page);
+  await page.goto(`/projects/${WORKSPACE_PROJECT_ID}`);
+  await page.getByRole('button', { name: 'Fan feed, wire' }).focus();
+  await page.keyboard.press('Enter');
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Delete connection' }).click();
+  await expect(page.getByRole('button', { name: 'Fan feed, wire' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(page.getByRole('button', { name: 'Fan feed, wire' })).toBeVisible();
 });
 
 test('MVP-DATA-017 promotes a Project Part Definition as an immutable Template revision', async ({

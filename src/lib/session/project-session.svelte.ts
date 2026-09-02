@@ -244,14 +244,18 @@ export function createProjectSession(dependencies: {
     if (typeof autosaveTimer === 'object') autosaveTimer.unref?.();
   }
 
-  function requestRecoveryCheckpoint(reason: string): void {
+  function requestRecoveryCheckpoint(reason: string, checkpointSnapshot?: ProjectSnapshot): void {
     const writableBacking = dependencies.backing;
     if (writableBacking.kind !== 'persisted' || writableBacking.access !== 'writable') {
       return;
     }
-    const saveOutcome = flush('explicit');
     checkpointPromise = checkpointPromise.then(async () => {
-      const saved = await saveOutcome;
+      if (checkpointSnapshot) {
+        await writableBacking.createCheckpoint(reason, checkpointSnapshot);
+        return;
+      }
+
+      const saved = await flush('explicit');
       if (saved.saved) await writableBacking.createCheckpoint(reason);
     });
   }
@@ -351,8 +355,13 @@ export function createProjectSession(dependencies: {
     const before = snapshot;
     const outcome = applyProjectAction(before, action);
     if (!outcome.accepted) return outcome;
-    if (action.type === 'replace-component' || action.type === 'insert-electrical-branch') {
-      requestRecoveryCheckpoint('before-destructive-operation');
+    if (
+      action.type === 'delete-component' ||
+      action.type === 'delete-connection' ||
+      action.type === 'replace-component' ||
+      action.type === 'insert-electrical-branch'
+    ) {
+      requestRecoveryCheckpoint('before-destructive-operation', before);
     }
 
     snapshot = outcome.snapshot;

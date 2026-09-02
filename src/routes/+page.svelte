@@ -219,6 +219,18 @@
     operationStatus = 'Downloaded bounded diagnostics with project values omitted.';
   }
 
+  async function downloadQuarantinedRaw(quarantineId: string): Promise<void> {
+    if (!application) return;
+    operationFailure = null;
+    const outcome = await application.createQuarantineDownload(quarantineId);
+    if (!outcome.created) {
+      operationFailure = `Quarantine export failed: ${outcome.reason}.`;
+      return;
+    }
+    startDownload(outcome.artifact);
+    operationStatus = 'Downloaded the quarantined bytes without repair.';
+  }
+
   async function stageLibraryImport(file: File): Promise<void> {
     if (!application) return;
     operationFailure = null;
@@ -277,6 +289,7 @@
   onexporttemplates={exportTemplates}
   onbackup={downloadLibraryBackup}
   ondiagnostics={downloadRedactedDiagnostics}
+  onexportquarantine={downloadQuarantinedRaw}
   onstageimport={stageLibraryImport}
   oncommitimport={commitLibraryImport}
 />

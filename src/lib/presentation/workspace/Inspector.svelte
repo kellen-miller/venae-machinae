@@ -14,6 +14,7 @@
     canAuthor,
     onmove,
     onaddprimitive,
+    ondelete,
     onfollow,
     onreveal
   }: {
@@ -25,6 +26,7 @@
     canAuthor: boolean;
     onmove: (componentId: string, x: string, y: string) => void;
     onaddprimitive: (primitiveId: string, fluidSystemId?: string) => void;
+    ondelete: (subject: Readonly<{ kind: 'component' | 'connection'; id: string }>) => void;
     onfollow: () => void;
     onreveal: () => void;
   } = $props();
@@ -131,6 +133,13 @@
           Apply position
         </button>
       </fieldset>
+      <button
+        class="delete-subject"
+        type="button"
+        disabled={!canAuthor}
+        onclick={() => ondelete({ kind: 'component', id: selectedComponent.id })}
+        >Delete component</button
+      >
     </section>
   {:else if selectedConnection}
     <section class="subject-inspector">
@@ -151,6 +160,13 @@
           ? 'electrical-connection'
           : 'fluid-connection'}
       />
+      <button
+        class="delete-subject"
+        type="button"
+        disabled={!canAuthor}
+        onclick={() => ondelete({ kind: 'connection', id: selectedConnection.id })}
+        >Delete connection</button
+      >
     </section>
   {:else}
     <section class="empty-inspector">
@@ -363,6 +379,19 @@
 
   fieldset > button {
     grid-column: 1 / -1;
+  }
+
+  .delete-subject {
+    width: 100%;
+    margin-top: 0.8rem;
+    border-color: #a94b36;
+    background: #fff7f3;
+    color: #8b3626;
+  }
+
+  .delete-subject:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 
   button:focus-visible,

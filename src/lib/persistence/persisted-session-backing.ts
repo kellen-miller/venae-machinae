@@ -1,5 +1,5 @@
 import { projectSnapshotToDocument } from './project-document';
-import { requestProjectTakeover } from './project-lease';
+import { requestProjectTakeoverAndWait } from './project-lease';
 
 import type { ProjectLease } from './project-lease';
 import type { BrowserProjectLibrary } from './project-library';
@@ -27,11 +27,12 @@ export function createWritablePersistedSessionBacking(input: {
       if (outcome.saved) return { saved: true, revision: outcome.revision };
       return outcome;
     },
-    async createCheckpoint(reason) {
+    async createCheckpoint(reason, snapshot) {
       try {
         const outcome = await input.library.createCheckpoint({
           projectId: input.lease.projectId,
-          reason
+          reason,
+          ...(snapshot ? { snapshot: projectSnapshotToDocument(snapshot) } : {})
         });
         return outcome.created ? { created: true } : { created: false, reason: 'missing-project' };
       } catch {
@@ -56,9 +57,8 @@ export function createReadOnlyPersistedSessionBacking(input: {
     access: 'read-only',
     durableRevision: input.durableRevision,
     async requestTakeover() {
-      return requestProjectTakeover(input.projectId)
-        ? { requested: true }
-        : { requested: false, reason: 'unsupported' };
+      const outcome = await requestProjectTakeoverAndWait(input.projectId);
+      return outcome === 'acquired' ? { requested: true } : { requested: false, reason: outcome };
     },
     async close() {}
   };

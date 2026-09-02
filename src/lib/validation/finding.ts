@@ -70,7 +70,7 @@ export type FindingOccurrence = z.infer<typeof findingOccurrenceSchema>;
 const subjectTombstoneTraceSchema = z.strictObject({
   subjectId: identity,
   subjectKind: z.enum(['component', 'connection']),
-  successorId: identity
+  successorId: identity.nullable()
 });
 
 export const findingTraceSchema = z.strictObject({

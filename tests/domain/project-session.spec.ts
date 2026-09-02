@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { applyProjectAction } from '../../src/lib/project/apply-action';
 import { createBlankProject } from '../../src/lib/project/project';
 import { createProjectSession } from '../../src/lib/session/project-session.svelte';
 
@@ -48,6 +49,7 @@ function writableBacking(
 ) {
   const saved: Readonly<{ snapshot: ProjectSnapshot; expectedRevision: number | null }>[] = [];
   const checkpoints: string[] = [];
+  const checkpointSnapshots: ProjectSnapshot[] = [];
   let closed = false;
   const backing: PersistedSessionBacking = {
     kind: 'persisted',
@@ -60,8 +62,9 @@ function writableBacking(
         Promise.resolve({ saved: true, revision: snapshot.revision })
       );
     },
-    async createCheckpoint(reason) {
+    async createCheckpoint(reason, snapshot) {
       checkpoints.push(reason);
+      if (snapshot) checkpointSnapshots.push(snapshot);
       return { created: true };
     },
     async requestTakeover() {
@@ -72,7 +75,7 @@ function writableBacking(
     }
   };
 
-  return { backing, saved, checkpoints, isClosed: () => closed };
+  return { backing, saved, checkpoints, checkpointSnapshots, isClosed: () => closed };
 }
 
 function createWritableSession(
@@ -326,6 +329,75 @@ describe('MVP-ARCH-003 Project Session durability', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('MVP-DATA-007 captures the exact pre-destructive snapshot', async () => {
+    let initial = blankProject();
+    const actions = [
+      {
+        type: 'add-system' as const,
+        causationId: 'system',
+        system: { id: 'power', label: 'Power', domain: 'electrical' as const, mediumId: null }
+      },
+      ...['source', 'load'].map((id) => ({
+        type: 'add-component' as const,
+        causationId: id,
+        component: {
+          id,
+          label: id,
+          kind: 'part' as const,
+          definitionId: null,
+          predecessorId: null,
+          successorId: null,
+          position: { x: '0', y: '0' },
+          ports: [
+            {
+              id: `${id}-port`,
+              componentId: id,
+              label: id,
+              domain: 'electrical' as const,
+              mediumId: null,
+              interfaceKey: null
+            }
+          ]
+        }
+      })),
+      {
+        type: 'add-connection' as const,
+        causationId: 'wire',
+        connection: {
+          id: 'wire',
+          label: 'Wire',
+          systemId: 'power',
+          sourcePortId: 'source-port',
+          targetPortId: 'load-port',
+          domain: 'electrical' as const,
+          mediumId: null,
+          kind: 'electrical-wire' as const,
+          interfaceAssessment: 'unknown' as const,
+          routeId: null
+        }
+      }
+    ];
+    for (const action of actions) {
+      const outcome = applyProjectAction(initial, action);
+      if (!outcome.accepted) throw new Error(outcome.rejection.message);
+      initial = outcome.snapshot;
+    }
+    const records = writableBacking({ durableRevision: initial.revision });
+    const session = createWritableSession({ initialSnapshot: initial, backing: records.backing });
+    expect(
+      session.execute({
+        type: 'delete-connection',
+        causationId: 'delete-wire',
+        connectionId: 'wire',
+        confirmedImpactSubjectIds: ['wire']
+      })
+    ).toMatchObject({ accepted: true });
+    await session.close();
+
+    expect(records.checkpointSnapshots[0]?.topology.connections).toMatchObject([{ id: 'wire' }]);
+    expect(session.view.snapshot.topology.connections).toEqual([]);
   });
 });
 

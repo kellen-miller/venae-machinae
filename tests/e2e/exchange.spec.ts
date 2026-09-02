@@ -36,4 +36,11 @@ test('MVP-DATA-011 MVP-DATA-012 MVP-DATA-013 MVP-DATA-014 MVP-DATA-015 MVP-DATA-
   await writeFile(tamperedPath, JSON.stringify(tampered));
   await page.getByLabel('Import exchange file').setInputFiles(tamperedPath);
   await expect(page.getByRole('alert')).toContainText(/corruption detection|payload-integrity/i);
+
+  const quarantineDownloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download raw tampered.venae.json' }).click();
+  const quarantineDownload = await quarantineDownloadPromise;
+  const quarantinePath = testInfo.outputPath('quarantined-raw.json');
+  await quarantineDownload.saveAs(quarantinePath);
+  expect(await readFile(quarantinePath, 'utf8')).toContain('Tampered after hashing');
 });

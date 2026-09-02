@@ -57,10 +57,99 @@ export type ActionOutcome =
     }>
   | Readonly<{ accepted: false; rejection: ActionRejection }>;
 
+function connectionImpactSubjectIds(
+  snapshot: ProjectSnapshot,
+  connectionId: SubjectId
+): readonly SubjectId[] {
+  return [
+    connectionId,
+    ...snapshot.electrical.circuits
+      .filter((circuit) => circuit.connectionIds.includes(connectionId))
+      .map((circuit) => circuit.id),
+    ...snapshot.electrical.harnesses
+      .filter((harness) => harness.wireConnectionIds.includes(connectionId))
+      .map((harness) => harness.id),
+    ...snapshot.electrical.bundles
+      .filter((bundle) => bundle.wireConnectionIds.includes(connectionId))
+      .map((bundle) => bundle.id),
+    ...snapshot.partRequirements
+      .filter((requirement) => requirement.subjectId === connectionId)
+      .map((requirement) => requirement.id),
+    ...snapshot.evidence
+      .filter((evidence) => evidence.subjectId === connectionId)
+      .map((evidence) => evidence.id),
+    ...snapshot.build.installations
+      .filter((installation) => installation.subjectId === connectionId)
+      .map((installation) => installation.id),
+    ...snapshot.operatingStates.flatMap((state) =>
+      state.bindings
+        .filter((binding) => binding.subjectId === connectionId)
+        .map((binding) => binding.id)
+    )
+  ];
+}
+
 export function previewProjectActionImpact(
   snapshot: ProjectSnapshot,
   action: DestructiveProjectAction
 ): ImpactPreview {
+  if (action.type === 'delete-connection') {
+    return { subjectIds: [...new Set(connectionImpactSubjectIds(snapshot, action.connectionId))] };
+  }
+
+  if (action.type === 'delete-component') {
+    const component = snapshot.topology.components.find(
+      (candidate) => candidate.id === action.componentId
+    );
+    if (!component) return { subjectIds: [action.componentId] };
+    const portIds = new Set(component.ports.map((port) => port.id));
+    const connectionIds = snapshot.topology.connections
+      .filter(
+        (connection) => portIds.has(connection.sourcePortId) || portIds.has(connection.targetPortId)
+      )
+      .map((connection) => connection.id);
+    const behaviorIds = snapshot.fluid.behaviors
+      .filter((behavior) => behavior.componentId === action.componentId)
+      .map((behavior) => behavior.id);
+    return {
+      subjectIds: [
+        ...new Set([
+          action.componentId,
+          ...connectionIds.flatMap((connectionId) =>
+            connectionImpactSubjectIds(snapshot, connectionId)
+          ),
+          ...snapshot.electrical.circuits
+            .filter((circuit) => circuit.componentIds.includes(action.componentId))
+            .map((circuit) => circuit.id),
+          ...snapshot.electrical.harnesses
+            .filter((harness) => harness.componentIds.includes(action.componentId))
+            .map((harness) => harness.id),
+          ...behaviorIds,
+          ...snapshot.fluid.boundaryConditions
+            .filter((boundary) => behaviorIds.includes(boundary.behaviorId))
+            .map((boundary) => boundary.id),
+          ...snapshot.partRequirements
+            .filter((requirement) => requirement.subjectId === action.componentId)
+            .map((requirement) => requirement.id),
+          ...snapshot.evidence
+            .filter((evidence) => evidence.subjectId === action.componentId)
+            .map((evidence) => evidence.id),
+          ...snapshot.build.installations
+            .filter((installation) => installation.subjectId === action.componentId)
+            .map((installation) => installation.id),
+          ...snapshot.operatingStates.flatMap((state) =>
+            state.bindings
+              .filter(
+                (binding) =>
+                  binding.subjectId === action.componentId || portIds.has(binding.subjectId)
+              )
+              .map((binding) => binding.id)
+          )
+        ])
+      ]
+    };
+  }
+
   if (action.type === 'insert-electrical-branch') {
     const connection = snapshot.topology.connections.find(
       (candidate) => candidate.id === action.connectionId
@@ -408,6 +497,203 @@ export function applyProjectAction(
       };
       changedSubjects = [action.componentId];
       undoLabel = `Move ${component.label}`;
+      break;
+    }
+
+    case 'delete-component':
+    case 'delete-connection': {
+      const component =
+        action.type === 'delete-component'
+          ? snapshot.topology.components.find((candidate) => candidate.id === action.componentId)
+          : undefined;
+      const connection =
+        action.type === 'delete-connection'
+          ? snapshot.topology.connections.find((candidate) => candidate.id === action.connectionId)
+          : undefined;
+      if (action.type === 'delete-component' && !component) {
+        return reject('missing-subject', `Component ${action.componentId} does not exist`);
+      }
+      if (action.type === 'delete-connection' && !connection) {
+        return reject('missing-subject', `Connection ${action.connectionId} does not exist`);
+      }
+
+      const impact = previewProjectActionImpact(snapshot, action);
+      const confirmed = new Set(action.confirmedImpactSubjectIds);
+      if (
+        confirmed.size !== impact.subjectIds.length ||
+        impact.subjectIds.some((subjectId) => !confirmed.has(subjectId))
+      ) {
+        return {
+          accepted: false,
+          rejection: {
+            code: 'confirmation-required',
+            message: 'Topology deletion requires confirmation of every affected subject',
+            impact
+          }
+        };
+      }
+
+      const deletedComponentIds = new Set(component ? [component.id] : []);
+      const deletedPortIds = new Set(component?.ports.map((port) => port.id) ?? []);
+      const deletedConnectionIds = new Set(
+        connection
+          ? [connection.id]
+          : snapshot.topology.connections
+              .filter(
+                (candidate) =>
+                  deletedPortIds.has(candidate.sourcePortId) ||
+                  deletedPortIds.has(candidate.targetPortId)
+              )
+              .map((candidate) => candidate.id)
+      );
+      const deletedBehaviorIds = new Set(
+        snapshot.fluid.behaviors
+          .filter((behavior) => deletedComponentIds.has(behavior.componentId))
+          .map((behavior) => behavior.id)
+      );
+      const remainingConnections = snapshot.topology.connections.filter(
+        (candidate) => !deletedConnectionIds.has(candidate.id)
+      );
+
+      next = {
+        ...snapshot,
+        topology: {
+          ...snapshot.topology,
+          components: snapshot.topology.components.filter(
+            (candidate) => !deletedComponentIds.has(candidate.id)
+          ),
+          connections: remainingConnections
+        },
+        electrical: {
+          ...snapshot.electrical,
+          components: snapshot.electrical.components.filter(
+            (record) => !deletedComponentIds.has(record.componentId)
+          ),
+          wires: snapshot.electrical.wires.filter(
+            (wire) => !deletedConnectionIds.has(wire.connectionId)
+          ),
+          circuits: snapshot.electrical.circuits.map((circuit) => ({
+            ...circuit,
+            connectionIds: circuit.connectionIds.filter(
+              (connectionId) => !deletedConnectionIds.has(connectionId)
+            ),
+            componentIds: circuit.componentIds.filter(
+              (componentId) => !deletedComponentIds.has(componentId)
+            ),
+            protectionComponentIds: circuit.protectionComponentIds.filter(
+              (componentId) => !deletedComponentIds.has(componentId)
+            )
+          })),
+          connectors: snapshot.electrical.connectors
+            .filter((connector) => !deletedComponentIds.has(connector.componentId))
+            .map((connector) => ({
+              ...connector,
+              cavities: connector.cavities.map((cavity) => {
+                const mateConnectionId =
+                  cavity.mateConnectionId && deletedConnectionIds.has(cavity.mateConnectionId)
+                    ? null
+                    : cavity.mateConnectionId;
+                const wireConnectionId =
+                  cavity.wireConnectionId && deletedConnectionIds.has(cavity.wireConnectionId)
+                    ? null
+                    : cavity.wireConnectionId;
+                if (
+                  mateConnectionId === cavity.mateConnectionId &&
+                  wireConnectionId === cavity.wireConnectionId
+                ) {
+                  return cavity;
+                }
+                return {
+                  ...cavity,
+                  mateConnectionId,
+                  wireConnectionId,
+                  unusedRequirement:
+                    mateConnectionId || wireConnectionId
+                      ? ('occupied' as const)
+                      : cavity.plugPartDefinitionId
+                        ? ('cavity-plug-required' as const)
+                        : cavity.sealPartDefinitionId
+                          ? ('seal-required' as const)
+                          : ('open-allowed' as const)
+                };
+              })
+            })),
+          harnesses: snapshot.electrical.harnesses.map((harness) => ({
+            ...harness,
+            componentIds: harness.componentIds.filter(
+              (componentId) => !deletedComponentIds.has(componentId)
+            ),
+            wireConnectionIds: harness.wireConnectionIds.filter(
+              (connectionId) => !deletedConnectionIds.has(connectionId)
+            )
+          })),
+          bundles: snapshot.electrical.bundles.map((bundle) => ({
+            ...bundle,
+            wireConnectionIds: bundle.wireConnectionIds.filter(
+              (connectionId) => !deletedConnectionIds.has(connectionId)
+            ),
+            twistedPairs: bundle.twistedPairs
+              .filter((pair) =>
+                pair.wireConnectionIds.every(
+                  (connectionId) => !deletedConnectionIds.has(connectionId)
+                )
+              )
+              .map((pair) => ({
+                ...pair,
+                drainWireConnectionId:
+                  pair.drainWireConnectionId && deletedConnectionIds.has(pair.drainWireConnectionId)
+                    ? null
+                    : pair.drainWireConnectionId
+              })),
+            concentric: bundle.concentric
+              ? {
+                  ...bundle.concentric,
+                  layers: bundle.concentric.layers.map((layer) => ({
+                    ...layer,
+                    wireConnectionIds: layer.wireConnectionIds.filter(
+                      (connectionId) => !deletedConnectionIds.has(connectionId)
+                    )
+                  }))
+                }
+              : null
+          }))
+        },
+        fluid: {
+          ...snapshot.fluid,
+          components: snapshot.fluid.components.filter(
+            (record) => !deletedComponentIds.has(record.componentId)
+          ),
+          lines: snapshot.fluid.lines.filter(
+            (line) => !deletedConnectionIds.has(line.connectionId)
+          ),
+          behaviors: snapshot.fluid.behaviors.filter(
+            (behavior) => !deletedBehaviorIds.has(behavior.id)
+          ),
+          boundaryConditions: snapshot.fluid.boundaryConditions.filter(
+            (boundary) => !deletedBehaviorIds.has(boundary.behaviorId)
+          )
+        },
+        results: staleResults,
+        tombstones: [
+          ...snapshot.tombstones.filter(
+            (tombstone) =>
+              !deletedComponentIds.has(tombstone.subjectId) &&
+              !deletedConnectionIds.has(tombstone.subjectId)
+          ),
+          ...[...deletedComponentIds].map((subjectId) => ({
+            subjectId,
+            subjectKind: 'component' as const,
+            successorId: null
+          })),
+          ...[...deletedConnectionIds].map((subjectId) => ({
+            subjectId,
+            subjectKind: 'connection' as const,
+            successorId: null
+          }))
+        ]
+      };
+      changedSubjects = impact.subjectIds;
+      undoLabel = component ? `Delete ${component.label}` : `Delete ${connection!.label}`;
       break;
     }
 

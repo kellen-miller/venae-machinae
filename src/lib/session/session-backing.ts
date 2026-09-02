@@ -22,7 +22,7 @@ export type TakeoverOutcome =
   | Readonly<{ requested: true }>
   | Readonly<{
       requested: false;
-      reason: 'already-writable' | 'unsupported' | 'transient-review';
+      reason: 'already-writable' | 'timed-out' | 'unsupported' | 'transient-review';
     }>;
 
 export type PersistedSessionBacking = Readonly<{
@@ -34,7 +34,7 @@ export type PersistedSessionBacking = Readonly<{
     expectedRevision: number | null,
     newAssets: readonly ProjectAsset[]
   ): Promise<SessionBackingSaveOutcome>;
-  createCheckpoint(reason: string): Promise<SessionCheckpointOutcome>;
+  createCheckpoint(reason: string, snapshot?: ProjectSnapshot): Promise<SessionCheckpointOutcome>;
   requestTakeover(): Promise<TakeoverOutcome>;
   close(): Promise<void>;
 }>;

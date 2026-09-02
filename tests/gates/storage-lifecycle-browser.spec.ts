@@ -65,6 +65,9 @@ test('MVP-DATA-003 MVP-DATA-005 MVP-GATE-006 automates storage, lease, upgrade, 
     { acquired: false, reason: 'held' }
   );
   expect(
+    await contender.evaluate(() => window.VenaeStorageLifecycleGate.runExclusiveLibraryChange())
+  ).toEqual({ acquired: false, reason: 'held' });
+  expect(
     await contender.evaluate(() => window.VenaeStorageLifecycleGate.sendTakeoverRequest('gate'))
   ).toBe(true);
   await expect

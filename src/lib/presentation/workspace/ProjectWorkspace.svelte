@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { beforeNavigate } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { onMount, tick } from 'svelte';
 
@@ -108,15 +109,50 @@
   const canvasViewportIdentity = $derived(
     `${presentation.canvasViewport.x},${presentation.canvasViewport.y},${presentation.canvasViewport.zoom}`
   );
+  let allowedNavigationUrl: string | null = null;
+
+  beforeNavigate(({ cancel, to, willUnload }) => {
+    if (allowedNavigationUrl && to?.url.href === allowedNavigationUrl) {
+      allowedNavigationUrl = null;
+      return;
+    }
+    if (!['queued', 'saving', 'failed'].includes(session.view.save.status)) return;
+    if (willUnload || !to) return;
+    cancel();
+    const destination = to.url.href;
+    if (session.view.save.status === 'failed') {
+      if (
+        !window.confirm(
+          'This Project has changes that are not confirmed durable. Leave and risk losing them?'
+        )
+      ) {
+        return;
+      }
+      allowedNavigationUrl = destination;
+      window.location.assign(destination);
+      return;
+    }
+
+    void session.flush('explicit').then((outcome) => {
+      if (!outcome.saved) {
+        interactionStatus = `Navigation paused: ${outcome.reason}. Export the working revision before leaving.`;
+        return;
+      }
+      allowedNavigationUrl = destination;
+      window.location.assign(destination);
+    });
+  });
 
   onMount(() => {
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const update = () => (prefersReducedMotion = preference.matches);
     const warnAboutUnsavedChanges = (event: BeforeUnloadEvent) => {
-      if (session.view.save.status !== 'failed') return;
+      if (allowedNavigationUrl) return;
+      if (!['queued', 'saving', 'failed'].includes(session.view.save.status)) return;
       event.preventDefault();
       event.returnValue = '';
     };
+    const flushBeforePageHide = () => void session.flush('explicit');
     const prepareApplicationReload = (event: Event) => {
       event.preventDefault();
       void (async () => {
@@ -154,10 +190,12 @@
     })();
     preference.addEventListener('change', update);
     window.addEventListener('beforeunload', warnAboutUnsavedChanges);
+    window.addEventListener('pagehide', flushBeforePageHide);
     window.addEventListener('venae:prepare-application-reload', prepareApplicationReload);
     return () => {
       preference.removeEventListener('change', update);
       window.removeEventListener('beforeunload', warnAboutUnsavedChanges);
+      window.removeEventListener('pagehide', flushBeforePageHide);
       window.removeEventListener('venae:prepare-application-reload', prepareApplicationReload);
     };
   });
@@ -173,9 +211,9 @@
   async function requestAuthoringTakeover(): Promise<void> {
     const outcome = await session.requestTakeover();
     interactionStatus = outcome.requested
-      ? 'Authoring takeover requested; retrying after the current writer flushes.'
+      ? 'The prior writer flushed and released its lease; acquiring authoring now.'
       : `Authoring takeover unavailable: ${outcome.reason}.`;
-    if (outcome.requested) window.setTimeout(() => window.location.reload(), 600);
+    if (outcome.requested) window.location.reload();
   }
 
   async function retrySave(): Promise<void> {
@@ -460,6 +498,35 @@
       componentId,
       position: { x, y }
     });
+  }
+
+  function deleteTopologySubject(subject: { kind: 'component' | 'connection'; id: string }): void {
+    const action =
+      subject.kind === 'component'
+        ? ({
+            type: 'delete-component',
+            causationId: crypto.randomUUID(),
+            componentId: subject.id,
+            confirmedImpactSubjectIds: []
+          } as const)
+        : ({
+            type: 'delete-connection',
+            causationId: crypto.randomUUID(),
+            connectionId: subject.id,
+            confirmedImpactSubjectIds: []
+          } as const);
+    const impact = session.previewImpact(action);
+    const dependentCount = Math.max(0, impact.subjectIds.length - 1);
+    if (
+      !window.confirm(
+        `Delete this ${subject.kind}? ${dependentCount} dependent record${dependentCount === 1 ? '' : 's'} will be updated; evidence, requirements, history, and a tombstone remain.`
+      )
+    ) {
+      return;
+    }
+
+    const accepted = execute({ ...action, confirmedImpactSubjectIds: impact.subjectIds });
+    if (accepted) presentation.clearSelection();
   }
 
   function addPrimitive(primitiveId: string, fluidSystemId?: string): void {
@@ -772,6 +839,7 @@
       {canAuthor}
       onmove={moveComponent}
       onaddprimitive={addPrimitive}
+      ondelete={deleteTopologySubject}
       onfollow={() => presentation.followPreview()}
       onreveal={revealPreview}
     />

@@ -37,6 +37,7 @@
     onexporttemplates,
     onbackup,
     ondiagnostics,
+    onexportquarantine,
     onstageimport,
     oncommitimport
   }: {
@@ -58,6 +59,7 @@
     onexporttemplates: () => void;
     onbackup: () => void;
     ondiagnostics: () => void;
+    onexportquarantine: (quarantineId: string) => void;
     onstageimport: (file: File) => void;
     oncommitimport: (decision: 'replace' | 'import-copy' | 'cancel') => void;
   } = $props();
@@ -409,11 +411,25 @@
     </section>
   {/if}
 
-  {#if overview && overview.quarantineCount > 0}
-    <p class="quarantine-summary">
-      {overview.quarantineCount} invalid record{overview.quarantineCount === 1 ? '' : 's'} retained in
-      quarantine for raw export.
-    </p>
+  {#if overview && overview.quarantine.length > 0}
+    <section class="retained-records" aria-labelledby="quarantine-heading">
+      <div>
+        <p class="eyebrow">No silent repair</p>
+        <h2 id="quarantine-heading">Quarantine</h2>
+      </div>
+      <ol>
+        {#each overview.quarantine as record (record.id)}
+          <li>
+            <strong>{record.sourceId}</strong>
+            <span>{record.reason}</span>
+            <button type="button" onclick={() => onexportquarantine(record.id)}>
+              Download raw {record.sourceId}
+            </button>
+            <small>Retained {record.quarantinedAt.slice(0, 10)}</small>
+          </li>
+        {/each}
+      </ol>
+    </section>
   {/if}
 </main>
 
@@ -484,8 +500,7 @@
     gap: 0.45rem;
   }
 
-  .operation-status,
-  .quarantine-summary {
+  .operation-status {
     margin: 0 0 1rem;
     padding: 0.7rem 1rem;
     border-left: 3px solid var(--color-accent);

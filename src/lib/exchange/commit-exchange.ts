@@ -91,7 +91,10 @@ function collectProjectOwnedIds(project: ProjectDocument): ReadonlySet<string> {
         ...(binding.behavior ? [binding.behavior.id] : [])
       ])
     ]),
-    ...project.tombstones.flatMap((tombstone) => [tombstone.subjectId, tombstone.successorId])
+    ...project.tombstones.flatMap((tombstone) => [
+      tombstone.subjectId,
+      ...(tombstone.successorId ? [tombstone.successorId] : [])
+    ])
   ]);
   for (const mediumId of [
     ...project.topology.systems.map((system) => system.mediumId),

@@ -308,6 +308,7 @@ export class BrowserProjectLibrary {
     projectId: string;
     reason: string;
     createdAt?: string;
+    snapshot?: ProjectDocument;
   }): Promise<
     | { created: true; checkpointId: string; projectRevision: number }
     | { created: false; reason: 'missing-project' }
@@ -320,17 +321,29 @@ export class BrowserProjectLibrary {
     }
 
     const checkpointId = input.checkpointId ?? crypto.randomUUID();
+    const checkpointSnapshot = input.snapshot
+      ? projectDocumentSchema.parse(input.snapshot)
+      : projectDocumentSchema.parse(project.snapshot);
+    if (checkpointSnapshot.project.id !== input.projectId) {
+      transaction.abort();
+      await transaction.done.catch(() => undefined);
+      throw new Error('Checkpoint Project ID does not match its snapshot');
+    }
     const checkpoint = recoveryCheckpointSchema.parse({
       id: checkpointId,
       projectId: input.projectId,
-      projectRevision: project.revision,
+      projectRevision: checkpointSnapshot.project.revision,
       reason: input.reason,
       createdAt: input.createdAt ?? new Date().toISOString(),
-      snapshot: structuredClone(project.snapshot)
+      snapshot: structuredClone(checkpointSnapshot)
     });
     await transaction.objectStore('checkpoints').put(checkpoint);
     await transaction.done;
-    return { created: true, checkpointId, projectRevision: project.revision };
+    return {
+      created: true,
+      checkpointId,
+      projectRevision: checkpointSnapshot.project.revision
+    };
   }
 
   async listCheckpoints(projectId: string): Promise<readonly RecoveryCheckpoint[]> {

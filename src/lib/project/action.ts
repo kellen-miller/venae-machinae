@@ -51,6 +51,12 @@ export type ProjectAction =
   | (Causation & Readonly<{ type: 'add-component'; component: Component }>)
   | (Causation &
       Readonly<{
+        type: 'delete-component';
+        componentId: SubjectId;
+        confirmedImpactSubjectIds: readonly SubjectId[];
+      }>)
+  | (Causation &
+      Readonly<{
         type: 'add-electrical-component';
         component: Component;
         role: ElectricalComponentRole;
@@ -68,6 +74,12 @@ export type ProjectAction =
         position: Readonly<{ x: string; y: string }>;
       }>)
   | (Causation & Readonly<{ type: 'add-connection'; connection: Connection }>)
+  | (Causation &
+      Readonly<{
+        type: 'delete-connection';
+        connectionId: SubjectId;
+        confirmedImpactSubjectIds: readonly SubjectId[];
+      }>)
   | (Causation & Readonly<{ type: 'configure-electrical-wire'; wire: ElectricalWire }>)
   | (Causation & Readonly<{ type: 'add-electrical-circuit'; circuit: ElectricalCircuit }>)
   | (Causation &
@@ -162,7 +174,10 @@ export type ProjectSystemAction = Causation &
 
 export type DestructiveProjectAction = Extract<
   ProjectAction,
-  { type: 'replace-component' | 'insert-electrical-branch' }
+  {
+    type:
+      'delete-component' | 'delete-connection' | 'replace-component' | 'insert-electrical-branch';
+  }
 >;
 
 export type ImpactPreview = Readonly<{

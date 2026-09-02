@@ -107,7 +107,7 @@ export const evaluationProjectSchema = z.strictObject({
     z.strictObject({
       subjectId: identity,
       subjectKind: z.enum(['component', 'connection']),
-      successorId: identity
+      successorId: identity.nullable()
     })
   )
 });
@@ -138,7 +138,7 @@ const evaluationChangeSetSchema = z.strictObject({
     z.strictObject({
       subjectId: identity,
       subjectKind: z.enum(['component', 'connection']),
-      successorId: identity
+      successorId: identity.nullable()
     })
   )
 });

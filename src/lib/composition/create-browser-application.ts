@@ -16,7 +16,11 @@ import {
   stageLibraryBackupExchange,
   stageTemplateExchange
 } from '../exchange/stage-exchange';
-import { acquireProjectLease, withExclusiveLibraryLock } from '../persistence/project-lease';
+import {
+  acquireProjectLease,
+  tryRunLibraryMaintenance,
+  withExclusiveLibraryLock
+} from '../persistence/project-lease';
 import { openProjectLibrary } from '../persistence/project-library';
 import {
   createReadOnlyPersistedSessionBacking,
@@ -71,7 +75,12 @@ export type LibraryOverview = Readonly<{
     expiresAt: string;
   }>[];
   templateRevisionCount: number;
-  quarantineCount: number;
+  quarantine: readonly Readonly<{
+    id: string;
+    sourceId: string;
+    quarantinedAt: string;
+    reason: string;
+  }>[];
 }>;
 
 export type DownloadArtifact = Readonly<{
@@ -145,6 +154,9 @@ export type BrowserApplication = Readonly<{
     exportedAt: string
   ): Promise<{ created: true; artifact: DownloadArtifact } | { created: false; reason: string }>;
   createDiagnosticsDownload(generatedAt: string): Promise<DownloadArtifact>;
+  createQuarantineDownload(
+    quarantineId: string
+  ): Promise<{ created: true; artifact: DownloadArtifact } | { created: false; reason: string }>;
   stageLibraryImport(file: File): Promise<StageLibraryImportOutcome>;
   commitLibraryImport(
     staged: StagedLibraryImport,
@@ -171,6 +183,13 @@ export async function createBrowserApplication(): Promise<BrowserApplication> {
   const library = await openProjectLibrary();
   let openSession: ProjectSession | null = null;
   let closed = false;
+  const runMaintenance = () =>
+    tryRunLibraryMaintenance(async () => {
+      const now = new Date().toISOString();
+      await library.reclaimDisposableRecords({ now });
+      await library.reclaimRollbackGenerations({ now });
+    });
+  await runMaintenance();
 
   return {
     listProjects() {
@@ -232,7 +251,12 @@ export async function createBrowserApplication(): Promise<BrowserApplication> {
           expiresAt: entry.expiresAt
         })),
         templateRevisionCount: templates.length,
-        quarantineCount: quarantine.length
+        quarantine: quarantine.map(({ id, sourceId, quarantinedAt, reason }) => ({
+          id,
+          sourceId,
+          quarantinedAt,
+          reason
+        }))
       };
     },
     async createNamedSnapshot(projectId, createdAt) {
@@ -355,6 +379,17 @@ export async function createBrowserApplication(): Promise<BrowserApplication> {
       return {
         filename: 'venae-machinae-diagnostics.json',
         json: JSON.stringify(diagnostics, null, 2)
+      };
+    },
+    async createQuarantineDownload(quarantineId) {
+      const raw = await library.exportQuarantinedRaw(quarantineId);
+      if (raw === undefined) return { created: false, reason: 'missing-quarantine-record' };
+      return {
+        created: true,
+        artifact: {
+          filename: `quarantine-${quarantineId}.json`,
+          json: raw
+        }
       };
     },
     async stageLibraryImport(file) {
@@ -493,7 +528,9 @@ export async function createBrowserApplication(): Promise<BrowserApplication> {
       openSession = session;
       if (leaseOutcome.acquired) {
         leaseOutcome.lease.onTakeoverRequested(() => {
-          void session.close().then(() => {
+          void session.flush('explicit').then(async (outcome) => {
+            if (!outcome.saved) return;
+            await session.close();
             if (openSession === session) openSession = null;
           });
         });
@@ -504,6 +541,7 @@ export async function createBrowserApplication(): Promise<BrowserApplication> {
       if (closed) return;
       closed = true;
       if (openSession) await openSession.close();
+      await runMaintenance();
       library.close();
     }
   };

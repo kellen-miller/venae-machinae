@@ -347,6 +347,142 @@ describe('MVP-MODEL-005 MVP-MODEL-009 replacement and impact', () => {
   });
 });
 
+describe('MVP-MODEL-009 MVP-VAL-012 topology deletion', () => {
+  it('requires exact impact confirmation, keeps evidence, and records removed topology', () => {
+    let snapshot = createBlankProject({
+      id: 'project-delete',
+      name: 'Delete fixture',
+      createdAt: '2026-09-01T00:00:00Z'
+    });
+    snapshot = accept(snapshot, {
+      type: 'add-system',
+      causationId: 'system',
+      system: { id: 'power', label: 'Power', domain: 'electrical', mediumId: null }
+    });
+    for (const id of ['source', 'load']) {
+      snapshot = accept(snapshot, {
+        type: 'add-electrical-component',
+        causationId: id,
+        role: id === 'source' ? 'source' : 'load',
+        component: {
+          id,
+          label: id,
+          kind: 'part',
+          definitionId: null,
+          predecessorId: null,
+          successorId: null,
+          position: { x: '0', y: '0' },
+          ports: [
+            {
+              id: `${id}-port`,
+              componentId: id,
+              label: id,
+              domain: 'electrical',
+              mediumId: null,
+              interfaceKey: null
+            }
+          ]
+        }
+      });
+    }
+    snapshot = accept(snapshot, {
+      type: 'add-connection',
+      causationId: 'wire',
+      connection: {
+        id: 'wire',
+        label: 'Wire',
+        systemId: 'power',
+        sourcePortId: 'source-port',
+        targetPortId: 'load-port',
+        domain: 'electrical',
+        mediumId: null,
+        kind: 'electrical-wire',
+        interfaceAssessment: 'compatible',
+        routeId: null
+      }
+    });
+    snapshot = accept(snapshot, {
+      type: 'configure-electrical-wire',
+      causationId: 'wire-record',
+      wire: {
+        connectionId: 'wire',
+        partDefinitionId: null,
+        role: 'power',
+        protocol: null,
+        routeLength: null,
+        cutLength: null,
+        serviceAllowance: null,
+        environment: 'cabin'
+      }
+    });
+    snapshot = accept(snapshot, {
+      type: 'add-electrical-circuit',
+      causationId: 'circuit',
+      circuit: {
+        id: 'circuit',
+        label: 'Circuit',
+        systemId: 'power',
+        connectionIds: ['wire'],
+        componentIds: ['source', 'load'],
+        protectionComponentIds: []
+      }
+    });
+    snapshot = accept(snapshot, {
+      type: 'record-evidence',
+      causationId: 'evidence',
+      evidence: {
+        id: 'load-evidence',
+        subjectId: 'load',
+        label: 'Installed label',
+        state: 'known',
+        value: '12 V',
+        unit: 'V',
+        provenance: 'label',
+        conflictValues: []
+      }
+    });
+
+    const deletion = {
+      type: 'delete-component' as const,
+      causationId: 'delete-load',
+      componentId: 'load',
+      confirmedImpactSubjectIds: []
+    };
+    const blocked = applyProjectAction(snapshot, deletion);
+    expect(blocked).toMatchObject({
+      accepted: false,
+      rejection: { code: 'confirmation-required' }
+    });
+    if (blocked.accepted || !blocked.rejection.impact) throw new Error('Expected impact preview');
+    expect(blocked.rejection.impact.subjectIds).toEqual([
+      'load',
+      'wire',
+      'circuit',
+      'load-evidence'
+    ]);
+
+    snapshot = accept(snapshot, {
+      ...deletion,
+      confirmedImpactSubjectIds: blocked.rejection.impact.subjectIds
+    });
+    expect(snapshot.topology.components.map(({ id }) => id)).toEqual(['source']);
+    expect(snapshot.topology.connections).toEqual([]);
+    expect(snapshot.electrical.components.map(({ componentId }) => componentId)).toEqual([
+      'source'
+    ]);
+    expect(snapshot.electrical.wires).toEqual([]);
+    expect(snapshot.electrical.circuits[0]).toMatchObject({
+      connectionIds: [],
+      componentIds: ['source']
+    });
+    expect(snapshot.evidence).toMatchObject([{ id: 'load-evidence', subjectId: 'load' }]);
+    expect(snapshot.tombstones).toEqual([
+      { subjectId: 'load', subjectKind: 'component', successorId: null },
+      { subjectId: 'wire', subjectKind: 'connection', successorId: null }
+    ]);
+  });
+});
+
 describe('MVP-PROD-003 derived result revision behavior', () => {
   it('publishes only a matching evaluation and makes prior results stale on the next edit', () => {
     const initial = createBlankProject({

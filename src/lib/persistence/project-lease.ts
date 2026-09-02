@@ -22,9 +22,9 @@ export async function withExclusiveLibraryLock<Value>(
 
   return navigator.locks.request(
     LIBRARY_LOCK_NAME,
-    { mode: 'exclusive' },
+    { mode: 'exclusive', ifAvailable: true },
     async (lock): Promise<LibraryLockOutcome<Value>> => {
-      if (!lock) return { acquired: false, reason: 'unsupported' };
+      if (!lock) return { acquired: false, reason: 'held' };
       return { acquired: true, value: await operation() };
     }
   );
@@ -142,4 +142,29 @@ export function requestProjectTakeover(projectId: string): boolean {
   channel.postMessage({ type: 'takeover-request', projectId });
   channel.close();
   return true;
+}
+
+export async function requestProjectTakeoverAndWait(
+  projectId: string,
+  timeoutMs = 10_000
+): Promise<'acquired' | 'timed-out' | 'unsupported'> {
+  if (!requestProjectTakeover(projectId) || typeof navigator === 'undefined' || !navigator.locks) {
+    return 'unsupported';
+  }
+
+  const abort = new AbortController();
+  const timeout = setTimeout(() => abort.abort(), timeoutMs);
+  try {
+    await navigator.locks.request(
+      `venae-machinae:project:${projectId}`,
+      { mode: 'exclusive', signal: abort.signal },
+      () => undefined
+    );
+    return 'acquired';
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') return 'timed-out';
+    return 'unsupported';
+  } finally {
+    clearTimeout(timeout);
+  }
 }
