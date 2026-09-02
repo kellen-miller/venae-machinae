@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-003",
+  "recordId": "MVP-GATE-003-milestone-5",
+  "recordedAt": "2026-09-02T03:28:06Z",
+  "supersedes": "MVP-GATE-003-baseline",
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "browsers": {
+      "chromium": "151.0.7922.34",
+      "firefox": "153.0",
+      "webkit": "26.5"
+    }
+  },
+  "versions": {
+    "idb": "8.0.3",
+    "fake-indexeddb": "6.2.5",
+    "zod": "4.5.4",
+    "playwright": "1.62.1",
+    "projectDocumentSchema": 8,
+    "indexedDbStructure": 2
+  },
+  "fixtures": ["tests/fixtures/capacity-project.ts"],
+  "command": "PLAYWRIGHT_PORT=4174 pnpm gate:persistence -- --record milestone-5",
+  "rawArtifacts": ["evidence/gates/raw/MVP-GATE-003-milestone-5-browser-measurements.json"],
+  "measurements": {
+    "fixtureScales": [1, 2, 5],
+    "largestSerializedBytes": 2843146,
+    "largestObservedSaveMs": 57,
+    "largestObservedReopenAndLoadMs": 46,
+    "operationLimitMs": 2000,
+    "browserEngines": 3,
+    "unitCases": 10,
+    "failures": 0
+  },
+  "verdict": "Pass",
+  "boundedDecision": "Whole-document IndexedDB transactions, separate hash-addressed assets, immutable checkpoints, and strict schema-8 recovery remain viable at 1x, 2x, and 5x."
+}

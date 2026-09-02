@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-003",
+  "recordId": "MVP-GATE-003-baseline",
+  "recordedAt": "2026-09-01T17:54:00Z",
+  "supersedes": null,
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "browsers": {
+      "chromium": "151.0.7922.34",
+      "firefox": "153.0",
+      "webkit": "26.5"
+    }
+  },
+  "versions": {
+    "idb": "8.0.3",
+    "fake-indexeddb": "6.2.5",
+    "zod": "4.5.4",
+    "playwright": "1.62.1",
+    "projectDocumentSchema": 1,
+    "indexedDbStructure": 1
+  },
+  "fixtures": ["tests/fixtures/capacity-project.ts"],
+  "command": "PLAYWRIGHT_PORT=4174 pnpm gate:persistence",
+  "rawArtifacts": ["evidence/gates/raw/MVP-GATE-003-browser-measurements.json"],
+  "measurements": {
+    "fixtureScales": [1, 2, 5],
+    "largestSerializedBytes": 1423796,
+    "largestObservedSaveMs": 34,
+    "largestObservedReopenAndLoadMs": 29,
+    "operationLimitMs": 2000,
+    "browserEngines": 3,
+    "fakeIndexedDbCases": 10,
+    "failures": 0
+  },
+  "verdict": "Pass",
+  "boundedDecision": "Whole-document IndexedDB transactions, separate hash-addressed assets, and immutable checkpoints are viable for the provisional schema at 1x, 2x, and 5x. This guarded baseline must be superseded after the production schema and assets are promoted in Milestone 5."
+}

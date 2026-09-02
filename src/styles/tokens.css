@@ -1,0 +1,19 @@
+:root {
+  color-scheme: dark;
+  --color-canvas: #0b1213;
+  --color-surface: #111d1f;
+  --color-surface-raised: #172628;
+  --color-line: #294043;
+  --color-line-strong: #416064;
+  --color-text: #edf3ef;
+  --color-text-muted: #9eb0ad;
+  --color-accent: #e3ff63;
+  --color-accent-ink: #182000;
+  --color-copper: #d9875e;
+  --font-display: 'Avenir Next Condensed', 'Arial Narrow', sans-serif;
+  --font-body: 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  --radius-small: 0.45rem;
+  --radius-medium: 0.85rem;
+  --shadow-raised: 0 1.5rem 5rem rgb(0 0 0 / 32%);
+}

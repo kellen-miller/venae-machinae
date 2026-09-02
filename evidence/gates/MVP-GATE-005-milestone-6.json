@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-005",
+  "recordId": "MVP-GATE-005-milestone-6",
+  "recordedAt": "2026-09-02T05:32:52Z",
+  "supersedes": "MVP-GATE-005-milestone-5",
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "browsers": {
+      "chromium": "151.0.7922.34",
+      "firefox": "153.0",
+      "webkit": "26.5"
+    }
+  },
+  "versions": {
+    "zod": "4.5.4",
+    "vite": "8.2.2",
+    "playwright": "1.62.1",
+    "projectDocumentSchema": 8,
+    "formulaCatalog": 1,
+    "validationRuleCatalog": 1
+  },
+  "fixtures": [
+    "src/lib/reference/rx7-example.v1.venae.json",
+    "tests/fixtures/rx7-capacity-counts.ts",
+    "tests/fixtures/rx7-capacity-project.ts"
+  ],
+  "command": "pnpm gate:worker -- --fixture rx7 --record milestone-6",
+  "rawArtifacts": ["evidence/gates/raw/MVP-GATE-005-milestone-6-rx7-browser-measurements.json"],
+  "measurements": {
+    "fixtureScales": [1, 2, 5],
+    "largestInitializationBytes": 293336,
+    "largestIncrementalBytes": 9187,
+    "largestIncrementalRatioPercent": 14.2,
+    "incrementalRatioLimitPercent": 20,
+    "largestInitializationDispatchMs": 4,
+    "largestIncrementalDispatchMs": 2,
+    "initializationDispatchLimitMs": 2000,
+    "incrementalDispatchLimitMs": 100,
+    "browserEngines": 3,
+    "unitCases": 10,
+    "failures": 0
+  },
+  "verdict": "Pass",
+  "boundedDecision": "The schema-8 evaluation DTO remains viable for the complete RX-7 calculations, screenings, operating states, evidence, and validation history with a production-CSP-safe native worker, bounded full initialization, revisioned changes, identity-gated publication, cancellation, restart, and server-loss guards."
+}

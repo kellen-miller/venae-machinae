@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-003",
+  "fixtureSchemaVersion": 1,
+  "results": [
+    {
+      "browser": "chromium",
+      "version": "151.0.7922.34",
+      "scales": [
+        {
+          "scale": 1,
+          "bytes": 279995,
+          "serializeMs": 1,
+          "validateMs": 6.4,
+          "cloneMs": 1.1,
+          "saveMs": 7.9,
+          "reopenAndLoadMs": 3.3
+        },
+        {
+          "scale": 2,
+          "bytes": 565695,
+          "serializeMs": 0.8,
+          "validateMs": 4.7,
+          "cloneMs": 2.3,
+          "saveMs": 7.4,
+          "reopenAndLoadMs": 6.2
+        },
+        {
+          "scale": 5,
+          "bytes": 1423796,
+          "serializeMs": 1.8,
+          "validateMs": 10.3,
+          "cloneMs": 6.7,
+          "saveMs": 16,
+          "reopenAndLoadMs": 12.4
+        }
+      ],
+      "recoveredExactly": true,
+      "checkpointRecoveredExactly": true,
+      "assetWrites": [1, 0, 0],
+      "assetCount": 1,
+      "verdict": "Pass"
+    },
+    {
+      "browser": "firefox",
+      "version": "153.0",
+      "scales": [
+        {
+          "scale": 1,
+          "bytes": 279995,
+          "serializeMs": 0,
+          "validateMs": 6,
+          "cloneMs": 3,
+          "saveMs": 6,
+          "reopenAndLoadMs": 7
+        },
+        {
+          "scale": 2,
+          "bytes": 565695,
+          "serializeMs": 0,
+          "validateMs": 7,
+          "cloneMs": 3,
+          "saveMs": 16,
+          "reopenAndLoadMs": 10
+        },
+        {
+          "scale": 5,
+          "bytes": 1423796,
+          "serializeMs": 2,
+          "validateMs": 15,
+          "cloneMs": 9,
+          "saveMs": 34,
+          "reopenAndLoadMs": 29
+        }
+      ],
+      "recoveredExactly": true,
+      "checkpointRecoveredExactly": true,
+      "assetWrites": [1, 0, 0],
+      "assetCount": 1,
+      "verdict": "Pass"
+    },
+    {
+      "browser": "webkit",
+      "version": "26.5",
+      "scales": [
+        {
+          "scale": 1,
+          "bytes": 279995,
+          "serializeMs": 1,
+          "validateMs": 6,
+          "cloneMs": 3,
+          "saveMs": 10,
+          "reopenAndLoadMs": 3
+        },
+        {
+          "scale": 2,
+          "bytes": 565695,
+          "serializeMs": 0,
+          "validateMs": 6,
+          "cloneMs": 4,
+          "saveMs": 9,
+          "reopenAndLoadMs": 4
+        },
+        {
+          "scale": 5,
+          "bytes": 1423796,
+          "serializeMs": 2,
+          "validateMs": 9,
+          "cloneMs": 11,
+          "saveMs": 19,
+          "reopenAndLoadMs": 8
+        }
+      ],
+      "recoveredExactly": true,
+      "checkpointRecoveredExactly": true,
+      "assetWrites": [1, 0, 0],
+      "assetCount": 1,
+      "verdict": "Pass"
+    }
+  ],
+  "boundaryTests": {
+    "fakeIndexedDbCases": 10,
+    "revisionConflictRetainedPrior": true,
+    "quotaExceededRetainedPrior": true
+  }
+}

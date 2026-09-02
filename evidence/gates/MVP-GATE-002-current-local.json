@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-002",
+  "recordId": "MVP-GATE-002-current-local",
+  "recordedAt": "2026-09-01T19:55:06Z",
+  "supersedes": "MVP-GATE-002-baseline",
+  "environment": {
+    "scope": "authoritative only for this recorded current local environment",
+    "hardware": "MacBook Pro Mac16,7, Apple M4 Pro 14-core, 48 GB",
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "browser": "Chromium 151.0.7922.34",
+    "viewport": "1280x900",
+    "revision": "32f5e9a6e6062bf7ab3fdb1a4e1f016d87972cee",
+    "lockfileSha256": "10b2ac6a90023dd04ac7f6449e846b0e8998f2c83f58898634b8b12bd60ba682"
+  },
+  "versions": {
+    "svelte": "5.57.0",
+    "vite": "8.2.2",
+    "playwright": "1.62.1",
+    "selectedAdapter": "app-owned raw SVG"
+  },
+  "fixtures": [
+    "tests/fixtures/renderer-capacity.ts",
+    "scripts/run-capacity-gate.mjs",
+    "tests/gates/graph-capacity.spec.ts",
+    "tests/gates/graph-capacity-browser.spec.ts"
+  ],
+  "command": "PLAYWRIGHT_PORT=4174 pnpm gate:capacity",
+  "rawArtifacts": [
+    "evidence/gates/raw/MVP-GATE-002-unculled-svg-failure.json",
+    "evidence/gates/raw/MVP-GATE-002-unculled-svg-failure.md",
+    "evidence/gates/raw/MVP-GATE-002-shadow-filter-failure.json",
+    "evidence/gates/raw/MVP-GATE-002-shadow-filter-failure.md",
+    "evidence/gates/raw/MVP-GATE-002-current-local.json",
+    "evidence/gates/raw/MVP-GATE-002-current-local.md"
+  ],
+  "measurements": {
+    "fixtureSha256": "88b30df8bd4d0357b22e1ec8af0279e5f65ef4af217996b81090a2c325de41f1",
+    "unitSpecSha256": "9a3b7f53494a898eb8546a8050566fea0bccb0628d1efe477e28be0b9502a8c7",
+    "runnerSha256": "e44ee6f7504bf733f5624ae0ef019fd884cf4f3e00dbeaaff7abdb62388dd0b4",
+    "browserSpecSha256": "91e35737c70a85b49e57f13bc3b7545abe5499485b2f244844819166ba3316d7",
+    "rawMeasurementSha256": "aec8137e7615b6a08a30552d7abfb791f3b66cc3dc61874d8558f79831f38a58",
+    "unitAssertions": 4,
+    "browserEngines": 1,
+    "scales": 3,
+    "componentCounts": [300, 600, 1500],
+    "portCounts": [1500, 3000, 7500],
+    "connectionCounts": [1200, 2400, 6000],
+    "maxPointerFeedbackMs": 51.40000009536743,
+    "minimumPanFps": 60,
+    "minimumZoomFps": 60,
+    "maxOneAndTwoTimesSnapshotToInteractiveMs": 212.89999997615814,
+    "fiveTimesRetainedJSHeapBytes": 54245144,
+    "structuralIntegrityFailures": 0,
+    "minimumHardwareClaim": false,
+    "hardwareAgeClaim": false
+  },
+  "verdict": "Pass",
+  "boundedDecision": "Retain the raw-SVG adapter with viewport culling, accessible semantic pagination, and filter-free physical layers. The recorded current local environment passes every locked threshold. This record does not establish minimum hardware, hardware-age, or cross-environment capacity support."
+}

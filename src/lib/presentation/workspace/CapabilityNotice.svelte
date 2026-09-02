@@ -1,0 +1,80 @@
+<script lang="ts">
+  import type { AuthoringCapability } from '../../session/authoring-capability';
+
+  let {
+    capability,
+    onrequesttakeover
+  }: { capability: AuthoringCapability; onrequesttakeover: () => void } = $props();
+
+  const message = $derived.by(() => {
+    if (capability.mode === 'author') return null;
+    if (capability.reason === 'mobile-review') {
+      return 'Mobile review: inspect, filter, search, compare, and export. Project mutation remains blocked below 700 CSS pixels.';
+    }
+    if (capability.reason === 'lease-held') {
+      return 'Read-only lease: another window owns this Project’s authoring lease. Review remains available.';
+    }
+    if (capability.reason === 'transient-review') {
+      return 'Transient review: this Project is not durable and cannot mutate the browser Project Library.';
+    }
+    if (capability.reason === 'missing-indexeddb') {
+      return 'IndexedDB is unavailable. Authoring is blocked; transient review and export remain available without silent persistence.';
+    }
+    if (capability.reason === 'missing-worker') {
+      return 'Web Worker evaluation is unavailable. Authoring is blocked; review and durable export remain available.';
+    }
+    return 'Web Locks are unavailable. Authoring is blocked; review and durable export remain available without an unsafe write lease.';
+  });
+</script>
+
+{#if message}
+  <aside class="capability-notice" role="status" data-capability-reason={capability.reason}>
+    <span aria-hidden="true">Read only</span>
+    <p>{message}</p>
+    {#if capability.reason === 'lease-held'}
+      <button type="button" onclick={onrequesttakeover}>Request authoring takeover</button>
+    {/if}
+  </aside>
+{/if}
+
+<style>
+  .capability-notice {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    min-height: 2.45rem;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid #a76848;
+    border-radius: var(--radius-small);
+    background: rgb(106 55 35 / 52%);
+    color: #ffebe0;
+  }
+
+  span {
+    flex: 0 0 auto;
+    padding: 0.22rem 0.38rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 0.56rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  p {
+    flex: 1 1 auto;
+    margin: 0;
+    font-size: 0.7rem;
+  }
+
+  button {
+    flex: 0 0 auto;
+    min-height: 2rem;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: inherit;
+    font: 0.62rem var(--font-mono);
+    cursor: pointer;
+  }
+</style>

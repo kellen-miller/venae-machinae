@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-002",
+  "recordId": "MVP-GATE-002-shadow-filter-failure",
+  "recordedAt": "2026-09-01T19:19:00Z",
+  "evidenceScope": "non-authoritative modern-host failure",
+  "supersedes": "MVP-GATE-002-unculled-svg-failure",
+  "environment": {
+    "hardware": "2024 MacBook Pro, Apple M4 Pro 14-core, 48 GB",
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "browser": "Chromium 151.0.7922.34",
+    "viewport": "1280x900"
+  },
+  "command": "PLAYWRIGHT_PORT=4174 pnpm exec playwright test tests/gates/graph-capacity-browser.spec.ts --project=chromium --reporter=list",
+  "thresholds": {
+    "pointerFeedbackMsExclusive": 100,
+    "oneAndTwoTimesFpsMinimum": 55,
+    "fiveTimesFpsExclusiveMinimum": 30,
+    "oneAndTwoTimesSnapshotToInteractiveMsExclusive": 2000
+  },
+  "measurements": [
+    {
+      "scale": 1,
+      "domElements": 2851,
+      "snapshotToInteractiveMs": 42.5,
+      "pointerFeedbackMs": 14.300000071525574,
+      "dragFeedbackMs": 54,
+      "routeEditFeedbackMs": 51,
+      "panAverageFps": 35.938356581592245,
+      "zoomAverageFps": 34.300331376082774,
+      "structuralIntegrityPreserved": true
+    },
+    {
+      "scale": 2,
+      "domElements": 2851,
+      "snapshotToInteractiveMs": 28,
+      "pointerFeedbackMs": 20.699999928474426,
+      "dragFeedbackMs": 59,
+      "routeEditFeedbackMs": 48,
+      "panAverageFps": 36.5778053316801,
+      "zoomAverageFps": 39.11688656102897,
+      "structuralIntegrityPreserved": true
+    },
+    {
+      "scale": 5,
+      "domElements": 2851,
+      "snapshotToInteractiveMs": 36.89999997615814,
+      "pointerFeedbackMs": 49.5,
+      "dragFeedbackMs": 81,
+      "routeEditFeedbackMs": 86,
+      "panAverageFps": 36.30769230769231,
+      "zoomAverageFps": 33.40565563411862,
+      "structuralIntegrityPreserved": true
+    }
+  ],
+  "verdict": "Fail",
+  "boundedDecision": "Retain viewport culling, semantic pagination, physical double strokes, and node shadows. Remove per-path SVG drop-shadow filters because they force costly repaint during every viewport transform."
+}

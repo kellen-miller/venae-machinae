@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "status": "superseded",
+  "records": [],
+  "supersededBy": "MVP-GATE-006-production-browsers",
+  "note": "The explicit 2026-09-01 evidence-scope amendment removed real-device and external-origin proof from Gate 6. This manifest remains only as historical provenance."
+}

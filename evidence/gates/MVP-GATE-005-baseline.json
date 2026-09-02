@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-005",
+  "recordId": "MVP-GATE-005-baseline",
+  "recordedAt": "2026-09-01T18:14:32Z",
+  "supersedes": null,
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "origin": "http://localhost:4174",
+    "browsers": {
+      "chromium": "151.0.7922.34",
+      "firefox": "153.0",
+      "webkit": "26.5"
+    }
+  },
+  "versions": {
+    "zod": "4.5.4",
+    "vite": "8.2.2",
+    "playwright": "1.62.1",
+    "projectDocumentSchema": 1,
+    "formulaCatalog": 1,
+    "validationRuleCatalog": 1
+  },
+  "fixtures": ["tests/fixtures/capacity-project.ts"],
+  "command": "PLAYWRIGHT_PORT=4174 pnpm gate:worker",
+  "rawArtifacts": ["evidence/gates/raw/MVP-GATE-005-browser-measurements.json"],
+  "measurements": {
+    "fixtureScales": [1, 2, 5],
+    "largestInitializationBytes": 1043330,
+    "incrementalBytes": 573,
+    "largestInitializationDispatchMs": 16,
+    "largestIncrementalDispatchMs": 8,
+    "initializationDispatchLimitMs": 2000,
+    "incrementalDispatchLimitMs": 100,
+    "browserEngines": 3,
+    "unitCases": 9,
+    "failures": 0
+  },
+  "verdict": "Pass",
+  "boundedDecision": "Retain one long-lived native evaluation Worker per writable session, evaluation-only full initialization DTOs, small revisioned change sets, identity-gated atomic publication, cooperative cancellation with forced restart, one automatic crash restart, explicit retry, and no restart during server loss. This guarded baseline must be superseded after the production document schema is promoted in Milestone 5."
+}

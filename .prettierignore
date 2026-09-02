@@ -1,0 +1,15 @@
+.svelte-kit
+.agent
+build
+coverage
+CONTEXT.md
+docs
+node_modules
+playwright-report
+README.md
+research
+test-results
+pnpm-lock.yaml
+evidence/frontend/*.png
+evidence/traceability/authority-baseline.md
+traceability/mvp.json

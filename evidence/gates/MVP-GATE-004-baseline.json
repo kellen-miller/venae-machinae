@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-004",
+  "recordId": "MVP-GATE-004-baseline",
+  "recordedAt": "2026-09-01T18:23:51Z",
+  "supersedes": null,
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "architecture": "arm64",
+    "node": "26.8.1",
+    "pinnedNode": "24.20.0",
+    "pnpm": "11.25.0",
+    "origin": "http://localhost:4174",
+    "browsers": {
+      "chromium": "151.0.7922.34",
+      "firefox": "153.0",
+      "webkit": "26.5"
+    }
+  },
+  "versions": {
+    "zod": "4.5.4",
+    "idb": "8.0.3",
+    "vite": "8.2.2",
+    "playwright": "1.62.1",
+    "projectDocumentSchema": 1,
+    "exchangeFormat": 1
+  },
+  "fixtures": ["tests/fixtures/capacity-project.ts"],
+  "command": "PLAYWRIGHT_PORT=4174 pnpm gate:exchange",
+  "rawArtifacts": ["evidence/gates/raw/MVP-GATE-004-browser-measurements.json"],
+  "measurements": {
+    "fixtureScales": [1, 2, 5],
+    "largestEnvelopeBytes": 18202080,
+    "largestOriginalAssetBytes": 12582912,
+    "largestIndividualAssetBytes": 6291456,
+    "largestNestingDepth": 7,
+    "largestCollectionEntries": 21006,
+    "largestEncodeMs": 478,
+    "largestParseMs": 18,
+    "largestValidationMs": 44.8,
+    "largestHashingMs": 48,
+    "largestCloneMs": 16.3,
+    "largestCommitMs": 62,
+    "largestEstimatedPeakBytes": 72808320,
+    "maxEnvelopeBytes": 20971520,
+    "maxIndividualAssetBytes": 6291456,
+    "maxCombinedAssetBytes": 12582912,
+    "maxAssets": 64,
+    "maxNestingDepth": 32,
+    "maxCollectionEntries": 50000,
+    "maxEstimatedPeakBytes": 134217728,
+    "browserEngines": 3,
+    "unitCases": 8,
+    "failures": 0
+  },
+  "verdict": "Pass",
+  "boundedDecision": "The strict monolithic JSON project envelope remains viable for the provisional schema. Freeze a 20 MiB encoded envelope, 6 MiB individual asset, 12 MiB combined assets, 64 assets, depth 32, 50000 collection entries, and 128 MiB instrumented retained-representation high-water bound. These guarded limits must be superseded after the production schema and exchange pipeline are promoted in Milestone 5."
+}

@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "gateId": "MVP-GATE-003",
+  "fixtureSchemaVersion": 8,
+  "results": [
+    {
+      "browser": "chromium",
+      "version": "151.0.7922.34",
+      "scales": [
+        {
+          "scale": 1,
+          "bytes": 563565,
+          "serializeMs": 0.7,
+          "validateMs": 2.9,
+          "cloneMs": 1.3,
+          "saveMs": 6.8,
+          "reopenAndLoadMs": 5.4
+        },
+        {
+          "scale": 2,
+          "bytes": 1132585,
+          "serializeMs": 1.5,
+          "validateMs": 5.7,
+          "cloneMs": 2.7,
+          "saveMs": 11.4,
+          "reopenAndLoadMs": 10.2
+        },
+        {
+          "scale": 5,
+          "bytes": 2843146,
+          "serializeMs": 3.5,
+          "validateMs": 13.7,
+          "cloneMs": 7,
+          "saveMs": 29.4,
+          "reopenAndLoadMs": 25.8
+        }
+      ],
+      "recoveredExactly": true,
+      "checkpointRecoveredExactly": true,
+      "assetWrites": [1, 0, 0],
+      "assetCount": 1,
+      "verdict": "Pass"
+    },
+    {
+      "browser": "firefox",
+      "version": "153.0",
+      "scales": [
+        {
+          "scale": 1,
+          "bytes": 563565,
+          "serializeMs": 0,
+          "validateMs": 5,
+          "cloneMs": 2,
+          "saveMs": 12,
+          "reopenAndLoadMs": 11
+        },
+        {
+          "scale": 2,
+          "bytes": 1132585,
+          "serializeMs": 1,
+          "validateMs": 8,
+          "cloneMs": 4,
+          "saveMs": 26,
+          "reopenAndLoadMs": 21
+        },
+        {
+          "scale": 5,
+          "bytes": 2843146,
+          "serializeMs": 3,
+          "validateMs": 18,
+          "cloneMs": 11,
+          "saveMs": 57,
+          "reopenAndLoadMs": 46
+        }
+      ],
+      "recoveredExactly": true,
+      "checkpointRecoveredExactly": true,
+      "assetWrites": [1, 0, 0],
+      "assetCount": 1,
+      "verdict": "Pass"
+    },
+    {
+      "browser": "webkit",
+      "version": "26.5",
+      "scales": [
+        {
+          "scale": 1,
+          "bytes": 563565,
+          "serializeMs": 1,
+          "validateMs": 4,
+          "cloneMs": 2,
+          "saveMs": 11,
+          "reopenAndLoadMs": 5
+        },
+        {
+          "scale": 2,
+          "bytes": 1132585,
+          "serializeMs": 1,
+          "validateMs": 5,
+          "cloneMs": 4,
+          "saveMs": 12,
+          "reopenAndLoadMs": 7
+        },
+        {
+          "scale": 5,
+          "bytes": 2843146,
+          "serializeMs": 3,
+          "validateMs": 11,
+          "cloneMs": 11,
+          "saveMs": 28,
+          "reopenAndLoadMs": 15
+        }
+      ],
+      "recoveredExactly": true,
+      "checkpointRecoveredExactly": true,
+      "assetWrites": [1, 0, 0],
+      "assetCount": 1,
+      "verdict": "Pass"
+    }
+  ],
+  "boundaryTests": {
+    "unitCases": 10,
+    "revisionConflictRetainedPrior": true,
+    "quotaExceededRetainedPrior": true
+  }
+}
