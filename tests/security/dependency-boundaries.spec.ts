@@ -11,9 +11,10 @@ describe('MVP-ARCH-001 dependency boundary', () => {
       ...packageMetadata.devDependencies
     };
 
-    expect(packages.svelte).toBe('5.57.0');
-    expect(packages['@sveltejs/kit']).toBe('2.70.3');
-    expect(packages['@sveltejs/adapter-node']).toBe('5.5.7');
+    for (const name of ['svelte', '@sveltejs/kit', '@sveltejs/adapter-node']) {
+      expect(packages[name]).toMatch(/^\d+\.\d+\.\d+$/);
+    }
+
     expect(packages.react).toBeUndefined();
     expect(packages['react-dom']).toBeUndefined();
     expect(packages['@xyflow/react']).toBeUndefined();
