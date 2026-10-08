@@ -120,8 +120,15 @@ describe('MVP-HANDOFF-002 pinned CI acceptance', () => {
 
   it('runs the complete final repository gate and every non-capacity evidence gate', () => {
     const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+    expect(workflow).toMatch(
+      /uses: kellen-miller\/ci\/\.github\/actions\/setup-node@[a-f0-9]{40}\b/
+    );
+    expect(workflow).toMatch(
+      /uses: kellen-miller\/ci\/\.github\/actions\/playwright-setup@[a-f0-9]{40}\b/
+    );
+    expect(workflow).toContain('browsers: chromium firefox webkit');
+
     for (const command of [
-      'pnpm install --frozen-lockfile',
       'pnpm format:check',
       'pnpm lint',
       'pnpm check',
@@ -147,6 +154,7 @@ describe('MVP-HANDOFF-002 pinned CI acceptance', () => {
     ]) {
       expect(workflow).toContain(command);
     }
+
     expect(workflow).not.toContain('pnpm gate:capacity');
     expect(workflow).not.toContain('pnpm gate:all');
   });

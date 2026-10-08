@@ -20,9 +20,9 @@ const normativeFiles = [
 
 for (const [name, commit] of authorityCommits) {
   try {
-    execFileSync('git', ['merge-base', '--is-ancestor', commit, 'HEAD'], { stdio: 'ignore' });
-  } catch {
-    throw new Error(`HEAD does not contain the required ${name} commit ${commit}`);
+    execFileSync('git', ['merge-base', '--is-ancestor', commit, 'HEAD'], { encoding: 'utf8' });
+  } catch (cause) {
+    throw new Error(`HEAD does not contain the required ${name} commit ${commit}`, { cause });
   }
 }
 
