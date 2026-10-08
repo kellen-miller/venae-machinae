@@ -18,7 +18,10 @@ const prohibited = [
 const present = prohibited.filter((name) => name in selected);
 
 if (present.length) throw new Error(`Prohibited direct dependencies: ${present.join(', ')}`);
-if (packageMetadata.packageManager !== 'pnpm@11.25.0') {
+if (
+  !/^pnpm@\d+\.\d+\.\d+$/.test(packageMetadata.packageManager) ||
+  packageMetadata.packageManager !== `pnpm@${packageMetadata.engines.pnpm}`
+) {
   throw new Error(`Unexpected package manager pin ${packageMetadata.packageManager}`);
 }
 
