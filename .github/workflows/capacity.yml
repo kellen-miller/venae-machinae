@@ -1,7 +1,7 @@
 name: Capacity harness smoke
 
 on:
-  workflow_dispatch:
+  pull_request:
 
 permissions:
   contents: read
@@ -18,20 +18,16 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
 
-      - name: Set up Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - name: Set up Node project
+        uses: kellen-miller/ci/.github/actions/setup-node@d1c91763535a5866b55282018f301d921b22bcd5
+
+      - name: Set up Playwright
+        uses: kellen-miller/ci/.github/actions/playwright-setup@d1c91763535a5866b55282018f301d921b22bcd5
         with:
-          node-version-file: .nvmrc
-
-      - name: Activate pinned pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@11.25.0 --activate
-
-      - name: Install frozen dependencies
-        run: pnpm install --frozen-lockfile
+          browsers: chromium
 
       - name: Smoke capacity harness
         run: pnpm gate:capacity -- --ci-smoke

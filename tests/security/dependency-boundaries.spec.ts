@@ -120,8 +120,21 @@ describe('MVP-HANDOFF-002 pinned CI acceptance', () => {
 
   it('runs the complete final repository gate and every non-capacity evidence gate', () => {
     const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+    const { scripts } = JSON.parse(readFileSync('package.json', 'utf8'));
+    expect(workflow).toMatch(
+      /uses: kellen-miller\/ci\/\.github\/actions\/setup-node@[a-f0-9]{40}\b/
+    );
+    expect(workflow).toMatch(
+      /uses: kellen-miller\/ci\/\.github\/actions\/playwright-setup@[a-f0-9]{40}\b/
+    );
+    expect(workflow).toContain('browser: [chromium, firefox, webkit]');
+    expect(workflow).toContain('browsers: ${{ matrix.browser }}');
+    expect(workflow).toContain('needs: checks');
+    expect(workflow).toContain('needs: [checks, browsers]');
+    expect(workflow).toContain('if: always()');
+    expect(workflow).toContain('projects+=(--project=workspace)');
+
     for (const command of [
-      'pnpm install --frozen-lockfile',
       'pnpm format:check',
       'pnpm lint',
       'pnpm check',
@@ -131,22 +144,38 @@ describe('MVP-HANDOFF-002 pinned CI acceptance', () => {
       'pnpm test:component',
       'pnpm test:exchange',
       'pnpm build',
-      'pnpm test:e2e',
-      'pnpm test:security',
-      'pnpm test:accessibility',
-      'pnpm test:visual',
+      'pnpm test:browser',
       'pnpm bundle:check',
-      'pnpm gate:numeric',
-      'pnpm gate:persistence',
-      'pnpm gate:storage-lifecycle',
-      'pnpm gate:worker',
-      'pnpm gate:exchange',
-      'pnpm gate:renderer',
-      'pnpm traceability',
+      'pnpm gate:evidence',
       'pnpm verify'
     ]) {
       expect(workflow).toContain(command);
     }
+
+    for (const suite of ['tests/e2e', 'tests/accessibility', 'tests/visual']) {
+      expect(scripts['test:browser']).toContain(suite);
+    }
+
+    for (const gate of [
+      'numeric',
+      'persistence',
+      'storage-lifecycle',
+      'worker',
+      'exchange',
+      'renderer'
+    ]) {
+      expect(scripts['test:browser']).toContain(`tests/gates/${gate}-browser.spec.ts`);
+    }
+
+    expect(scripts['test:unit']).toContain('tests/security');
+    expect(scripts['test:unit']).toContain('tests/gates');
+    expect(scripts.verify).toContain('pnpm traceability');
+
+    for (const id of ['001', '003', '004', '005', '006', '007']) {
+      expect(scripts['gate:evidence']).toContain(`MVP-GATE-${id}`);
+    }
+
+    expect(scripts['test:browser']).not.toContain('graph-capacity');
     expect(workflow).not.toContain('pnpm gate:capacity');
     expect(workflow).not.toContain('pnpm gate:all');
   });
