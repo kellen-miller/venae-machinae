@@ -42,7 +42,8 @@ jobs:
   browsers:
     needs: checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    # Cold browser dependencies and the full suite need separate time budgets.
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
