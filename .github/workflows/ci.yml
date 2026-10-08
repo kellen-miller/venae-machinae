@@ -2,7 +2,6 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
 
 permissions:
   contents: read
@@ -12,9 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
+  checks:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 10
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -25,16 +24,9 @@ jobs:
       - name: Set up Node project
         uses: kellen-miller/ci/.github/actions/setup-node@d1c91763535a5866b55282018f301d921b22bcd5
 
-      - name: Check authority baseline before browser tests
-        run: pnpm authority:check
-
-      - name: Set up Playwright
-        uses: kellen-miller/ci/.github/actions/playwright-setup@d1c91763535a5866b55282018f301d921b22bcd5
-        with:
-          browsers: chromium firefox webkit
-
       - name: Verify repository
         run: |
+          pnpm verify
           pnpm format:check
           pnpm lint
           pnpm check
@@ -44,16 +36,65 @@ jobs:
           pnpm test:component
           pnpm test:exchange
           pnpm build
-          pnpm test:e2e
-          pnpm test:security
-          pnpm test:accessibility
-          pnpm test:visual
           pnpm bundle:check
-          pnpm gate:numeric
-          pnpm gate:persistence
-          pnpm gate:storage-lifecycle
-          pnpm gate:worker
-          pnpm gate:exchange
-          pnpm gate:renderer
-          pnpm traceability
-          pnpm verify
+          pnpm gate:evidence
+
+  browsers:
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node project
+        uses: kellen-miller/ci/.github/actions/setup-node@d1c91763535a5866b55282018f301d921b22bcd5
+
+      - name: Set up Playwright
+        uses: kellen-miller/ci/.github/actions/playwright-setup@d1c91763535a5866b55282018f301d921b22bcd5
+        with:
+          browsers: ${{ matrix.browser }}
+
+      - name: Build production application
+        run: pnpm build
+
+      - name: Test production browsers
+        env:
+          PLAYWRIGHT_SKIP_BUILD: '1'
+          BROWSER: ${{ matrix.browser }}
+        run: |
+          projects=(--project="$BROWSER")
+          if [[ "$BROWSER" == chromium ]]; then
+            projects+=(--project=workspace)
+          fi
+
+          pnpm test:browser "${projects[@]}"
+
+      - name: Upload browser reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  verify:
+    if: always()
+    needs: [checks, browsers]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require all validation jobs
+        env:
+          CHECKS_RESULT: ${{ needs.checks.result }}
+          BROWSERS_RESULT: ${{ needs.browsers.result }}
+        run: |
+          [[ "$CHECKS_RESULT" == success && "$BROWSERS_RESULT" == success ]]

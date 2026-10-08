@@ -10,7 +10,7 @@ const rasterHash = '431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f26
 
 test.beforeEach(async ({ page }) => {
   await seedWorkspaceProject(page);
-  await page.goto(`/projects/${WORKSPACE_PROJECT_ID}`);
+  await page.goto(`/projects/${WORKSPACE_PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-workspace-mode="select"]')).toBeVisible();
 });
 

@@ -30,7 +30,7 @@ async function installGate(page: Page) {
   await page.addInitScript({
     content: `${browserBundle}\nwindow.VenaeStorageLifecycleGate = VenaeStorageLifecycleGate;`
   });
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
 }
 
 test('MVP-DATA-003 MVP-DATA-005 MVP-GATE-006 automates storage, lease, upgrade, and restore lifecycle', async ({

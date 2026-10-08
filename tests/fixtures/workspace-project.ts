@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 export const WORKSPACE_PROJECT_ID = 'workspace-project';
 
 export async function seedWorkspaceProject(page: Page): Promise<void> {
-  await page.goto('/health');
+  await page.goto('/health', { waitUntil: 'domcontentloaded' });
   await page.evaluate(
     async ({ projectId, snapshot }) => {
       const database = await new Promise<IDBDatabase>((resolve, reject) => {

@@ -16,7 +16,8 @@ export default defineConfig({
     trace: 'retain-on-failure'
   },
   webServer: {
-    command: `pnpm build && HOST=localhost PORT=${port} ORIGIN=${origin} pnpm start`,
+    // CI builds once before running the combined browser suite.
+    command: `${process.env.PLAYWRIGHT_SKIP_BUILD === '1' ? '' : 'pnpm build && '}HOST=localhost PORT=${port} ORIGIN=${origin} pnpm start`,
     url: `${origin}/health`,
     reuseExistingServer: false,
     timeout: 120_000
