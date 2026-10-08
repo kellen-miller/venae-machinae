@@ -43,7 +43,9 @@
     "dependencies:check": "node scripts/check-prohibited-dependencies.mjs",
     "server-boundary:check": "node scripts/check-server-boundary.mjs",
     "production-source:check": "node scripts/check-production-sources.mjs",
-    "verify": "pnpm authority:check && pnpm traceability && pnpm claims:check && pnpm dependencies:check && pnpm server-boundary:check && pnpm production-source:check"
+    "verify": "pnpm authority:check && pnpm traceability && pnpm claims:check && pnpm dependencies:check && pnpm server-boundary:check && pnpm production-source:check",
+    "test:browser": "playwright test tests/e2e tests/accessibility tests/visual tests/gates/numeric-browser.spec.ts tests/gates/persistence-browser.spec.ts tests/gates/storage-lifecycle-browser.spec.ts tests/gates/worker-browser.spec.ts tests/gates/exchange-browser.spec.ts tests/gates/renderer-browser.spec.ts",
+    "gate:evidence": "node scripts/check-gate-evidence.mjs MVP-GATE-001 MVP-GATE-003 MVP-GATE-004 MVP-GATE-005 MVP-GATE-006 MVP-GATE-007"
   },
   "dependencies": {
     "decimal.js": "10.6.0",
