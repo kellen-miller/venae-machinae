@@ -36,6 +36,15 @@ export default defineConfig(
   ts.configs.recommended,
   svelte.configs.recommended,
   {
+    files: ['**/*.d.ts'],
+    rules: {
+      '@typescript-eslint/no-empty-object-type': [
+        'error',
+        { allowInterfaces: 'with-single-extends' }
+      ]
+    }
+  },
+  {
     languageOptions: {
       globals: {
         ...globals.browser,
