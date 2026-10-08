@@ -25,6 +25,9 @@ jobs:
       - name: Set up Node project
         uses: kellen-miller/ci/.github/actions/setup-node@d1c91763535a5866b55282018f301d921b22bcd5
 
+      - name: Check authority baseline before browser tests
+        run: pnpm authority:check
+
       - name: Set up Playwright
         uses: kellen-miller/ci/.github/actions/playwright-setup@d1c91763535a5866b55282018f301d921b22bcd5
         with:
