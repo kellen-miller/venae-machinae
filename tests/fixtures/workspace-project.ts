@@ -3,7 +3,9 @@ import type { Page } from '@playwright/test';
 export const WORKSPACE_PROJECT_ID = 'workspace-project';
 
 export async function seedWorkspaceProject(page: Page): Promise<void> {
-  await page.goto('/health', { waitUntil: 'domcontentloaded' });
+  await page.goto('/health', { waitUntil: 'commit' });
+  // Poll readiness instead of depending on a navigation lifecycle event.
+  await page.waitForFunction(() => document.readyState !== 'loading');
   await page.evaluate(
     async ({ projectId, snapshot }) => {
       const database = await new Promise<IDBDatabase>((resolve, reject) => {

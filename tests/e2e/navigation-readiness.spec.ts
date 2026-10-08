@@ -34,6 +34,6 @@ test('seeds the workspace while a document resource is pending', async ({ page }
 
   await seedWorkspaceProject(page);
   expect(await page.evaluate(() => document.readyState)).toBe('interactive');
-  await page.goto(`/projects/${WORKSPACE_PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/projects/${WORKSPACE_PROJECT_ID}`, { waitUntil: 'commit' });
   await expect(page.locator('[data-workspace-mode="select"]')).toBeVisible();
 });

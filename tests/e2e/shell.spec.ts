@@ -11,7 +11,7 @@ test('production shell exposes delivery state without a project endpoint', async
     }
   });
 
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.goto('/', { waitUntil: 'commit' });
   await expect(
     page.getByRole('heading', { name: 'Your vehicle systems work stays in this browser.' })
   ).toBeVisible();
