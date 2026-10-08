@@ -3,19 +3,19 @@
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
 
-  import { createBrowserApplication } from '$lib/composition/create-browser-application';
-  import ProjectLibraryView from '$lib/presentation/library/ProjectLibraryView.svelte';
+  import { createBrowserApplication } from '#lib/composition/create-browser-application.ts';
+  import ProjectLibraryView from '#lib/presentation/library/ProjectLibraryView.svelte';
 
-  import type { BrowserApplication } from '$lib/composition/create-browser-application';
+  import type { BrowserApplication } from '#lib/composition/create-browser-application.ts';
   import type {
     DownloadArtifact,
     LibraryOverview,
     StagedLibraryImport
-  } from '$lib/composition/create-browser-application';
+  } from '#lib/composition/create-browser-application.ts';
   import type {
     ProjectLibraryState,
     ProjectListing
-  } from '$lib/presentation/library/ProjectLibraryView.svelte';
+  } from '#lib/presentation/library/ProjectLibraryView.svelte';
 
   let application = $state<BrowserApplication | null>(null);
   let projects = $state<readonly ProjectListing[]>([]);

@@ -5,7 +5,7 @@ import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 import ts from 'typescript-eslint';
 
-import svelteConfig from './svelte.config.js';
+import svelteConfig from './svelte-options.js';
 
 const pureDomainFiles = [
   'src/lib/project/**/*.{js,ts}',
@@ -35,6 +35,15 @@ export default defineConfig(
   js.configs.recommended,
   ts.configs.recommended,
   svelte.configs.recommended,
+  {
+    files: ['**/*.d.ts'],
+    rules: {
+      '@typescript-eslint/no-empty-object-type': [
+        'error',
+        { allowInterfaces: 'with-single-extends' }
+      ]
+    }
+  },
   {
     languageOptions: {
       globals: {
