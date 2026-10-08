@@ -2,12 +2,12 @@
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
 
-  import ProjectWorkspace from '$lib/presentation/workspace/ProjectWorkspace.svelte';
-  import { createBrowserApplication } from '$lib/composition/create-browser-application';
+  import ProjectWorkspace from '#lib/presentation/workspace/ProjectWorkspace.svelte';
+  import { createBrowserApplication } from '#lib/composition/create-browser-application.ts';
 
-  import type { BrowserApplication } from '$lib/composition/create-browser-application';
-  import type { PartDefinition } from '$lib/project/project';
-  import type { ProjectSession } from '$lib/session/project-session.svelte';
+  import type { BrowserApplication } from '#lib/composition/create-browser-application.ts';
+  import type { PartDefinition } from '#lib/project/project.ts';
+  import type { ProjectSession } from '#lib/session/project-session.svelte.ts';
   import type { PageProps } from './$types';
 
   let { params }: PageProps = $props();
