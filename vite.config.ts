@@ -1,8 +1,12 @@
 import { sveltekit } from '@sveltejs/kit/vite';
+import svelteOptions from './svelte-options.js';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [sveltekit()],
+  plugins: [sveltekit(svelteOptions)],
+  build: {
+    minify: true
+  },
   server: {
     host: 'localhost',
     port: 4173,

@@ -1,4 +1,4 @@
-import type { Handle } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
 
 const responseHeaders = {
   'cross-origin-opener-policy': 'same-origin',

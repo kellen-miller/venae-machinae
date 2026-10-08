@@ -4,7 +4,7 @@
 
   import { updated } from '$app/state';
   import type { Snippet } from 'svelte';
-  import DeliveryStatus from '$lib/presentation/delivery/DeliveryStatus.svelte';
+  import DeliveryStatus from '#lib/presentation/delivery/DeliveryStatus.svelte';
 
   let { children }: { children: Snippet } = $props();
 
