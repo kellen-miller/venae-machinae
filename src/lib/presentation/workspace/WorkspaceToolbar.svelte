@@ -66,6 +66,15 @@
     onsearch: () => void;
     oncommand: () => void;
   } = $props();
+  function listenForDisplayDismissal(element: HTMLDetailsElement): () => void {
+    const dismiss = (event: PointerEvent) => {
+      if (element.open && event.target instanceof Node && !element.contains(event.target)) {
+        element.open = false;
+      }
+    };
+    document.addEventListener('pointerdown', dismiss, true);
+    return () => document.removeEventListener('pointerdown', dismiss, true);
+  }
 </script>
 
 <div class="workspace-toolbar">
@@ -128,7 +137,18 @@
     </label>
   </div>
 
-  <details class="overlay-controls">
+  <details
+    class="overlay-controls"
+    {@attach listenForDisplayDismissal}
+    onfocusout={(event) => {
+      if (
+        event.relatedTarget instanceof Node &&
+        !event.currentTarget.contains(event.relatedTarget)
+      ) {
+        event.currentTarget.open = false;
+      }
+    }}
+  >
     <summary>Display</summary>
     <fieldset>
       <legend>Show on the map</legend>

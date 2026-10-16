@@ -167,6 +167,7 @@ test('MVP-STATE-005 MVP-STATE-012 authors states and compares synchronized proje
   await expect(selection).toBeChecked();
 
   await page.getByRole('button', { name: 'State Compare view' }).click();
+  await expect(potential).toBeHidden();
   const lens = page.getByRole('dialog', { name: 'Lens Stack' });
   await expect(lens.locator('[data-operating-state-record]')).toHaveCount(5);
   await lens.getByLabel('State Compare Operating State name').fill('Service Check');
