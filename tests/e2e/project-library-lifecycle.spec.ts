@@ -221,11 +221,15 @@ test('MVP-MODEL-009 MVP-VAL-012 confirms connection deletion, retains a tombston
   await page.goto(`/projects/${WORKSPACE_PROJECT_ID}`);
   await page.getByRole('button', { name: 'Fan feed, wire' }).focus();
   await page.keyboard.press('Enter');
+  await page
+    .getByLabel('Inspector', { exact: true })
+    .getByText('More details', { exact: true })
+    .click();
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Delete connection' }).click();
   await expect(page.getByRole('button', { name: 'Fan feed, wire' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Undo' })).toBeEnabled();
-  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(page.getByRole('button', { name: 'Undo last Project action' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Undo last Project action' }).click();
   await expect(page.getByRole('button', { name: 'Fan feed, wire' })).toBeVisible();
 });
 

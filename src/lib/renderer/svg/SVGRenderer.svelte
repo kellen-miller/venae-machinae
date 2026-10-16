@@ -560,7 +560,7 @@
       </g>
 
       {#if capability === 'author'}
-        <g class="route-layer" aria-label="Editable route points">
+        <g class="route-layer" role="group" aria-label="Editable route points">
           {#each visibleModel.connections.filter((mapped) => mapped.connection.selected) as mapped (mapped.connection.id)}
             {#each mapped.connection.routePoints as point, index (point.id)}
               <circle

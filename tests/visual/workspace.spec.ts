@@ -202,6 +202,10 @@ test('records final M7 help, tablet authoring, mobile review, and server loss', 
   await openBundledRx7Example(page);
   await page.getByRole('button', { name: 'Battery to fuse, wire' }).focus();
   await page.keyboard.press('Enter');
+  await page
+    .getByLabel('Inspector', { exact: true })
+    .getByText('More details', { exact: true })
+    .click();
   await page.getByRole('button', { name: 'Help for Wire' }).click();
   await expect(page.getByRole('dialog', { name: 'Wire help' })).toBeVisible();
   await page.screenshot({

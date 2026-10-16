@@ -128,7 +128,7 @@
   }
 
   .canvas-status strong {
-    color: #a34d28;
+    color: #f1ae83;
   }
 
   .vehicle-background {

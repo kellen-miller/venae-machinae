@@ -51,7 +51,11 @@ test('zoom stays under the cursor and connections follow a dragged part', async 
   ).toBeVisible();
   const canvas = page.locator('[data-renderer-adapter="svg"] > svg');
   const bounds = (await canvas.boundingBox())!;
-  const anchor = { x: bounds.x + bounds.width * 0.4, y: bounds.y + bounds.height * 0.4 };
+  // Browser pointer/wheel coordinates use whole CSS pixels.
+  const anchor = {
+    x: Math.round(bounds.x + bounds.width * 0.4),
+    y: Math.round(bounds.y + bounds.height * 0.4)
+  };
   const worldPoint = () =>
     canvas.evaluate((svg, point) => {
       const content = svg.querySelector('.connection-layer')

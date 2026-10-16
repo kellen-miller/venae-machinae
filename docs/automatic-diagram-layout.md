@@ -44,8 +44,9 @@ migration/defaults. Schema-9 exports require this application or a newer version
 reverting the application does not downgrade them.
 
 The client loads ELK only for an explicit Tidy request. Its dedicated worker is
-terminated on completion, error, timeout or workspace teardown. A stale revision
-or changed filter discards the result. Requests are bounded to 500 visible parts,
+terminated on completion, error, timeout or workspace teardown. Changed layout inputs
+or a changed filter discard the result. Evaluation-only revision changes do not
+invalidate pending geometry. Requests are bounded to 500 visible parts,
 1,000 lines and 20 seconds of worker execution. Failed checks leave the previous
 diagram intact. Large overview projections can still be viewed without loading
 ELK; choose an individual circuit when layout is too large.

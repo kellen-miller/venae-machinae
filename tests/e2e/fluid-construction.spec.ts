@@ -24,7 +24,7 @@ async function addPrimitive(
   count = 1
 ): Promise<void> {
   await page
-    .getByLabel('Fluid System for new fluid primitive')
+    .getByRole('combobox', { name: 'Add to system', exact: true })
     .selectOption({ label: systemLabel });
   for (let index = 0; index < count; index += 1) {
     await page.getByRole('button', { name }).click();

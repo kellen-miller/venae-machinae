@@ -217,7 +217,7 @@
 
   async function tidyVisibleDiagram(): Promise<void> {
     if (!canAuthor || layoutBusy || projection.nodes.length === 0) return;
-    const revision = session.view.snapshot.revision;
+    const source = session.view.snapshot;
     const system = presentation.systemFilterId,
       domain = presentation.domainFilter;
     const input = projection;
@@ -263,7 +263,11 @@
       }
       if (request.signal.aborted) return;
       if (
-        session.view.snapshot.revision !== revision ||
+        // Evaluation publication advances revision without changing layout inputs.
+        session.view.snapshot.topology !== source.topology ||
+        session.view.snapshot.evidence !== source.evidence ||
+        session.view.snapshot.fluid !== source.fluid ||
+        session.view.snapshot.diagramLayout !== source.diagramLayout ||
         system !== presentation.systemFilterId ||
         domain !== presentation.domainFilter
       ) {
