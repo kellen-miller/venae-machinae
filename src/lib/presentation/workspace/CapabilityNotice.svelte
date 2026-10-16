@@ -9,7 +9,7 @@
   const message = $derived.by(() => {
     if (capability.mode === 'author') return null;
     if (capability.reason === 'mobile-review') {
-      return 'Mobile review: inspect, filter, search, compare, and export. Project mutation remains blocked below 700 CSS pixels.';
+      return 'Explore and export your project here. Use a larger screen to edit.';
     }
     if (capability.reason === 'lease-held') {
       return 'Read-only lease: another window owns this Project’s authoring lease. Review remains available.';

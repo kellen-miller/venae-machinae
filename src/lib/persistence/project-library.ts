@@ -323,7 +323,7 @@ export class BrowserProjectLibrary {
     const checkpointId = input.checkpointId ?? crypto.randomUUID();
     const checkpointSnapshot = input.snapshot
       ? projectDocumentSchema.parse(input.snapshot)
-      : projectDocumentSchema.parse(project.snapshot);
+      : storedProjectSchema.parse(project).snapshot;
     if (checkpointSnapshot.project.id !== input.projectId) {
       transaction.abort();
       await transaction.done.catch(() => undefined);
@@ -434,11 +434,12 @@ export class BrowserProjectLibrary {
       ['projects', 'checkpoints', 'namedSnapshots'],
       'readwrite'
     );
-    const namedSnapshot = await transaction.objectStore('namedSnapshots').get(input.id);
-    if (!namedSnapshot) {
+    const storedNamedSnapshot = await transaction.objectStore('namedSnapshots').get(input.id);
+    if (!storedNamedSnapshot) {
       await transaction.done;
       return { restored: false, reason: 'missing-snapshot' };
     }
+    const namedSnapshot = namedSnapshotSchema.parse(storedNamedSnapshot);
     const project = await transaction.objectStore('projects').get(namedSnapshot.projectId);
     if (!project) {
       await transaction.done;

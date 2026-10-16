@@ -1,6 +1,7 @@
+import { diagramLayoutSchema, validateDiagramLayout } from './diagram-layout';
 import { validateTopology } from '../topology/topology';
 import { validateElectricalModel } from '../electrical/electrical';
-import { validateFluidModel } from '../fluid/fluid';
+import { FLUID_NOMINAL_SIZE_LABEL, validateFluidModel } from '../fluid/fluid';
 import { getFormulaDefinition } from '../calculation/formula-catalog';
 import { unitSemantic } from '../calculation/unit-registry';
 import { validateOperatingStateModel } from '../operating-state/operating-state';
@@ -27,6 +28,7 @@ export type ActionRejectionCode =
   | 'confirmation-required'
   | 'invalid-confirmation'
   | 'invalid-background'
+  | 'invalid-diagram-layout'
   | 'invalid-electrical-record'
   | 'invalid-electrical-reference'
   | 'invalid-fluid-record'
@@ -325,6 +327,56 @@ export function applyProjectAction(
   let undoLabel: string;
 
   switch (action.type) {
+    case 'tidy-diagram': {
+      const parsed = diagramLayoutSchema.safeParse(action.layout);
+      if (!parsed.success) return reject('invalid-diagram-layout', 'Invalid schematic geometry');
+      const layout = parsed.data;
+      const nodeIds = new Set(layout.nodes.map((node) => node.id));
+      const edgeIds = new Set(layout.edges.map((edge) => edge.id));
+      const positions = new Map(layout.nodes.map((node) => [node.id, node]));
+      next = {
+        ...snapshot,
+        topology: {
+          ...snapshot.topology,
+          components: snapshot.topology.components.map((component) => {
+            const position = positions.get(component.id);
+            return position
+              ? { ...component, position: { x: String(position.x), y: String(position.y) } }
+              : component;
+          })
+        },
+        diagramLayout: {
+          engine: layout.engine,
+          nodes: [
+            ...(snapshot.diagramLayout?.nodes.filter((node) => !nodeIds.has(node.id)) ?? []),
+            ...layout.nodes
+          ],
+          edges: [
+            ...(snapshot.diagramLayout?.edges.filter((edge) => {
+              const connection = snapshot.topology.connections.find(
+                (candidate) => candidate.id === edge.id
+              );
+              return (
+                !edgeIds.has(edge.id) &&
+                connection &&
+                !layout.nodes.some((node) =>
+                  node.ports.some(
+                    (port) =>
+                      port.id === connection.sourcePortId || port.id === connection.targetPortId
+                  )
+                )
+              );
+            }) ?? []),
+            ...layout.edges
+          ]
+        },
+        results: staleResults
+      };
+      changedSubjects = [...nodeIds, ...edgeIds];
+      undoLabel = 'Tidy diagram';
+      break;
+    }
+
     case 'set-validation-applicability': {
       const decision = action.decision;
       if (
@@ -1052,6 +1104,50 @@ export function applyProjectAction(
       undoLabel = `Record cable evidence for ${action.specification.partDefinitionId}`;
       break;
 
+    case 'configure-fluid-line-size': {
+      const connection = snapshot.topology.connections.find(
+        (item) => item.id === action.connectionId
+      );
+      const existing = snapshot.evidence.find((item) => item.id === action.evidenceId);
+      if (
+        connection?.domain !== 'fluid' ||
+        !action.evidenceId.trim() ||
+        action.evidenceId.length > 160 ||
+        !action.provenance.trim() ||
+        (action.dashSize !== null &&
+          (!Number.isInteger(action.dashSize) || action.dashSize < 1 || action.dashSize > 64)) ||
+        (existing &&
+          (existing.subjectId !== connection.id || existing.label !== FLUID_NOMINAL_SIZE_LABEL)) ||
+        (!existing && projectIdentityExists(snapshot, action.evidenceId))
+      ) {
+        return reject(
+          'invalid-fluid-record',
+          'Nominal size requires a fluid connection, a dash size from 1 to 64 or Unknown, and provenance.'
+        );
+      }
+
+      next = {
+        ...snapshot,
+        evidence: [
+          ...snapshot.evidence.filter((item) => item.id !== action.evidenceId),
+          {
+            id: action.evidenceId,
+            subjectId: connection.id,
+            label: FLUID_NOMINAL_SIZE_LABEL,
+            state: action.dashSize === null ? 'unknown' : 'known',
+            value: action.dashSize === null ? null : String(action.dashSize),
+            unit: 'AN',
+            provenance: action.provenance.trim(),
+            conflictValues: []
+          }
+        ],
+        results: staleResults
+      };
+      changedSubjects = [connection.id, action.evidenceId];
+      undoLabel = `Set ${connection.label} nominal size`;
+      break;
+    }
+
     case 'configure-fluid-line':
       next = {
         ...snapshot,
@@ -1717,6 +1813,27 @@ export function applyProjectAction(
       break;
     }
   }
+
+  if (action.type !== 'tidy-diagram' && next.diagramLayout && next.topology !== snapshot.topology) {
+    next = {
+      ...next,
+      diagramLayout: {
+        ...next.diagramLayout,
+        nodes: next.diagramLayout.nodes.filter((node) =>
+          next.topology.components.some(
+            (component) =>
+              component.id === node.id &&
+              component.ports.length === node.ports.length &&
+              component.ports.every((port) => node.ports.some((saved) => saved.id === port.id))
+          )
+        ),
+        edges: []
+      }
+    };
+  }
+
+  const diagramRejection = validateDiagramLayout(next.diagramLayout, next.topology);
+  if (diagramRejection) return reject('invalid-diagram-layout', diagramRejection);
 
   const topologyRejection = validateTopology(next.topology);
   if (topologyRejection) return { accepted: false, rejection: topologyRejection };

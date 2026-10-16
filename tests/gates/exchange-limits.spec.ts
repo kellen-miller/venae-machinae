@@ -604,12 +604,63 @@ describe('MVP-GATE-004 exchange limits', () => {
     library.close();
   });
 
+  it('migrates schema-8 project and backup payloads after verifying original integrity', async () => {
+    const envelope = structuredClone(await createEnvelope()) as unknown as {
+      payload: Record<string, unknown>;
+      integrity: { payloadSha256: string };
+    };
+    envelope.payload.schemaVersion = 8;
+    delete envelope.payload.diagramLayout;
+    envelope.integrity.payloadSha256 = await sha256Hex(canonicalJson(envelope.payload));
+    const staged = await stageExchange(asBlob(envelope), MEASURED_EXCHANGE_LIMITS);
+    expect(staged).toMatchObject({
+      staged: true,
+      envelope: { payload: { schemaVersion: 9, diagramLayout: null } }
+    });
+
+    const library = await openProjectLibrary();
+    try {
+      await library.createBlankProject({
+        id: 'legacy',
+        name: 'Legacy diagram',
+        createdAt: '2026-09-01T00:00:00Z'
+      });
+      const backup = await createLibraryBackupExchange({
+        backup: (await library.createLibraryBackup({ createdAt: '2026-09-01T00:00:00Z' })).payload,
+        exportedAt: '2026-09-01T00:00:00Z'
+      });
+      const legacy = structuredClone(backup) as unknown as {
+        payload: { projects: { snapshot: Record<string, unknown> }[] };
+        integrity: { payloadSha256: string };
+      };
+      for (const project of legacy.payload.projects) {
+        project.snapshot.schemaVersion = 8;
+        delete project.snapshot.diagramLayout;
+      }
+      legacy.integrity.payloadSha256 = await sha256Hex(canonicalJson(legacy.payload));
+      expect(
+        await stageLibraryBackupExchange(asBlob(legacy), MEASURED_EXCHANGE_LIMITS)
+      ).toMatchObject({
+        staged: true,
+        envelope: {
+          payload: { projects: [{ snapshot: { schemaVersion: 9, diagramLayout: null } }] }
+        }
+      });
+      (legacy.payload.projects[0]!.snapshot.project as Record<string, unknown>).name = 'tampered';
+      expect(
+        await stageLibraryBackupExchange(asBlob(legacy), MEASURED_EXCHANGE_LIMITS)
+      ).toMatchObject({ staged: false, reason: 'payload-integrity' });
+    } finally {
+      library.close();
+    }
+  });
+
   it('MVP-DATA-014 MVP-DATA-016 blocks unknown schemas and MIME-spoofed active content', async () => {
-    expect(RELEASED_PROJECT_DOCUMENT_MIGRATIONS).toEqual([]);
+    expect(RELEASED_PROJECT_DOCUMENT_MIGRATIONS).toMatchObject([{ fromVersion: 8, toVersion: 9 }]);
     expect(migrateProjectDocument(generateCapacityProject(1))).toMatchObject({
       migrated: true,
       appliedVersions: [],
-      document: { schemaVersion: 8 }
+      document: { schemaVersion: 9 }
     });
 
     const newerExchange = structuredClone(await createEnvelope()) as unknown as Record<
@@ -624,7 +675,7 @@ describe('MVP-GATE-004 exchange limits', () => {
     const newerProject = structuredClone(await createEnvelope()) as unknown as {
       payload: { schemaVersion: number };
     };
-    newerProject.payload.schemaVersion = 9;
+    newerProject.payload.schemaVersion = 10;
     await expect(stageExchange(asBlob(newerProject), MEASURED_EXCHANGE_LIMITS)).resolves.toEqual(
       expect.objectContaining({ staged: false, reason: 'newer-schema' })
     );

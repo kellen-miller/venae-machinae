@@ -34,6 +34,9 @@
     canUndo,
     canRedo,
     canAuthor,
+    layoutBusy,
+    tidyAvailable,
+    ontidy,
     onmode,
     ondomainfilter,
     onsystemfilter,
@@ -55,6 +58,9 @@
     canUndo: boolean;
     canRedo: boolean;
     canAuthor: boolean;
+    layoutBusy: boolean;
+    tidyAvailable: boolean;
+    ontidy: () => void;
     onmode: (mode: WorkspaceMode) => void;
     ondomainfilter: (domain: 'all' | 'electrical' | 'fluid') => void;
     onsystemfilter: (systemId: string | null) => void;
@@ -66,6 +72,15 @@
     onsearch: () => void;
     oncommand: () => void;
   } = $props();
+  function listenForDisplayDismissal(element: HTMLDetailsElement): () => void {
+    const dismiss = (event: PointerEvent) => {
+      if (element.open && event.target instanceof Node && !element.contains(event.target)) {
+        element.open = false;
+      }
+    };
+    document.addEventListener('pointerdown', dismiss, true);
+    return () => document.removeEventListener('pointerdown', dismiss, true);
+  }
 </script>
 
 <div class="workspace-toolbar">
@@ -78,7 +93,7 @@
         disabled={!canAuthor && candidate.id !== 'select' && candidate.id !== 'pan'}
         onclick={() => onmode(candidate.id)}
       >
-        <span>{candidate.label}</span>
+        <span>{candidate.id === 'add' ? 'Add part' : candidate.label}</span>
         <kbd>{candidate.shortcut}</kbd>
       </button>
     {/each}
@@ -86,14 +101,14 @@
 
   <div class="projection-filters" aria-label="Projection filters">
     <label>
-      <span>Domain</span>
+      <span>Show</span>
       <select
         aria-label="Domain filter"
         value={domainFilter}
         onchange={(event) =>
           ondomainfilter(event.currentTarget.value as 'all' | 'electrical' | 'fluid')}
       >
-        <option value="all">All domains</option>
+        <option value="all">Everything</option>
         <option value="electrical">Electrical</option>
         <option value="fluid">Fluid</option>
       </select>
@@ -128,10 +143,21 @@
     </label>
   </div>
 
-  <details class="overlay-controls">
-    <summary>Overlay channels</summary>
+  <details
+    class="overlay-controls"
+    {@attach listenForDisplayDismissal}
+    onfocusout={(event) => {
+      if (
+        event.relatedTarget instanceof Node &&
+        !event.currentTarget.contains(event.relatedTarget)
+      ) {
+        event.currentTarget.open = false;
+      }
+    }}
+  >
+    <summary>Display</summary>
     <fieldset>
-      <legend>Independent derived channels</legend>
+      <legend>Show on the map</legend>
       {#each overlayChannelControls as channel (channel.id)}
         <label>
           <input
@@ -156,6 +182,14 @@
   </details>
 
   <div class="utility-actions">
+    <button
+      type="button"
+      class="tidy-button"
+      disabled={!canAuthor || layoutBusy || !tidyAvailable}
+      aria-busy={layoutBusy}
+      title="Arrange the visible parts and lines. Undo restores the previous arrangement."
+      onclick={ontidy}>{layoutBusy ? 'Tidying…' : 'Tidy diagram'}</button
+    >
     <button type="button" disabled={!canUndo} onclick={onundo} aria-label="Undo last Project action"
       >↶</button
     >
@@ -296,19 +330,24 @@
     font-size: 0.7rem;
   }
 
-  @media (max-width: 70rem) {
+  @media (max-width: 85rem) {
     .workspace-toolbar {
-      grid-template-columns: 1fr auto;
+      grid-template-columns: minmax(0, 1fr) auto;
     }
 
     .projection-filters {
-      grid-column: 1 / -1;
+      grid-column: 1;
       grid-row: 2;
       justify-content: start;
       overflow-x: auto;
     }
 
     .overlay-controls {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    .utility-actions {
       grid-column: 2;
       grid-row: 1;
     }
@@ -340,7 +379,8 @@
       right: 0.5rem;
     }
 
-    .mode-group button span,
+    .mode-group kbd,
+    .mode-group button:disabled,
     .utility-actions button:not(:last-child) {
       display: none;
     }

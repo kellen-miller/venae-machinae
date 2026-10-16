@@ -26,6 +26,10 @@ test('MVP-UX-012 sends direct manipulation and Inspector edits through one actio
   expect(directRevision).toBeGreaterThan(7);
 
   await page.locator('[data-renderer-node="fan"] .node-shell').click();
+  await page
+    .getByLabel('Inspector', { exact: true })
+    .getByText('More details', { exact: true })
+    .click();
   await page.getByLabel('Component X position').fill('512');
   await page.getByLabel('Component Y position').fill('144');
   await page.getByRole('button', { name: 'Apply position' }).click();

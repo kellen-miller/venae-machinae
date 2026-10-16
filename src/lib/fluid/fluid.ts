@@ -1,4 +1,34 @@
 import type { SubjectId, Topology } from '../topology/topology';
+import type { EngineeringEvidence } from '../evidence/evidence';
+
+export const FLUID_NOMINAL_SIZE_LABEL = 'Nominal AN size';
+
+export function fluidLineNominalSize(
+  evidence: readonly EngineeringEvidence[],
+  connectionId: string
+) {
+  const records = evidence.filter(
+    (record) => record.subjectId === connectionId && record.label === FLUID_NOMINAL_SIZE_LABEL
+  );
+  const values = records
+    .filter((record) => record.state === 'known')
+    .map((record) => {
+      const match = record.value?.trim().match(/^-?(\d+)(?:\s*AN)?$/i);
+      const size = match ? Number(match[1]) : null;
+      return size && size <= 64 && (record.unit === null || record.unit === 'AN') ? size : null;
+    });
+  const distinct = new Set(values.filter((value): value is number => value !== null));
+  if (records.some((record) => record.state === 'conflicting') || distinct.size > 1) {
+    return { dashSize: null, status: 'conflicting' as const, label: 'Size conflict' };
+  }
+
+  if (values.includes(null) || distinct.size === 0) {
+    return { dashSize: null, status: 'unknown' as const, label: 'Size unknown' };
+  }
+
+  const dashSize = [...distinct][0]!;
+  return { dashSize, status: 'known' as const, label: `-${dashSize}AN` };
+}
 
 export type FluidComponentRole =
   | 'endpoint'

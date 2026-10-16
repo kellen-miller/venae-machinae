@@ -2071,7 +2071,7 @@ const build = {
 };
 
 const payload = {
-  schemaVersion: 8,
+  schemaVersion: 9,
   project: {
     id: 'reference-rx7-v1',
     name: 'Illustrative RX-7 vehicle systems study',

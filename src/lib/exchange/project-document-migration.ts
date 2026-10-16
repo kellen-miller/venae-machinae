@@ -10,7 +10,13 @@ type ReleasedProjectDocumentMigration = Readonly<{
 }>;
 
 export const RELEASED_PROJECT_DOCUMENT_MIGRATIONS: readonly ReleasedProjectDocumentMigration[] =
-  Object.freeze([]);
+  Object.freeze([
+    {
+      fromVersion: 8,
+      toVersion: 9,
+      migrate: (document) => ({ ...document, schemaVersion: 9, diagramLayout: null })
+    }
+  ]);
 
 export type ProjectDocumentMigrationOutcome =
   | Readonly<{

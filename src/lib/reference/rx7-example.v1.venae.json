@@ -7,7 +7,7 @@
     "projectRevision": 42
   },
   "payload": {
-    "schemaVersion": 8,
+    "schemaVersion": 9,
     "project": {
       "id": "reference-rx7-v1",
       "name": "Illustrative RX-7 vehicle systems study",
@@ -6155,7 +6155,8 @@
       "opacity": "0.18",
       "visible": false,
       "locked": true
-    }
+    },
+    "diagramLayout": null
   },
   "assets": [
     {
@@ -6167,7 +6168,7 @@
   ],
   "integrity": {
     "algorithm": "SHA-256",
-    "payloadSha256": "c310b6c947617ea73eeb63d211ba958452216797f215ceead3109660c146f56f",
+    "payloadSha256": "20e317552dcaeaf5117aeeeb9213432b75bcbb8cc1007b87873d88c84d461cf8",
     "exportMetadataSha256": "b066613fc8edcedf497d33986048a82854791f1e74b827ac63a87e2351bc9901",
     "assets": [
       {

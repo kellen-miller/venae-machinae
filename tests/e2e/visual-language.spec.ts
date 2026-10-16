@@ -21,31 +21,40 @@ test('MVP-UX-006 keeps physical construction and overlay channels additive', asy
   const pipe = page.locator('[data-renderer-connection="pipe-oil"]');
 
   await expect(wire).toHaveAttribute('data-physical-kind', 'wire');
-  await expect(wire.locator('[data-physical-layer="outer"]')).toHaveAttribute('stroke-width', '6');
+  expect(
+    Number(await wire.locator('[data-physical-layer="outer"]').getAttribute('stroke-width'))
+  ).toBeGreaterThan(
+    Number(await wire.locator('[data-physical-layer="medium"]').getAttribute('stroke-width'))
+  );
   await expect(wire.locator('[data-physical-layer="stripe"]')).toHaveCount(1);
   await expect(hose).toHaveAttribute('data-physical-kind', 'hose');
   await expect(tube).toHaveAttribute('data-physical-kind', 'tube');
   await expect(pipe).toHaveAttribute('data-physical-kind', 'pipe');
   for (const fluid of [hose, tube, pipe]) {
-    await expect(fluid.locator('[data-physical-layer="outer"]')).toHaveAttribute(
-      'stroke-width',
-      '13'
+    await expect(fluid).toHaveAttribute('data-nominal-size', 'unknown');
+    expect(
+      Number(await fluid.locator('[data-physical-layer="outer"]').getAttribute('stroke-width'))
+    ).toBeGreaterThan(
+      Number(await fluid.locator('[data-physical-layer="medium"]').getAttribute('stroke-width'))
     );
   }
 
-  const constructionCues = await Promise.all(
-    [hose, tube, pipe].map((connection) =>
-      connection.locator('[data-physical-layer="medium"]').evaluate((path) => {
-        const style = getComputedStyle(path);
-        return { dash: style.strokeDasharray, cap: style.strokeLinecap };
-      })
+  await expect(hose.locator('.hose-braid')).toHaveCount(1);
+  await expect(tube.locator('.hose-braid')).toHaveCount(0);
+  await expect(pipe.locator('.hose-braid')).toHaveCount(0);
+  expect(
+    await pipe
+      .locator('[data-physical-layer="medium"]')
+      .evaluate((path) => getComputedStyle(path).strokeDasharray)
+  ).not.toBe('none');
+  const outlines = await Promise.all(
+    [hose, tube].map((connection) =>
+      connection
+        .locator('[data-physical-layer="outer"]')
+        .evaluate((path) => getComputedStyle(path).stroke)
     )
   );
-  expect(constructionCues).toEqual([
-    { dash: '2px, 3px', cap: 'round' },
-    { dash: 'none', cap: 'butt' },
-    { dash: '18px, 3px', cap: 'square' }
-  ]);
+  expect(outlines[0]).not.toBe(outlines[1]);
 
   async function channels(connectionId: string): Promise<string[]> {
     return page
@@ -133,9 +142,9 @@ test('MVP-NFR-002/MVP-ARCH-008 exposes mobile review and same-origin lease block
   await page.setViewportSize({ width: 699, height: 900 });
   await page.reload();
   await expect(page.locator('[data-capability-reason="mobile-review"]')).toContainText(
-    'Project mutation remains blocked below 700 CSS pixels'
+    'Use a larger screen to edit.'
   );
-  await expect(page.getByRole('button', { name: 'Add mode' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Add mode', includeHidden: true })).toBeDisabled();
   await page.locator('[data-renderer-node="battery"] .node-shell').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('[data-primary-selection="battery"]')).toBeVisible();

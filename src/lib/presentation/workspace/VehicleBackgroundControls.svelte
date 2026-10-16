@@ -133,19 +133,24 @@
   .background-controls {
     position: absolute;
     z-index: 9;
-    right: 21.5rem;
-    bottom: 3.9rem;
-    width: min(31rem, calc(100% - 27rem));
-    border: 1px solid rgb(35 73 72 / 36%);
-    border-radius: 0.6rem 0.2rem 0.6rem 0.2rem;
-    background: rgb(246 249 244 / 94%);
-    color: #263f40;
+    right: 14rem;
+    bottom: 1.2rem;
+    width: max-content;
+    max-width: calc(100% - 7rem);
+    border: 1px solid #344754;
+    border-radius: 0.6rem;
+    background: rgb(20 31 41 / 96%);
+    color: #d7e7ed;
     box-shadow: 0 1rem 3rem rgb(17 40 40 / 22%);
+  }
+
+  .background-controls[open] {
+    width: 26rem;
   }
 
   summary {
     padding: 0.6rem 0.75rem;
-    color: #2e5654;
+    color: #a9bdca;
     font: 0.64rem var(--font-mono);
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -160,7 +165,7 @@
 
   p {
     margin: 0 0 0.65rem;
-    color: #667a77;
+    color: #a9bdca;
     font-size: 0.68rem;
     line-height: 1.45;
   }
@@ -181,12 +186,12 @@
     gap: 0.45rem;
     margin: 0;
     padding: 0.65rem;
-    border: 1px solid #cad7d2;
+    border: 1px solid #344754;
   }
 
   legend,
   label span {
-    color: #647875;
+    color: #a9bdca;
     font: 0.56rem var(--font-mono);
     text-transform: uppercase;
   }
@@ -204,10 +209,10 @@
   select,
   button {
     min-height: 2.1rem;
-    border: 1px solid #a7bbb5;
+    border: 1px solid #344754;
     border-radius: 0.3rem;
-    background: #fffefb;
-    color: #233f40;
+    background: #0f1d28;
+    color: #d7e7ed;
     font: 0.7rem var(--font-mono);
   }
 
@@ -239,7 +244,7 @@
   }
 
   button.secondary {
-    background: #f7f9f5;
+    background: #1a2b35;
     color: #8a3f2d;
   }
 
@@ -258,6 +263,8 @@
 
   @media (max-width: 43.75rem) {
     .background-controls {
+      top: 4rem;
+      bottom: auto;
       right: 0.5rem;
       width: 12rem;
     }

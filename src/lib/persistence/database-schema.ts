@@ -1,11 +1,25 @@
 import { z } from 'zod';
 
 import { projectDocumentSchema } from './project-document';
+import { migrateProjectDocument } from '../exchange/project-document-migration';
+
 import { APPLICATION_VERSIONS } from '../version/version-registry';
 
 import type { DBSchema } from 'idb';
 
 z.config({ jitless: true });
+
+const storedDocumentSchema = z.preprocess((value) => {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    !('schemaVersion' in value) ||
+    value.schemaVersion !== 8
+  )
+    return value;
+  const outcome = migrateProjectDocument(value);
+  return outcome.migrated ? outcome.document : value;
+}, projectDocumentSchema);
 
 export const PROJECT_LIBRARY_DATABASE_NAME = 'venae-machinae';
 export const PROJECT_LIBRARY_DATABASE_VERSION = APPLICATION_VERSIONS.indexedDbStructure;
@@ -21,7 +35,7 @@ const sha256 = z.string().regex(/^[a-f0-9]{64}$/);
 export const storedProjectSchema = z.strictObject({
   projectId: identity,
   revision: z.number().int().nonnegative(),
-  snapshot: projectDocumentSchema
+  snapshot: storedDocumentSchema
 });
 
 export const storedAssetSchema = z.strictObject({
@@ -36,7 +50,7 @@ export const recoveryCheckpointSchema = z.strictObject({
   projectRevision: z.number().int().nonnegative(),
   reason: z.string().min(1).max(240),
   createdAt: utcDateTime,
-  snapshot: projectDocumentSchema
+  snapshot: storedDocumentSchema
 });
 
 export const namedSnapshotSchema = z.strictObject({
@@ -46,7 +60,7 @@ export const namedSnapshotSchema = z.strictObject({
   name: z.string().min(1).max(240),
   note: z.string().max(4_000),
   createdAt: utcDateTime,
-  snapshot: projectDocumentSchema
+  snapshot: storedDocumentSchema
 });
 
 export const templateRevisionSchema = z.strictObject({

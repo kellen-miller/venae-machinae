@@ -1,3 +1,4 @@
+import { diagramLayoutSchema, validateDiagramLayout } from '../project/diagram-layout';
 import { z } from 'zod';
 
 import { validateElectricalModel } from '../electrical/electrical';
@@ -439,6 +440,7 @@ const fluidModelSchema = z.strictObject({
 
 export const projectDocumentSchema = z.strictObject({
   schemaVersion: z.literal(APPLICATION_VERSIONS.projectDocumentSchema),
+  diagramLayout: diagramLayoutSchema.nullable().default(null),
   project: z.strictObject({
     id: identity,
     name: z.string().min(1).max(240),
@@ -506,6 +508,7 @@ export function projectSnapshotToDocument(snapshot: ProjectSnapshot): ProjectDoc
       createdAt: snapshot.createdAt
     },
     topology: snapshot.topology,
+    diagramLayout: snapshot.diagramLayout,
     electrical: snapshot.electrical,
     fluid: snapshot.fluid,
     calculations: snapshot.calculations,
@@ -533,6 +536,7 @@ export function projectDocumentToSnapshot(document: ProjectDocument): ProjectSna
     revision: parsed.project.revision,
     createdAt: parsed.project.createdAt,
     topology: parsed.topology,
+    diagramLayout: parsed.diagramLayout,
     electrical: parsed.electrical,
     fluid: parsed.fluid,
     calculations: parsed.calculations,
@@ -550,6 +554,9 @@ export function projectDocumentToSnapshot(document: ProjectDocument): ProjectSna
     assetHashes: parsed.assetHashes,
     vehicleBackground: parsed.vehicleBackground
   };
+  const diagramRejection = validateDiagramLayout(snapshot.diagramLayout, snapshot.topology);
+  if (diagramRejection)
+    throw new Error(`Persisted Project diagram is invalid: ${diagramRejection}`);
   const rejection = validateTopology(snapshot.topology);
   if (rejection) throw new Error(`Persisted Project topology is invalid: ${rejection.message}`);
   const electricalRejection = validateElectricalModel(

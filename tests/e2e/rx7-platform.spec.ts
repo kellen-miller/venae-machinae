@@ -45,9 +45,9 @@ test('MVP-NFR-001 MVP-NFR-002 MVP-NFR-004 MVP-ACC-015 crosses desktop, tablet, a
   await expect(mobileNotice).toBeVisible();
   await expect(page.locator(`[data-project-revision="${durableRevision}"]`)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Apply project edit' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Add mode' })).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Connect mode' })).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Route mode' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Add mode' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Connect mode' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Route mode' })).toBeHidden();
   await page.getByRole('combobox', { name: 'Operating State' }).selectOption({
     label: 'Run Hot / Fan On'
   });

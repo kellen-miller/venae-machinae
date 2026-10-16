@@ -18,7 +18,8 @@
     mode,
     background,
     backgroundAsset,
-    onintent
+    onintent,
+    motionPaused
   }: {
     projection: RendererProjection;
     viewport: RendererViewport;
@@ -27,6 +28,7 @@
     background: VehicleBackground | null;
     backgroundAsset: ProjectAsset | null;
     onintent: RendererIntentHandler;
+    motionPaused: boolean;
   } = $props();
 
   function attachBackgroundSource(image: HTMLImageElement): () => void {
@@ -59,7 +61,7 @@
     </div>
   {/if}
 
-  <TopologyRenderer {projection} {viewport} {capability} {onintent} />
+  <TopologyRenderer {projection} {viewport} {capability} {onintent} {motionPaused} />
 </section>
 
 <style>
@@ -71,21 +73,37 @@
 
   .canvas-workspace :global(.renderer-shell) {
     height: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    min-height: 0;
   }
 
   .canvas-workspace :global(.canvas-lens) {
     height: 100%;
+    min-height: 0;
   }
 
   .canvas-workspace :global(.svg-frame),
-  .canvas-workspace :global(svg) {
+  .canvas-workspace :global(.svg-frame > svg) {
     height: 100%;
-    min-height: 100%;
+    min-height: 0;
     border: 0;
     border-radius: 0;
   }
 
+  .canvas-workspace :global(.svg-frame > svg) {
+    width: calc(100% - 21rem);
+  }
+
+  .canvas-workspace:has(.vehicle-background) :global(.svg-frame) {
+    background: transparent;
+  }
+
   .canvas-workspace :global(.semantic-lens) {
+    display: none;
+  }
+
+  .canvas-workspace :global(.canvas-heading) {
     display: none;
   }
 
@@ -93,15 +111,15 @@
     position: absolute;
     z-index: 3;
     right: 1rem;
-    bottom: 0.9rem;
+    bottom: 4.2rem;
     display: flex;
     gap: 0.42rem;
     align-items: center;
     padding: 0.32rem 0.55rem;
     border: 1px solid rgb(29 68 68 / 28%);
     border-radius: 999px;
-    background: rgb(247 250 246 / 86%);
-    color: #304e50;
+    background: rgb(20 29 36 / 90%);
+    color: #99acb7;
     font-family: var(--font-mono);
     font-size: 0.6rem;
     letter-spacing: 0.06em;
@@ -110,7 +128,7 @@
   }
 
   .canvas-status strong {
-    color: #a34d28;
+    color: #f1ae83;
   }
 
   .vehicle-background {
@@ -139,6 +157,9 @@
   }
 
   @media (max-width: 43.75rem) {
+    .canvas-workspace :global(.svg-frame > svg) {
+      width: 100%;
+    }
     .canvas-status {
       bottom: 4.7rem;
     }

@@ -24,7 +24,7 @@ async function addPrimitive(
   count = 1
 ): Promise<void> {
   await page
-    .getByLabel('Fluid System for new fluid primitive')
+    .getByRole('combobox', { name: 'Add to system', exact: true })
     .selectOption({ label: systemLabel });
   for (let index = 0; index < count; index += 1) {
     await page.getByRole('button', { name }).click();
@@ -338,7 +338,7 @@ test('MVP-FLUID-001..005 builds coolant, oil, and fuel construction', async ({ p
     };
   }, projectId);
   expect(stored).toEqual({
-    schemaVersion: 8,
+    schemaVersion: 9,
     fluidSystemCount: 3,
     mediumCount: 3,
     fluidRecordCount: 3,

@@ -240,7 +240,7 @@ describe('MVP-UX-010 MVP-ACC-001 through MVP-ACC-010 bundled RX-7 example', () =
         inputFingerprint: 'a'.repeat(64),
         formulaCatalogVersion: 1,
         validationRuleCatalogVersion: 1,
-        schemaVersion: 8,
+        schemaVersion: 9,
         scope: { kind: 'validate-project' },
         project
       };

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { beforeNavigate } from '$app/navigation';
   import { resolve } from '$app/paths';
+  import { page } from '$app/state';
   import { onMount, tick } from 'svelte';
 
   import { createProjectExchange } from '../../exchange/project-exchange';
@@ -13,6 +14,7 @@
   } from '../../reporting/generate-output';
   import { projectSnapshotToDocument } from '../../persistence/project-document';
   import { projectSnapshotToRendererProjection } from '../../renderer/projection';
+  import { createSVGModel, fitRendererProjection } from '../../renderer/svg/adapter';
   import { createProjectComponentFromPrimitive, PRIMITIVES } from '../../reference/primitives';
   import { setProjectSessionContext } from '../../session/project-context';
   import CanvasWorkspace from './CanvasWorkspace.svelte';
@@ -62,6 +64,8 @@
     { type: 'insert-electrical-branch' }
   > | null>(null);
   let branchPreview = $state<ImpactPreview | null>(null);
+  let layoutBusy = $state(false);
+  let layoutRequest: AbortController | null = null;
   let prefersReducedMotion = $state(false);
   let printableReport = $state<PrintableReport | null>(null);
   const canAuthor = $derived(session.view.capability.mode === 'author');
@@ -144,6 +148,16 @@
   });
 
   onMount(() => {
+    const requestedSystem = page.url.searchParams.get('system');
+    presentation.systemFilterId =
+      session.view.snapshot.topology.systems.find(
+        (system) => system.id === requestedSystem || system.label === requestedSystem
+      )?.id ?? null;
+    presentation.canvasViewport = fitRendererProjection(
+      projectSnapshotToRendererProjection(session.view.snapshot, {
+        systemFilterId: presentation.systemFilterId
+      })
+    );
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const update = () => (prefersReducedMotion = preference.matches);
     const warnAboutUnsavedChanges = (event: BeforeUnloadEvent) => {
@@ -193,12 +207,93 @@
     window.addEventListener('pagehide', flushBeforePageHide);
     window.addEventListener('venae:prepare-application-reload', prepareApplicationReload);
     return () => {
+      layoutRequest?.abort();
       preference.removeEventListener('change', update);
       window.removeEventListener('beforeunload', warnAboutUnsavedChanges);
       window.removeEventListener('pagehide', flushBeforePageHide);
       window.removeEventListener('venae:prepare-application-reload', prepareApplicationReload);
     };
   });
+
+  async function tidyVisibleDiagram(): Promise<void> {
+    if (!canAuthor || layoutBusy || projection.nodes.length === 0) return;
+    const source = session.view.snapshot;
+    const system = presentation.systemFilterId,
+      domain = presentation.domainFilter;
+    const input = projection;
+    const request = new AbortController();
+    layoutRequest = request;
+    layoutBusy = true;
+    interactionStatus = 'Tidying parts and lines… You can still pan and zoom.';
+    try {
+      const { tidyDiagram } = await import('../../renderer/diagram-layout-client');
+      let layout = await tidyDiagram(input, request.signal);
+      // Pack below hidden cards, routes and badges, preserving their arrangement.
+      const visibleIds = new Set(input.nodes.map((node) => node.id));
+      const fullProjection = projectSnapshotToRendererProjection(session.view.snapshot);
+      const hidden = fullProjection.nodes.filter((node) => !visibleIds.has(node.id));
+      if (hidden.length > 0) {
+        const hiddenRoutes = createSVGModel(fullProjection, 'review').connections.filter(
+          (edge) => !visibleIds.has(edge.source.node.id) && !visibleIds.has(edge.target.node.id)
+        );
+        const hiddenBottom = Math.max(
+          ...hidden.map((node) => node.position.y + node.height),
+          ...hiddenRoutes.flatMap((edge) => [
+            ...edge.points.map((point) => point.y + 24),
+            edge.labelPoint.y + 40
+          ])
+        );
+        const layoutTop = Math.min(
+          ...layout.nodes.map((node) => node.y),
+          ...layout.edges.flatMap((edge) => [
+            ...edge.points.map((point) => point.y - 24),
+            ...(edge.label ? [edge.label.y - 40] : [])
+          ])
+        );
+        const offset = Math.ceil((hiddenBottom + 128 - layoutTop) / 8) * 8;
+        layout = {
+          ...layout,
+          nodes: layout.nodes.map((node) => ({ ...node, y: node.y + offset })),
+          edges: layout.edges.map((edge) => ({
+            ...edge,
+            points: edge.points.map((point) => ({ ...point, y: point.y + offset })),
+            label: edge.label ? { ...edge.label, y: edge.label.y + offset } : null
+          }))
+        };
+      }
+      if (request.signal.aborted) return;
+      if (
+        // Evaluation publication advances revision without changing layout inputs.
+        session.view.snapshot.topology !== source.topology ||
+        session.view.snapshot.evidence !== source.evidence ||
+        session.view.snapshot.fluid !== source.fluid ||
+        session.view.snapshot.diagramLayout !== source.diagramLayout ||
+        system !== presentation.systemFilterId ||
+        domain !== presentation.domainFilter
+      ) {
+        interactionStatus = 'Diagram changed while tidying. Run Tidy diagram again.';
+        return;
+      }
+
+      if (execute({ type: 'tidy-diagram', layout, causationId: crypto.randomUUID() })) {
+        presentation.canvasViewport = fitRendererProjection(
+          projectSnapshotToRendererProjection(session.view.snapshot, {
+            systemFilterId: system,
+            domainFilter: domain
+          })
+        );
+        interactionStatus = 'Diagram tidied. Undo restores your previous arrangement.';
+      }
+    } catch (error) {
+      if (!request.signal.aborted)
+        interactionStatus = error instanceof Error ? error.message : 'Could not tidy this diagram.';
+    } finally {
+      if (layoutRequest === request) {
+        layoutRequest = null;
+        layoutBusy = false;
+      }
+    }
+  }
 
   function execute(action: ProjectAction): boolean {
     const outcome = session.execute(action);
@@ -756,9 +851,20 @@
       canUndo={session.view.canUndo}
       canRedo={session.view.canRedo}
       {canAuthor}
+      {layoutBusy}
+      tidyAvailable={projection.nodes.length > 0}
+      ontidy={tidyVisibleDiagram}
       onmode={setMode}
       ondomainfilter={(domain) => (presentation.domainFilter = domain)}
-      onsystemfilter={(systemId) => (presentation.systemFilterId = systemId)}
+      onsystemfilter={(systemId) => {
+        presentation.systemFilterId = systemId;
+        presentation.canvasViewport = fitRendererProjection(
+          projectSnapshotToRendererProjection(session.view.snapshot, {
+            domainFilter: presentation.domainFilter,
+            systemFilterId: systemId
+          })
+        );
+      }}
       onstate={activateOperatingState}
       onchannel={(channel, enabled) => presentation.setOverlayChannel(channel, enabled)}
       onmotion={(paused) => (presentation.motionPaused = paused)}
@@ -782,6 +888,7 @@
         viewport={presentation.canvasViewport}
         capability={rendererCapability}
         mode={presentation.mode}
+        {motionPaused}
         background={session.view.snapshot.vehicleBackground}
         {backgroundAsset}
         onintent={handleIntent}
@@ -837,6 +944,7 @@
       mode={presentation.mode}
       denseViewOpen={activeDenseView !== null}
       {canAuthor}
+      onaction={execute}
       onmove={moveComponent}
       onaddprimitive={addPrimitive}
       ondelete={deleteTopologySubject}
@@ -968,7 +1076,7 @@
     min-height: 40rem;
     overflow: hidden;
     padding: 0.55rem;
-    background: #102123;
+    background: #0c141c;
   }
 
   .workspace-header {
@@ -979,7 +1087,7 @@
     min-height: 4.4rem;
     padding: 0.55rem 0.75rem;
     border: 1px solid var(--color-line);
-    border-radius: var(--radius-medium) var(--radius-small) var(--radius-medium) var(--radius-small);
+    border-radius: 0.65rem;
     background: rgb(17 29 31 / 97%);
   }
 
@@ -1004,8 +1112,11 @@
   }
 
   h1 {
-    font-family: var(--font-display);
-    font-size: clamp(1.2rem, 2.1vw, 1.8rem);
+    max-width: none;
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.5vw, 1.35rem);
+    font-weight: 550;
+    letter-spacing: -0.025em;
     line-height: 1;
   }
 
@@ -1019,6 +1130,14 @@
     color: var(--color-accent-ink);
     font-weight: 750;
     cursor: pointer;
+  }
+
+  .revision-action {
+    border: 1px solid #344754;
+    background: #1a2b35;
+    color: #bfd0d9;
+    font-size: 0.75rem;
+    font-weight: 500;
   }
 
   .overlay-inspector {

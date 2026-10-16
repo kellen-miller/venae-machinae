@@ -20,6 +20,9 @@ import type { Point, SubjectId, Topology } from '../topology/topology';
 import type { ValidationApplicabilityDecision, ValidationHistory } from '../validation/finding';
 import type { BuildRecord } from '../build/build-record';
 
+import type { DiagramLayout } from './diagram-layout';
+
+export type { DiagramLayout } from './diagram-layout';
 export type { OperatingState } from '../operating-state/operating-state';
 
 export type ResultId = string;
@@ -139,6 +142,7 @@ export type ProjectSnapshot = Readonly<{
   settings: Readonly<{ unitSystem: 'metric' | 'imperial' }>;
   assetHashes: readonly string[];
   vehicleBackground: VehicleBackground | null;
+  diagramLayout: DiagramLayout | null;
 }>;
 
 export function createBlankProject(input: {
@@ -167,7 +171,8 @@ export function createBlankProject(input: {
     operatingStates: [],
     settings: { unitSystem: 'metric' },
     assetHashes: [],
-    vehicleBackground: null
+    vehicleBackground: null,
+    diagramLayout: null
   };
 }
 
