@@ -1,6 +1,6 @@
 import { validateTopology } from '../topology/topology';
 import { validateElectricalModel } from '../electrical/electrical';
-import { validateFluidModel } from '../fluid/fluid';
+import { FLUID_NOMINAL_SIZE_LABEL, validateFluidModel } from '../fluid/fluid';
 import { getFormulaDefinition } from '../calculation/formula-catalog';
 import { unitSemantic } from '../calculation/unit-registry';
 import { validateOperatingStateModel } from '../operating-state/operating-state';
@@ -1051,6 +1051,50 @@ export function applyProjectAction(
       changedSubjects = [action.specification.partDefinitionId];
       undoLabel = `Record cable evidence for ${action.specification.partDefinitionId}`;
       break;
+
+    case 'configure-fluid-line-size': {
+      const connection = snapshot.topology.connections.find(
+        (item) => item.id === action.connectionId
+      );
+      const existing = snapshot.evidence.find((item) => item.id === action.evidenceId);
+      if (
+        connection?.domain !== 'fluid' ||
+        !action.evidenceId.trim() ||
+        action.evidenceId.length > 160 ||
+        !action.provenance.trim() ||
+        (action.dashSize !== null &&
+          (!Number.isInteger(action.dashSize) || action.dashSize < 1 || action.dashSize > 64)) ||
+        (existing &&
+          (existing.subjectId !== connection.id || existing.label !== FLUID_NOMINAL_SIZE_LABEL)) ||
+        (!existing && projectIdentityExists(snapshot, action.evidenceId))
+      ) {
+        return reject(
+          'invalid-fluid-record',
+          'Nominal size requires a fluid connection, a dash size from 1 to 64 or Unknown, and provenance.'
+        );
+      }
+
+      next = {
+        ...snapshot,
+        evidence: [
+          ...snapshot.evidence.filter((item) => item.id !== action.evidenceId),
+          {
+            id: action.evidenceId,
+            subjectId: connection.id,
+            label: FLUID_NOMINAL_SIZE_LABEL,
+            state: action.dashSize === null ? 'unknown' : 'known',
+            value: action.dashSize === null ? null : String(action.dashSize),
+            unit: 'AN',
+            provenance: action.provenance.trim(),
+            conflictValues: []
+          }
+        ],
+        results: staleResults
+      };
+      changedSubjects = [connection.id, action.evidenceId];
+      undoLabel = `Set ${connection.label} nominal size`;
+      break;
+    }
 
     case 'configure-fluid-line':
       next = {

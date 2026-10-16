@@ -1,4 +1,5 @@
 import type { ProjectSnapshot } from '../project/project';
+import { fluidLineNominalSize } from '../fluid/fluid';
 
 export type RendererPoint = Readonly<{
   x: number;
@@ -20,6 +21,8 @@ export type RendererNode = Readonly<{
   id: string;
   label: string;
   kind: string;
+  role?: string;
+  accentColor?: string;
   position: RendererPoint;
   width: number;
   height: number;
@@ -39,7 +42,13 @@ export type RendererPhysicalConnection = Readonly<{
   conductorStripe?: string;
   conductorScale?: number;
   medium?: string;
+  mediumLabel?: string;
+  mediumColor?: string;
+  nominalDashSize?: number | null;
+  sizeLabel?: string;
+  sizeStatus?: 'known' | 'unknown' | 'conflicting';
   temperature?: string;
+  directionCurrent?: boolean;
   direction?: 'forward' | 'reverse' | 'bidirectional' | 'unknown';
 }>;
 
@@ -249,44 +258,88 @@ export function projectSnapshotToRendererProjection(
   const visiblePortIds = new Set(
     filteredComponents.flatMap((component) => component.ports.map((port) => port.id))
   );
-  const nodes: RendererNode[] = filteredComponents.map((component) => ({
-    id: component.id,
-    label: component.label,
-    kind: component.kind,
-    position: { x: Number(component.position.x), y: Number(component.position.y) },
-    width: 176,
-    height: Math.max(96, 64 + component.ports.length * 24),
-    selected: options.selectedSubjectId === component.id,
-    previewed: options.previewSubjectId === component.id,
-    ports: component.ports.map((port, index) => ({
-      id: port.id,
-      nodeId: component.id,
-      label: port.label,
-      domain: port.domain,
-      direction: 'bidirectional',
-      side: index % 2 === 0 ? 'left' : 'right',
-      offset: (index + 1) / (component.ports.length + 1),
-      compatibility:
-        previewSource?.id === port.id
-          ? 'compatible'
-          : previewSource
-            ? previewSource.componentId !== port.componentId &&
-              previewSource.domain === port.domain &&
-              previewSource.mediumId === port.mediumId &&
-              (previewSource.interfaceKey === null ||
-                port.interfaceKey === null ||
-                previewSource.interfaceKey === port.interfaceKey)
-              ? 'compatible'
-              : 'blocked'
-            : 'idle'
-    }))
-  }));
+  const mediumColors = ['#69c9e4', '#e9b26e', '#a9d58a', '#e3a0b5', '#b5a3e4', '#76cbb5'];
+  const media = new Map(
+    snapshot.fluid.media.map((medium, index) => [
+      medium.id,
+      {
+        label: medium.label,
+        color: mediumColors[index % mediumColors.length]!
+      }
+    ])
+  );
+  const componentByPort = new Map(
+    snapshot.topology.components.flatMap((component) =>
+      component.ports.map((port) => [port.id, component] as const)
+    )
+  );
+  const peerByPort = new Map(
+    snapshot.topology.connections.flatMap(
+      (connection) =>
+        [
+          [connection.sourcePortId, componentByPort.get(connection.targetPortId)],
+          [connection.targetPortId, componentByPort.get(connection.sourcePortId)]
+        ] as const
+    )
+  );
+  const nodes: RendererNode[] = filteredComponents.map((component) => {
+    const sides = component.ports.map((port, index) => {
+      const peer = peerByPort.get(port.id);
+      return peer
+        ? Number(peer.position.x) >= Number(component.position.x)
+          ? 'right'
+          : 'left'
+        : index % 2 === 0
+          ? 'left'
+          : 'right';
+    });
+    const height = Math.max(112, 70 + component.ports.length * 22);
+    const mediumId = component.ports.find((port) => port.mediumId)?.mediumId;
+    return {
+      id: component.id,
+      label: component.label,
+      kind: component.kind,
+      position: { x: Number(component.position.x), y: Number(component.position.y) },
+      width: 176,
+      height,
+      role:
+        snapshot.fluid.components.find((record) => record.componentId === component.id)?.role ??
+        component.kind,
+      accentColor: mediumId ? (media.get(mediumId)?.color ?? '#8cbfc7') : '#b4a8e9',
+      selected: options.selectedSubjectId === component.id,
+      previewed: options.previewSubjectId === component.id,
+      ports: component.ports.map((port, index) => ({
+        id: port.id,
+        nodeId: component.id,
+        label: port.label,
+        domain: port.domain,
+        direction: 'bidirectional',
+        side: sides[index]!,
+        offset: (72 + index * 22) / height,
+        compatibility:
+          previewSource?.id === port.id
+            ? 'compatible'
+            : previewSource
+              ? previewSource.componentId !== port.componentId &&
+                previewSource.domain === port.domain &&
+                previewSource.mediumId === port.mediumId &&
+                (previewSource.interfaceKey === null ||
+                  port.interfaceKey === null ||
+                  previewSource.interfaceKey === port.interfaceKey)
+                ? 'compatible'
+                : 'blocked'
+              : 'idle'
+      }))
+    };
+  });
   const connections: RendererConnection[] = filteredConnections
     .filter(
       (connection) =>
         visiblePortIds.has(connection.sourcePortId) && visiblePortIds.has(connection.targetPortId)
     )
     .map((connection) => {
+      const nominalSize = fluidLineNominalSize(snapshot.evidence, connection.id);
+      const medium = connection.mediumId ? media.get(connection.mediumId) : undefined;
       const route = snapshot.topology.routes.find(
         (candidate) => candidate.id === connection.routeId
       );
@@ -313,6 +366,11 @@ export function projectSnapshotToRendererProjection(
             : {
                 kind: connection.kind.replace('fluid-', '') as 'hose' | 'tube' | 'pipe',
                 ...(connection.mediumId ? { medium: connection.mediumId } : {}),
+                ...(medium ? { mediumLabel: medium.label, mediumColor: medium.color } : {}),
+                nominalDashSize: nominalSize.dashSize,
+                sizeLabel: nominalSize.label,
+                sizeStatus: nominalSize.status,
+                directionCurrent: activeOverlayResult?.status === 'current',
                 direction:
                   direction === 'forward' ||
                   direction === 'reverse' ||

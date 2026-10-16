@@ -142,7 +142,7 @@ test('MVP-STATE-005 MVP-STATE-012 authors states and compares synchronized proje
   await openOperatingStateProject(page);
   await activateState(page, 'Run Hot / Fan On');
 
-  await page.getByText('Overlay channels', { exact: true }).click();
+  await page.getByText('Display', { exact: true }).click();
   const potential = page.getByRole('checkbox', { name: 'Electrical potential Overlay Channel' });
   const current = page.getByRole('checkbox', { name: 'Electrical current Overlay Channel' });
   const signal = page.getByRole('checkbox', { name: 'Signal direction Overlay Channel' });
@@ -268,7 +268,7 @@ test('MVP-STATE-013 preserves stale overlays and topology when evaluation fails'
   await openOperatingStateProject(page);
   await activateState(page, 'Run Hot / Fan On');
   await expect(page.locator('[data-save-status="saved"]')).toBeVisible();
-  await page.getByText('Overlay channels', { exact: true }).click();
+  await page.getByText('Display', { exact: true }).click();
   await page.getByRole('checkbox', { name: 'Pause direction motion' }).uncheck();
   await expect(page.locator('[data-motion-paused="true"]')).toBeVisible();
 

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { beforeNavigate } from '$app/navigation';
   import { resolve } from '$app/paths';
+  import { page } from '$app/state';
   import { onMount, tick } from 'svelte';
 
   import { createProjectExchange } from '../../exchange/project-exchange';
@@ -13,6 +14,7 @@
   } from '../../reporting/generate-output';
   import { projectSnapshotToDocument } from '../../persistence/project-document';
   import { projectSnapshotToRendererProjection } from '../../renderer/projection';
+  import { fitRendererProjection } from '../../renderer/svg/adapter';
   import { createProjectComponentFromPrimitive, PRIMITIVES } from '../../reference/primitives';
   import { setProjectSessionContext } from '../../session/project-context';
   import CanvasWorkspace from './CanvasWorkspace.svelte';
@@ -144,6 +146,16 @@
   });
 
   onMount(() => {
+    const requestedSystem = page.url.searchParams.get('system');
+    presentation.systemFilterId =
+      session.view.snapshot.topology.systems.find(
+        (system) => system.id === requestedSystem || system.label === requestedSystem
+      )?.id ?? null;
+    presentation.canvasViewport = fitRendererProjection(
+      projectSnapshotToRendererProjection(session.view.snapshot, {
+        systemFilterId: presentation.systemFilterId
+      })
+    );
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const update = () => (prefersReducedMotion = preference.matches);
     const warnAboutUnsavedChanges = (event: BeforeUnloadEvent) => {
@@ -758,7 +770,15 @@
       {canAuthor}
       onmode={setMode}
       ondomainfilter={(domain) => (presentation.domainFilter = domain)}
-      onsystemfilter={(systemId) => (presentation.systemFilterId = systemId)}
+      onsystemfilter={(systemId) => {
+        presentation.systemFilterId = systemId;
+        presentation.canvasViewport = fitRendererProjection(
+          projectSnapshotToRendererProjection(session.view.snapshot, {
+            domainFilter: presentation.domainFilter,
+            systemFilterId: systemId
+          })
+        );
+      }}
       onstate={activateOperatingState}
       onchannel={(channel, enabled) => presentation.setOverlayChannel(channel, enabled)}
       onmotion={(paused) => (presentation.motionPaused = paused)}
@@ -782,6 +802,7 @@
         viewport={presentation.canvasViewport}
         capability={rendererCapability}
         mode={presentation.mode}
+        {motionPaused}
         background={session.view.snapshot.vehicleBackground}
         {backgroundAsset}
         onintent={handleIntent}
@@ -837,6 +858,7 @@
       mode={presentation.mode}
       denseViewOpen={activeDenseView !== null}
       {canAuthor}
+      onaction={execute}
       onmove={moveComponent}
       onaddprimitive={addPrimitive}
       ondelete={deleteTopologySubject}
@@ -968,7 +990,7 @@
     min-height: 40rem;
     overflow: hidden;
     padding: 0.55rem;
-    background: #102123;
+    background: #0c141c;
   }
 
   .workspace-header {
@@ -979,7 +1001,7 @@
     min-height: 4.4rem;
     padding: 0.55rem 0.75rem;
     border: 1px solid var(--color-line);
-    border-radius: var(--radius-medium) var(--radius-small) var(--radius-medium) var(--radius-small);
+    border-radius: 0.65rem;
     background: rgb(17 29 31 / 97%);
   }
 
@@ -1004,8 +1026,11 @@
   }
 
   h1 {
-    font-family: var(--font-display);
-    font-size: clamp(1.2rem, 2.1vw, 1.8rem);
+    max-width: none;
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.5vw, 1.35rem);
+    font-weight: 550;
+    letter-spacing: -0.025em;
     line-height: 1;
   }
 
@@ -1019,6 +1044,14 @@
     color: var(--color-accent-ink);
     font-weight: 750;
     cursor: pointer;
+  }
+
+  .revision-action {
+    border: 1px solid #344754;
+    background: #1a2b35;
+    color: #bfd0d9;
+    font-size: 0.75rem;
+    font-weight: 500;
   }
 
   .overlay-inspector {

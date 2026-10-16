@@ -15,12 +15,14 @@
     projection,
     viewport,
     capability,
-    onintent
+    onintent,
+    motionPaused = true
   }: {
     projection: RendererProjection;
     viewport: RendererViewport;
     capability: RendererCapabilityMode;
     onintent: RendererIntentHandler;
+    motionPaused?: boolean;
   } = $props();
 
   const semanticId = $props.id();
@@ -144,7 +146,7 @@
       <strong>Revision {projection.revision}</strong>
       <em>{capability === 'author' ? 'Authoring' : 'Review'}</em>
     </div>
-    <SVGRenderer {projection} {viewport} {capability} {onintent} />
+    <SVGRenderer {projection} {viewport} {capability} {onintent} {motionPaused} />
   </div>
 
   <aside class="semantic-lens" aria-label="Topology semantic map">

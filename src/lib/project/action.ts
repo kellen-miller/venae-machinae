@@ -103,6 +103,14 @@ export type ProjectAction =
         specification: ElectricalCableSpecification;
       }>)
   | (Causation & Readonly<{ type: 'configure-fluid-line'; line: FluidLine }>)
+  | (Causation &
+      Readonly<{
+        type: 'configure-fluid-line-size';
+        connectionId: SubjectId;
+        evidenceId: SubjectId;
+        dashSize: number | null;
+        provenance: string;
+      }>)
   | (Causation & Readonly<{ type: 'configure-fluid-behavior'; behavior: FluidComponentBehavior }>)
   | (Causation &
       Readonly<{

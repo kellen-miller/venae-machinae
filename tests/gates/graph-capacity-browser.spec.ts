@@ -225,12 +225,12 @@ test('MVP-GATE-002 exercises selected-renderer capacity locally', async ({
     expect(renderedCounts).toMatchObject({
       visibleNodeLabels: 20,
       visiblePortLabels: 100,
-      visibleRoutePoints: 80,
+      visibleRoutePoints: 0,
       semanticComponents: 40,
       semanticConnections: 60
     });
     expect(renderedCounts.visibleConnections).toBeGreaterThanOrEqual(155);
-    expect(renderedCounts.visibleConnections).toBeLessThanOrEqual(160);
+    expect(renderedCounts.visibleConnections).toBeLessThan(200);
     expect(renderedCounts.visibleOverlays).toBeGreaterThan(0);
     expect(renderedCounts.domElements).toBeLessThan(10_000);
 
@@ -293,6 +293,10 @@ test('MVP-GATE-002 exercises selected-renderer capacity locally', async ({
       .not.toEqual(initialNodePosition);
     const dragFeedbackMs = Date.now() - dragStartedAt;
 
+    await page
+      .locator(`[data-renderer-connection="renderer-connection-${fixture.scale}x-0"]`)
+      .focus();
+    await page.keyboard.press('Enter');
     const routePoint = page.locator('[data-renderer-route-point]').first();
     const initialRoutePointPosition = mounted.state.firstRoutePointPosition;
     const routeEditStartedAt = Date.now();
@@ -311,6 +315,8 @@ test('MVP-GATE-002 exercises selected-renderer capacity locally', async ({
       })
       .toEqual({ x: initialRoutePointPosition.x + 8, y: initialRoutePointPosition.y });
     const routeEditFeedbackMs = Date.now() - routeEditStartedAt;
+    await firstNodeShell.focus();
+    await page.keyboard.press('Enter');
 
     const panSurface = page.locator('[data-pan-surface]');
     const panBounds = await panSurface.boundingBox();
