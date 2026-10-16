@@ -34,6 +34,9 @@
     canUndo,
     canRedo,
     canAuthor,
+    layoutBusy,
+    tidyAvailable,
+    ontidy,
     onmode,
     ondomainfilter,
     onsystemfilter,
@@ -55,6 +58,9 @@
     canUndo: boolean;
     canRedo: boolean;
     canAuthor: boolean;
+    layoutBusy: boolean;
+    tidyAvailable: boolean;
+    ontidy: () => void;
     onmode: (mode: WorkspaceMode) => void;
     ondomainfilter: (domain: 'all' | 'electrical' | 'fluid') => void;
     onsystemfilter: (systemId: string | null) => void;
@@ -176,6 +182,14 @@
   </details>
 
   <div class="utility-actions">
+    <button
+      type="button"
+      class="tidy-button"
+      disabled={!canAuthor || layoutBusy || !tidyAvailable}
+      aria-busy={layoutBusy}
+      title="Arrange the visible parts and lines. Undo restores the previous arrangement."
+      onclick={ontidy}>{layoutBusy ? 'Tidying…' : 'Tidy diagram'}</button
+    >
     <button type="button" disabled={!canUndo} onclick={onundo} aria-label="Undo last Project action"
       >↶</button
     >

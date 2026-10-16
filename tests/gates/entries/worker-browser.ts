@@ -29,7 +29,7 @@ function createInitialization(
     inputFingerprint: fingerprint,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 8,
+    schemaVersion: 9,
     scope: { kind: 'incremental', subjectIds: [] },
     project
   };
@@ -47,7 +47,7 @@ function createIncrementalChange(
     inputFingerprint: fingerprintTwo,
     formulaCatalogVersion: 1,
     validationRuleCatalogVersion: 1,
-    schemaVersion: 8,
+    schemaVersion: 9,
     scope: { kind: 'incremental', subjectIds: [] },
     changeSet: {
       baseRevision: initialization.projectRevision,

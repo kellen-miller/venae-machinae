@@ -218,7 +218,8 @@ async function evaluate(token: ActiveEvaluation): Promise<void> {
     operatingStates: evaluating.operatingStates,
     settings: { unitSystem: 'metric' },
     assetHashes: [],
-    vehicleBackground: null
+    vehicleBackground: null,
+    diagramLayout: null
   };
   for (const state of evaluating.operatingStates) {
     const overlay = evaluateOperatingStateOverlay(

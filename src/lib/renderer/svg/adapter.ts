@@ -157,12 +157,25 @@ export function createSVGModel(
     const target = ports.get(connection.targetPortId);
     if (!source || !target)
       throw new Error(`Connection ${connection.id} references an absent Port`);
+    const saved = connection.diagramRoute;
+    const first = saved?.points[0],
+      last = saved?.points.at(-1);
+    const diagramRoute =
+      first &&
+      last &&
+      Math.abs(first.x - source.center.x) < 0.01 &&
+      Math.abs(first.y - source.center.y) < 0.01 &&
+      Math.abs(last.x - target.center.x) < 0.01 &&
+      Math.abs(last.y - target.center.y) < 0.01
+        ? saved
+        : undefined;
     let points = [
       source.center,
       ...connection.routePoints.map((point) => point.position),
       target.center
     ];
-    if (connection.routePoints.length === 0) {
+    if (diagramRoute) points = [...diagramRoute.points];
+    if (!diagramRoute && connection.routePoints.length === 0) {
       const midpoint =
         source.port.side === 'left' && target.port.side === 'left'
           ? Math.min(source.node.position.x, target.node.position.x) - 44
@@ -218,7 +231,7 @@ export function createSVGModel(
     let path = points
       .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
       .join(' ');
-    if (connection.routePoints.length === 0) {
+    if (diagramRoute || connection.routePoints.length === 0) {
       path = `M ${points[0]!.x} ${points[0]!.y}`;
       for (let index = 1; index < points.length - 1; index++) {
         const previous = points[index - 1]!,
@@ -263,7 +276,7 @@ export function createSVGModel(
       target,
       points,
       path,
-      labelPoint,
+      labelPoint: diagramRoute?.label ?? labelPoint,
       strokeWidth: nominal ? Math.min(26, Math.max(4, nominal * 1.4)) : 6,
       overlayMarks: overlayMarks.get(connection.id) ?? []
     };

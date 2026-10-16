@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { seedWorkspaceProject, WORKSPACE_PROJECT_ID } from '../fixtures/workspace-project';
 
 test('line sizes edit immediately, trace endpoints, undo, and survive reload', async ({ page }) => {
   await page.goto('/examples/rx7-fd');
@@ -105,4 +106,109 @@ test('zoom stays under the cursor and connections follow a dragged part', async 
 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('.flow-cue.flowing')).toHaveCount(0);
+});
+
+test('tidy coordinates nodes, ports and sized labels; undo and durable reload preserve geometry', async ({
+  page
+}) => {
+  const errors: string[] = [];
+  const workerRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('elk-worker')) workerRequests.push(request.url());
+  });
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/examples/rx7-fd');
+  await expect(
+    page.getByRole('heading', { name: 'RX-7 FD · Stock fluid systems copy', exact: true })
+  ).toBeVisible();
+  const lines = page.locator('[data-renderer-connection]');
+  await lines.first().focus();
+  await page.keyboard.press('Enter');
+  await page.getByLabel('Nominal AN size', { exact: true }).selectOption('8');
+  const geometry = () =>
+    page.evaluate(() => ({
+      nodes: Array.from(document.querySelectorAll('[data-renderer-node]')).map((node) => ({
+        id: node.getAttribute('data-renderer-node'),
+        transform: node.getAttribute('transform'),
+        width: node.querySelector('.node-shell')?.getAttribute('width'),
+        height: node.querySelector('.node-shell')?.getAttribute('height')
+      })),
+      edges: Array.from(document.querySelectorAll('[data-renderer-connection]')).map((edge) => ({
+        id: edge.getAttribute('data-renderer-connection'),
+        path: edge.querySelector('[data-physical-layer="medium"]')?.getAttribute('d')
+      }))
+    }));
+  const before = await geometry();
+  const tidy = page.getByRole('button', { name: 'Tidy diagram', exact: true });
+  expect(workerRequests).toEqual([]);
+  await tidy.click();
+  await expect(page.locator('.interaction-status')).toHaveText(
+    'Diagram tidied. Undo restores your previous arrangement.'
+  );
+  await expect(tidy).toBeEnabled();
+  expect(workerRequests).toHaveLength(1);
+  const arranged = await geometry();
+  expect(arranged).not.toEqual(before);
+  await expect(page.locator('.line-badge')).not.toHaveCount(0);
+  await page.getByRole('button', { name: 'Undo last Project action' }).click();
+  expect(await geometry()).toEqual(before);
+  await page.getByRole('button', { name: 'Redo Project action' }).click();
+  expect(await geometry()).toEqual(arranged);
+  await expect(page.locator('[data-save-status="saved"]')).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { name: 'RX-7 FD · Stock fluid systems copy', exact: true })
+  ).toBeVisible();
+  expect(await geometry()).toEqual(arranged);
+  expect(errors).toEqual([]);
+});
+
+test('filtered tidy clears hidden authored routes that extend below their cards', async ({
+  page
+}) => {
+  await seedWorkspaceProject(page);
+  await page.evaluate(async (projectId) => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('venae-machinae');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const transaction = database.transaction('projects', 'readwrite');
+    const store = transaction.objectStore('projects');
+    const request = store.get(projectId);
+    request.onsuccess = () => {
+      const record = request.result;
+      const route = record.snapshot.topology.routes.find(
+        (candidate: { id: string }) => candidate.id === 'route-wire'
+      );
+      for (const segment of record.snapshot.topology.segments) {
+        if (route.segmentIds.includes(segment.id)) {
+          segment.start.y = '10000';
+          segment.end.y = '10000';
+        }
+      }
+      store.put(record);
+    };
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(transaction.error);
+    });
+    database.close();
+  }, WORKSPACE_PROJECT_ID);
+  await page.goto(`/projects/${WORKSPACE_PROJECT_ID}?system=system-coolant`);
+  await expect(page.locator('[data-renderer-node="pump"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Tidy diagram', exact: true }).click();
+  await expect(page.locator('.interaction-status')).toHaveText(
+    'Diagram tidied. Undo restores your previous arrangement.'
+  );
+  const positions = await page.locator('[data-renderer-node]').evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const matrix = (node as unknown as SVGGraphicsElement).transform.baseVal.consolidate()!
+        .matrix;
+      return matrix.f;
+    })
+  );
+  expect(positions.length).toBe(3);
+  expect(positions.every((y) => y > 10000)).toBe(true);
 });

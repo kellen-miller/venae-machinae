@@ -59,6 +59,7 @@ export type RendererConnection = Readonly<{
   targetPortId: string;
   physical: RendererPhysicalConnection;
   routePoints: readonly RendererRoutePoint[];
+  diagramRoute?: Readonly<{ points: readonly RendererPoint[]; label: RendererPoint | null }>;
   selected: boolean;
   previewed?: boolean;
 }>;
@@ -282,7 +283,10 @@ export function projectSnapshotToRendererProjection(
         ] as const
     )
   );
+  const savedNodes = new Map(snapshot.diagramLayout?.nodes.map((node) => [node.id, node]));
+  const savedEdges = new Map(snapshot.diagramLayout?.edges.map((edge) => [edge.id, edge]));
   const nodes: RendererNode[] = filteredComponents.map((component) => {
+    const saved = savedNodes.get(component.id);
     const sides = component.ports.map((port, index) => {
       const peer = peerByPort.get(port.id);
       return peer
@@ -300,8 +304,8 @@ export function projectSnapshotToRendererProjection(
       label: component.label,
       kind: component.kind,
       position: { x: Number(component.position.x), y: Number(component.position.y) },
-      width: 176,
-      height,
+      width: saved?.width ?? 176,
+      height: saved?.height ?? height,
       role:
         snapshot.fluid.components.find((record) => record.componentId === component.id)?.role ??
         component.kind,
@@ -314,8 +318,10 @@ export function projectSnapshotToRendererProjection(
         label: port.label,
         domain: port.domain,
         direction: 'bidirectional',
-        side: sides[index]!,
-        offset: (72 + index * 22) / height,
+        side: saved?.ports.find((candidate) => candidate.id === port.id)?.side ?? sides[index]!,
+        offset:
+          saved?.ports.find((candidate) => candidate.id === port.id)?.offset ??
+          (72 + index * 22) / height,
         compatibility:
           previewSource?.id === port.id
             ? 'compatible'
@@ -378,6 +384,7 @@ export function projectSnapshotToRendererProjection(
                     ? direction
                     : 'unknown'
               },
+        ...(savedEdges.has(connection.id) ? { diagramRoute: savedEdges.get(connection.id)! } : {}),
         routePoints:
           route?.segmentIds.flatMap((segmentId) => {
             const segment = snapshot.topology.segments.find(

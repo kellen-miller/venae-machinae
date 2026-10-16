@@ -58,6 +58,55 @@ beforeEach(async () => {
 });
 
 describe('MVP-ARCH-003 persisted and live project boundaries', () => {
+  it('opens schema-8 projects and creates pre-edit checkpoints without losing their positions', async () => {
+    const library = await openProjectLibrary();
+    try {
+      const document = projectSnapshotToDocument(
+        createBlankProject({
+          id: 'legacy-project',
+          name: 'Legacy',
+          createdAt: '2026-09-01T00:00:00Z'
+        })
+      );
+      const legacy = { ...document, schemaVersion: 8 } as Record<string, unknown>;
+      delete legacy.diagramLayout;
+      await putRawStoredProject({ projectId: document.project.id, revision: 0, snapshot: legacy });
+      expect(await library.loadProject(document.project.id)).toMatchObject({
+        schemaVersion: 9,
+        diagramLayout: null,
+        topology: document.topology
+      });
+      expect(
+        await library.createCheckpoint({
+          projectId: document.project.id,
+          reason: 'before-edit',
+          createdAt: '2026-09-01T01:00:00Z'
+        })
+      ).toMatchObject({ created: true });
+      expect(
+        await library.createNamedSnapshot({
+          id: 'legacy-named',
+          projectId: document.project.id,
+          name: 'Saved arrangement',
+          note: '',
+          createdAt: '2026-09-01T01:00:00Z'
+        })
+      ).toMatchObject({ created: true });
+      expect((await library.listCheckpoints(document.project.id))[0]?.snapshot.schemaVersion).toBe(
+        9
+      );
+      expect(
+        await library.restoreNamedSnapshot({
+          id: 'legacy-named',
+          checkpointId: 'restore',
+          restoredAt: '2026-09-01T02:00:00Z'
+        })
+      ).toMatchObject({ restored: true });
+    } finally {
+      library.close();
+    }
+  });
+
   it('MVP-DATA-006 persists the complete aggregate without generated Overlay marks', () => {
     let snapshot = createBlankProject({
       id: 'project-round-trip',
@@ -146,7 +195,7 @@ describe('MVP-ARCH-003 persisted and live project boundaries', () => {
     const document = projectSnapshotToDocument(snapshot);
     expect(document).not.toBe(snapshot);
     expect(document).toMatchObject({
-      schemaVersion: 8,
+      schemaVersion: 9,
       project: { id: 'project-round-trip', revision: 3 },
       topology: {
         systems: [{ id: 'system-coolant', mediumId: 'medium-coolant' }],

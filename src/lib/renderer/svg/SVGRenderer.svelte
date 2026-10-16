@@ -333,7 +333,10 @@
       {@attach attachContent}
       transform={`translate(${liveViewport.x} ${liveViewport.y}) scale(${liveViewport.zoom})`}
     >
-      <g class="connection-layer">
+      <g
+        class="connection-layer"
+        class:tidied={projection.connections.some((edge) => edge.diagramRoute)}
+      >
         {#each visibleModel.connections as mapped (mapped.connection.id)}
           {@const physical = mapped.connection.physical}
           {@const isWire = physical.kind === 'wire'}
@@ -419,11 +422,17 @@
             {#if !isWire && ((physical.sizeStatus === 'known' && liveViewport.zoom >= 0.55) || focus.connections.has(mapped.connection.id))}
               <g
                 class="line-badge"
-                transform={`translate(${mapped.labelPoint.x} ${mapped.labelPoint.y}) scale(${1 / liveViewport.zoom})`}
+                transform={`translate(${mapped.labelPoint.x} ${mapped.labelPoint.y}) scale(${mapped.connection.diagramRoute ? 1 : 1 / liveViewport.zoom})`}
                 aria-hidden="true"
               >
-                <rect x="-58" y="-29" width="116" height="23" rx="6" />
-                <text y="-15" text-anchor="middle"
+                <rect
+                  x="-58"
+                  y={mapped.connection.diagramRoute ? -12 : -29}
+                  width="116"
+                  height="23"
+                  rx="6"
+                />
+                <text y={mapped.connection.diagramRoute ? 2 : -15} text-anchor="middle"
                   >{physical.sizeLabel ?? 'Size unknown'}
                   <tspan>{physical.kind.toUpperCase()}</tspan></text
                 >
@@ -651,6 +660,10 @@
     stroke-linecap: round;
     stroke-linejoin: round;
     vector-effect: non-scaling-stroke;
+  }
+
+  .connection-layer.tidied path:not(.hit-area) {
+    vector-effect: none;
   }
 
   .connection-layer > g,

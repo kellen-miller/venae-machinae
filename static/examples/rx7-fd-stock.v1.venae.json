@@ -7,7 +7,7 @@
     "projectRevision": 0
   },
   "payload": {
-    "schemaVersion": 8,
+    "schemaVersion": 9,
     "project": {
       "id": "rx7-fd-stock-fluid-overview-v1",
       "name": "RX-7 FD · Stock fluid systems",
@@ -62,8 +62,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "175",
-            "y": "266.75"
+            "x": "1888",
+            "y": "2216"
           },
           "ports": [
             {
@@ -108,8 +108,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "390",
-            "y": "266.75"
+            "x": "96",
+            "y": "2456"
           },
           "ports": [
             {
@@ -170,8 +170,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "605",
-            "y": "140.25"
+            "x": "1336",
+            "y": "1944"
           },
           "ports": [
             {
@@ -200,8 +200,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "605",
-            "y": "266.75"
+            "x": "736",
+            "y": "2096"
           },
           "ports": [
             {
@@ -230,8 +230,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "605",
-            "y": "393.25"
+            "x": "736",
+            "y": "2288"
           },
           "ports": [
             {
@@ -260,8 +260,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "820",
-            "y": "266.75"
+            "x": "1304",
+            "y": "2256"
           },
           "ports": [
             {
@@ -306,8 +306,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "390",
-            "y": "519.75"
+            "x": "688",
+            "y": "2616"
           },
           "ports": [
             {
@@ -344,8 +344,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "820",
-            "y": "519.75"
+            "x": "1304",
+            "y": "2648"
           },
           "ports": [
             {
@@ -366,8 +366,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1275",
-            "y": "266.75"
+            "x": "1264",
+            "y": "968"
           },
           "ports": [
             {
@@ -404,8 +404,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1490",
-            "y": "266.75"
+            "x": "128",
+            "y": "1360"
           },
           "ports": [
             {
@@ -466,8 +466,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1705",
-            "y": "140.25"
+            "x": "720",
+            "y": "1272"
           },
           "ports": [
             {
@@ -496,8 +496,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1705",
-            "y": "266.75"
+            "x": "728",
+            "y": "1024"
           },
           "ports": [
             {
@@ -526,8 +526,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1705",
-            "y": "393.25"
+            "x": "720",
+            "y": "1488"
           },
           "ports": [
             {
@@ -556,8 +556,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1920",
-            "y": "393.25"
+            "x": "1264",
+            "y": "1488"
           },
           "ports": [
             {
@@ -578,8 +578,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "175",
-            "y": "886.75"
+            "x": "2240",
+            "y": "576"
           },
           "ports": [
             {
@@ -608,8 +608,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "390",
-            "y": "886.75"
+            "x": "96",
+            "y": "376"
           },
           "ports": [
             {
@@ -638,8 +638,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "605",
-            "y": "886.75"
+            "x": "664",
+            "y": "376"
           },
           "ports": [
             {
@@ -668,8 +668,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "820",
-            "y": "886.75"
+            "x": "1192",
+            "y": "376"
           },
           "ports": [
             {
@@ -706,8 +706,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "820",
-            "y": "760.25"
+            "x": "1736",
+            "y": "376"
           },
           "ports": [
             {
@@ -728,8 +728,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "605",
-            "y": "1065"
+            "x": "1736",
+            "y": "576"
           },
           "ports": [
             {
@@ -758,8 +758,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1275",
-            "y": "886.75"
+            "x": "1616",
+            "y": "888"
           },
           "ports": [
             {
@@ -788,8 +788,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1490",
-            "y": "886.75"
+            "x": "2120",
+            "y": "888"
           },
           "ports": [
             {
@@ -834,8 +834,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1705",
-            "y": "886.75"
+            "x": "2656",
+            "y": "888"
           },
           "ports": [
             {
@@ -896,8 +896,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1920",
-            "y": "737.25"
+            "x": "3240",
+            "y": "888"
           },
           "ports": [
             {
@@ -918,8 +918,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1920",
-            "y": "852.25"
+            "x": "3240",
+            "y": "1152"
           },
           "ports": [
             {
@@ -940,8 +940,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1920",
-            "y": "967.25"
+            "x": "3240",
+            "y": "1376"
           },
           "ports": [
             {
@@ -962,8 +962,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1920",
-            "y": "1082.25"
+            "x": "3240",
+            "y": "1616"
           },
           "ports": [
             {
@@ -984,8 +984,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "175",
-            "y": "1506.75"
+            "x": "64",
+            "y": "64"
           },
           "ports": [
             {
@@ -1006,8 +1006,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "425",
-            "y": "1506.75"
+            "x": "568",
+            "y": "64"
           },
           "ports": [
             {
@@ -1036,8 +1036,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "675",
-            "y": "1506.75"
+            "x": "1152",
+            "y": "64"
           },
           "ports": [
             {
@@ -1066,8 +1066,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "925",
-            "y": "1506.75"
+            "x": "1680",
+            "y": "64"
           },
           "ports": [
             {
@@ -1088,8 +1088,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1275",
-            "y": "1506.75"
+            "x": "3016",
+            "y": "64"
           },
           "ports": [
             {
@@ -1118,8 +1118,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1510",
-            "y": "1506.75"
+            "x": "3520",
+            "y": "64"
           },
           "ports": [
             {
@@ -1148,8 +1148,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1745",
-            "y": "1506.75"
+            "x": "1984",
+            "y": "64"
           },
           "ports": [
             {
@@ -1178,8 +1178,8 @@
           "predecessorId": null,
           "successorId": null,
           "position": {
-            "x": "1980",
-            "y": "1506.75"
+            "x": "2488",
+            "y": "64"
           },
           "ports": [
             {
@@ -3736,12 +3736,1697 @@
       "unitSystem": "metric"
     },
     "assetHashes": [],
-    "vehicleBackground": null
+    "vehicleBackground": null,
+    "diagramLayout": {
+      "engine": "elk-layered",
+      "nodes": [
+        {
+          "id": "coolant-water-pump",
+          "x": 1888,
+          "y": 2216,
+          "width": 216,
+          "height": 200,
+          "ports": [
+            {
+              "id": "coolant-lower-hose-target",
+              "side": "left",
+              "offset": 0.44
+            },
+            {
+              "id": "coolant-return-pump-target",
+              "side": "left",
+              "offset": 0.6
+            },
+            {
+              "id": "coolant-ast-pump-target",
+              "side": "left",
+              "offset": 0.8
+            },
+            {
+              "id": "coolant-pump-jackets-source",
+              "side": "right",
+              "offset": 0.44
+            }
+          ]
+        },
+        {
+          "id": "coolant-water-jackets",
+          "x": 96,
+          "y": 2456,
+          "width": 216,
+          "height": 280,
+          "ports": [
+            {
+              "id": "coolant-pump-jackets-target",
+              "side": "left",
+              "offset": 0.37142857142857144
+            },
+            {
+              "id": "coolant-upper-hose-source",
+              "side": "right",
+              "offset": 0.37142857142857144
+            },
+            {
+              "id": "coolant-heater-feed-source",
+              "side": "right",
+              "offset": 0.5142857142857142
+            },
+            {
+              "id": "coolant-turbo-feed-source",
+              "side": "right",
+              "offset": 0.6285714285714286
+            },
+            {
+              "id": "coolant-bypass-source",
+              "side": "right",
+              "offset": 0.7428571428571429
+            },
+            {
+              "id": "coolant-degas-source",
+              "side": "right",
+              "offset": 0.8571428571428571
+            }
+          ]
+        },
+        {
+          "id": "coolant-radiator",
+          "x": 1336,
+          "y": 1944,
+          "width": 208,
+          "height": 144,
+          "ports": [
+            {
+              "id": "coolant-upper-hose-target",
+              "side": "left",
+              "offset": 0.6111111111111112
+            },
+            {
+              "id": "coolant-lower-hose-source",
+              "side": "right",
+              "offset": 0.6111111111111112
+            }
+          ]
+        },
+        {
+          "id": "coolant-heater",
+          "x": 736,
+          "y": 2096,
+          "width": 208,
+          "height": 144,
+          "ports": [
+            {
+              "id": "coolant-heater-feed-target",
+              "side": "left",
+              "offset": 0.5555555555555556
+            },
+            {
+              "id": "coolant-heater-return-source",
+              "side": "right",
+              "offset": 0.5555555555555556
+            }
+          ]
+        },
+        {
+          "id": "coolant-turbo-water",
+          "x": 736,
+          "y": 2288,
+          "width": 208,
+          "height": 152,
+          "ports": [
+            {
+              "id": "coolant-turbo-feed-target",
+              "side": "left",
+              "offset": 0.5789473684210527
+            },
+            {
+              "id": "coolant-turbo-return-source",
+              "side": "right",
+              "offset": 0.5789473684210527
+            }
+          ]
+        },
+        {
+          "id": "coolant-water-return",
+          "x": 1304,
+          "y": 2256,
+          "width": 272,
+          "height": 208,
+          "ports": [
+            {
+              "id": "coolant-heater-return-target",
+              "side": "left",
+              "offset": 0.38461538461538464
+            },
+            {
+              "id": "coolant-turbo-return-target",
+              "side": "left",
+              "offset": 0.5769230769230769
+            },
+            {
+              "id": "coolant-bypass-target",
+              "side": "left",
+              "offset": 0.7692307692307693
+            },
+            {
+              "id": "coolant-return-pump-source",
+              "side": "right",
+              "offset": 0.38461538461538464
+            }
+          ]
+        },
+        {
+          "id": "coolant-ast",
+          "x": 688,
+          "y": 2616,
+          "width": 304,
+          "height": 160,
+          "ports": [
+            {
+              "id": "coolant-degas-target",
+              "side": "left",
+              "offset": 0.5
+            },
+            {
+              "id": "coolant-ast-pump-source",
+              "side": "right",
+              "offset": 0.5
+            },
+            {
+              "id": "coolant-recovery-source",
+              "side": "right",
+              "offset": 0.75
+            }
+          ]
+        },
+        {
+          "id": "coolant-overflow",
+          "x": 1304,
+          "y": 2648,
+          "width": 208,
+          "height": 152,
+          "ports": [
+            {
+              "id": "coolant-recovery-target",
+              "side": "left",
+              "offset": 0.5789473684210527
+            }
+          ]
+        },
+        {
+          "id": "oil-sump",
+          "x": 1264,
+          "y": 968,
+          "width": 232,
+          "height": 216,
+          "ports": [
+            {
+              "id": "oil-drain-target",
+              "side": "left",
+              "offset": 0.5925925925925926
+            },
+            {
+              "id": "oil-turbo-oil-drain-target",
+              "side": "left",
+              "offset": 0.7777777777777778
+            },
+            {
+              "id": "oil-pickup-source",
+              "side": "right",
+              "offset": 0.5925925925925926
+            }
+          ]
+        },
+        {
+          "id": "oil-oil-circuit",
+          "x": 128,
+          "y": 1360,
+          "width": 248,
+          "height": 288,
+          "ports": [
+            {
+              "id": "oil-pickup-target",
+              "side": "left",
+              "offset": 0.3333333333333333
+            },
+            {
+              "id": "oil-cooler-return-target",
+              "side": "left",
+              "offset": 0.5555555555555556
+            },
+            {
+              "id": "oil-drain-source",
+              "side": "right",
+              "offset": 0.3333333333333333
+            },
+            {
+              "id": "oil-cooler-feed-source",
+              "side": "right",
+              "offset": 0.5555555555555556
+            },
+            {
+              "id": "oil-turbo-oil-feed-source",
+              "side": "right",
+              "offset": 0.7222222222222222
+            },
+            {
+              "id": "oil-metered-feed-source",
+              "side": "right",
+              "offset": 0.8333333333333334
+            }
+          ]
+        },
+        {
+          "id": "oil-oil-cooler",
+          "x": 720,
+          "y": 1272,
+          "width": 208,
+          "height": 152,
+          "ports": [
+            {
+              "id": "oil-cooler-feed-target",
+              "side": "left",
+              "offset": 0.5789473684210527
+            },
+            {
+              "id": "oil-cooler-return-source",
+              "side": "right",
+              "offset": 0.5789473684210527
+            }
+          ]
+        },
+        {
+          "id": "oil-turbo-oil",
+          "x": 728,
+          "y": 1024,
+          "width": 208,
+          "height": 184,
+          "ports": [
+            {
+              "id": "oil-turbo-oil-feed-target",
+              "side": "left",
+              "offset": 0.6086956521739131
+            },
+            {
+              "id": "oil-turbo-oil-drain-source",
+              "side": "right",
+              "offset": 0.6086956521739131
+            }
+          ]
+        },
+        {
+          "id": "oil-metering-pump",
+          "x": 720,
+          "y": 1488,
+          "width": 232,
+          "height": 184,
+          "ports": [
+            {
+              "id": "oil-metered-feed-target",
+              "side": "left",
+              "offset": 0.6086956521739131
+            },
+            {
+              "id": "oil-injection-source",
+              "side": "right",
+              "offset": 0.6086956521739131
+            }
+          ]
+        },
+        {
+          "id": "oil-oil-nozzles",
+          "x": 1264,
+          "y": 1488,
+          "width": 208,
+          "height": 184,
+          "ports": [
+            {
+              "id": "oil-injection-target",
+              "side": "left",
+              "offset": 0.6086956521739131
+            }
+          ]
+        },
+        {
+          "id": "fuel-tank",
+          "x": 2240,
+          "y": 576,
+          "width": 192,
+          "height": 144,
+          "ports": [
+            {
+              "id": "fuel-fuel-return-target",
+              "side": "left",
+              "offset": 0.6111111111111112
+            },
+            {
+              "id": "fuel-tank-pump-source",
+              "side": "right",
+              "offset": 0.6111111111111112
+            }
+          ]
+        },
+        {
+          "id": "fuel-fuel-pump",
+          "x": 96,
+          "y": 376,
+          "width": 256,
+          "height": 152,
+          "ports": [
+            {
+              "id": "fuel-tank-pump-target",
+              "side": "left",
+              "offset": 0.5789473684210527
+            },
+            {
+              "id": "fuel-pump-filter-source",
+              "side": "right",
+              "offset": 0.5789473684210527
+            }
+          ]
+        },
+        {
+          "id": "fuel-fuel-filter",
+          "x": 664,
+          "y": 376,
+          "width": 200,
+          "height": 152,
+          "ports": [
+            {
+              "id": "fuel-pump-filter-target",
+              "side": "left",
+              "offset": 0.5789473684210527
+            },
+            {
+              "id": "fuel-filter-rails-source",
+              "side": "right",
+              "offset": 0.5789473684210527
+            }
+          ]
+        },
+        {
+          "id": "fuel-fuel-rails",
+          "x": 1192,
+          "y": 376,
+          "width": 224,
+          "height": 168,
+          "ports": [
+            {
+              "id": "fuel-filter-rails-target",
+              "side": "left",
+              "offset": 0.5238095238095238
+            },
+            {
+              "id": "fuel-injector-feed-source",
+              "side": "right",
+              "offset": 0.5238095238095238
+            },
+            {
+              "id": "fuel-rail-regulator-source",
+              "side": "right",
+              "offset": 0.7619047619047619
+            }
+          ]
+        },
+        {
+          "id": "fuel-injectors",
+          "x": 1736,
+          "y": 376,
+          "width": 192,
+          "height": 152,
+          "ports": [
+            {
+              "id": "fuel-injector-feed-target",
+              "side": "left",
+              "offset": 0.5789473684210527
+            }
+          ]
+        },
+        {
+          "id": "fuel-fpr",
+          "x": 1736,
+          "y": 576,
+          "width": 192,
+          "height": 144,
+          "ports": [
+            {
+              "id": "fuel-rail-regulator-target",
+              "side": "left",
+              "offset": 0.6111111111111112
+            },
+            {
+              "id": "fuel-fuel-return-source",
+              "side": "right",
+              "offset": 0.6111111111111112
+            }
+          ]
+        },
+        {
+          "id": "brakes-brake-reservoir",
+          "x": 1616,
+          "y": 888,
+          "width": 192,
+          "height": 216,
+          "ports": [
+            {
+              "id": "brakes-reservoir-a-source",
+              "side": "right",
+              "offset": 0.5185185185185185
+            },
+            {
+              "id": "brakes-reservoir-b-source",
+              "side": "right",
+              "offset": 0.7407407407407407
+            }
+          ]
+        },
+        {
+          "id": "brakes-master",
+          "x": 2120,
+          "y": 888,
+          "width": 224,
+          "height": 216,
+          "ports": [
+            {
+              "id": "brakes-reservoir-a-target",
+              "side": "left",
+              "offset": 0.5185185185185185
+            },
+            {
+              "id": "brakes-reservoir-b-target",
+              "side": "left",
+              "offset": 0.7407407407407407
+            },
+            {
+              "id": "brakes-circuit-a-source",
+              "side": "right",
+              "offset": 0.5185185185185185
+            },
+            {
+              "id": "brakes-circuit-b-source",
+              "side": "right",
+              "offset": 0.7407407407407407
+            }
+          ]
+        },
+        {
+          "id": "brakes-brake-distribution",
+          "x": 2656,
+          "y": 888,
+          "width": 240,
+          "height": 304,
+          "ports": [
+            {
+              "id": "brakes-circuit-a-target",
+              "side": "left",
+              "offset": 0.3684210526315789
+            },
+            {
+              "id": "brakes-circuit-b-target",
+              "side": "left",
+              "offset": 0.5263157894736842
+            },
+            {
+              "id": "brakes-fl-line-source",
+              "side": "right",
+              "offset": 0.3684210526315789
+            },
+            {
+              "id": "brakes-fr-line-source",
+              "side": "right",
+              "offset": 0.5263157894736842
+            },
+            {
+              "id": "brakes-rl-line-source",
+              "side": "right",
+              "offset": 0.7105263157894737
+            },
+            {
+              "id": "brakes-rr-line-source",
+              "side": "right",
+              "offset": 0.868421052631579
+            }
+          ]
+        },
+        {
+          "id": "brakes-fl",
+          "x": 3240,
+          "y": 888,
+          "width": 192,
+          "height": 192,
+          "ports": [
+            {
+              "id": "brakes-fl-line-target",
+              "side": "left",
+              "offset": 0.5833333333333334
+            }
+          ]
+        },
+        {
+          "id": "brakes-fr",
+          "x": 3240,
+          "y": 1152,
+          "width": 192,
+          "height": 160,
+          "ports": [
+            {
+              "id": "brakes-fr-line-target",
+              "side": "left",
+              "offset": 0.6
+            }
+          ]
+        },
+        {
+          "id": "brakes-rl",
+          "x": 3240,
+          "y": 1376,
+          "width": 192,
+          "height": 168,
+          "ports": [
+            {
+              "id": "brakes-rl-line-target",
+              "side": "left",
+              "offset": 0.5238095238095238
+            }
+          ]
+        },
+        {
+          "id": "brakes-rr",
+          "x": 3240,
+          "y": 1616,
+          "width": 192,
+          "height": 168,
+          "ports": [
+            {
+              "id": "brakes-rr-line-target",
+              "side": "left",
+              "offset": 0.6190476190476191
+            }
+          ]
+        },
+        {
+          "id": "clutch-clutch-reservoir",
+          "x": 64,
+          "y": 64,
+          "width": 192,
+          "height": 144,
+          "ports": [
+            {
+              "id": "clutch-clutch-feed-source",
+              "side": "right",
+              "offset": 0.6111111111111112
+            }
+          ]
+        },
+        {
+          "id": "clutch-clutch-master",
+          "x": 568,
+          "y": 64,
+          "width": 256,
+          "height": 144,
+          "ports": [
+            {
+              "id": "clutch-clutch-feed-target",
+              "side": "left",
+              "offset": 0.6111111111111112
+            },
+            {
+              "id": "clutch-clutch-pressure-source",
+              "side": "right",
+              "offset": 0.6111111111111112
+            }
+          ]
+        },
+        {
+          "id": "clutch-clutch-line",
+          "x": 1152,
+          "y": 64,
+          "width": 200,
+          "height": 144,
+          "ports": [
+            {
+              "id": "clutch-clutch-pressure-target",
+              "side": "left",
+              "offset": 0.6111111111111112
+            },
+            {
+              "id": "clutch-clutch-slave-source",
+              "side": "right",
+              "offset": 0.6111111111111112
+            }
+          ]
+        },
+        {
+          "id": "clutch-slave",
+          "x": 1680,
+          "y": 64,
+          "width": 192,
+          "height": 144,
+          "ports": [
+            {
+              "id": "clutch-clutch-slave-target",
+              "side": "left",
+              "offset": 0.6111111111111112
+            }
+          ]
+        },
+        {
+          "id": "steering-ps-reservoir",
+          "x": 3016,
+          "y": 64,
+          "width": 192,
+          "height": 144,
+          "ports": [
+            {
+              "id": "steering-ps-reservoir-return-target",
+              "side": "left",
+              "offset": 0.6111111111111112
+            },
+            {
+              "id": "steering-ps-suction-source",
+              "side": "right",
+              "offset": 0.6111111111111112
+            }
+          ]
+        },
+        {
+          "id": "steering-ps-pump",
+          "x": 3520,
+          "y": 64,
+          "width": 192,
+          "height": 144,
+          "ports": [
+            {
+              "id": "steering-ps-suction-target",
+              "side": "left",
+              "offset": 0.6111111111111112
+            },
+            {
+              "id": "steering-ps-pressure-source",
+              "side": "right",
+              "offset": 0.6111111111111112
+            }
+          ]
+        },
+        {
+          "id": "steering-rack",
+          "x": 1984,
+          "y": 64,
+          "width": 192,
+          "height": 144,
+          "ports": [
+            {
+              "id": "steering-ps-pressure-target",
+              "side": "left",
+              "offset": 0.6111111111111112
+            },
+            {
+              "id": "steering-ps-return-source",
+              "side": "right",
+              "offset": 0.6111111111111112
+            }
+          ]
+        },
+        {
+          "id": "steering-ps-cooler",
+          "x": 2488,
+          "y": 64,
+          "width": 216,
+          "height": 144,
+          "ports": [
+            {
+              "id": "steering-ps-return-target",
+              "side": "left",
+              "offset": 0.6111111111111112
+            },
+            {
+              "id": "steering-ps-reservoir-return-source",
+              "side": "right",
+              "offset": 0.6111111111111112
+            }
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "id": "coolant-pump-jackets",
+          "points": [
+            {
+              "x": 2104,
+              "y": 2304
+            },
+            {
+              "x": 2136,
+              "y": 2304
+            },
+            {
+              "x": 2136,
+              "y": 2832
+            },
+            {
+              "x": 64,
+              "y": 2832
+            },
+            {
+              "x": 64,
+              "y": 2560
+            },
+            {
+              "x": 96,
+              "y": 2560
+            }
+          ],
+          "label": {
+            "x": 1148,
+            "y": 2860
+          }
+        },
+        {
+          "id": "coolant-upper-hose",
+          "points": [
+            {
+              "x": 312,
+              "y": 2560
+            },
+            {
+              "x": 344,
+              "y": 2560
+            },
+            {
+              "x": 344,
+              "y": 2032
+            },
+            {
+              "x": 1336,
+              "y": 2032
+            }
+          ],
+          "label": {
+            "x": 840,
+            "y": 2004
+          }
+        },
+        {
+          "id": "coolant-lower-hose",
+          "points": [
+            {
+              "x": 1544,
+              "y": 2032
+            },
+            {
+              "x": 1824,
+              "y": 2032
+            },
+            {
+              "x": 1824,
+              "y": 2304
+            },
+            {
+              "x": 1888,
+              "y": 2304
+            }
+          ],
+          "label": {
+            "x": 1732,
+            "y": 2060
+          }
+        },
+        {
+          "id": "coolant-heater-feed",
+          "points": [
+            {
+              "x": 312,
+              "y": 2600
+            },
+            {
+              "x": 376,
+              "y": 2600
+            },
+            {
+              "x": 376,
+              "y": 2176
+            },
+            {
+              "x": 736,
+              "y": 2176
+            }
+          ],
+          "label": {
+            "x": 532,
+            "y": 2208
+          }
+        },
+        {
+          "id": "coolant-heater-return",
+          "points": [
+            {
+              "x": 944,
+              "y": 2176
+            },
+            {
+              "x": 1240,
+              "y": 2176
+            },
+            {
+              "x": 1240,
+              "y": 2336
+            },
+            {
+              "x": 1304,
+              "y": 2336
+            }
+          ],
+          "label": {
+            "x": 1148,
+            "y": 2208
+          }
+        },
+        {
+          "id": "coolant-turbo-feed",
+          "points": [
+            {
+              "x": 312,
+              "y": 2632
+            },
+            {
+              "x": 408,
+              "y": 2632
+            },
+            {
+              "x": 408,
+              "y": 2376
+            },
+            {
+              "x": 736,
+              "y": 2376
+            }
+          ],
+          "label": {
+            "x": 532,
+            "y": 2408
+          }
+        },
+        {
+          "id": "coolant-turbo-return",
+          "points": [
+            {
+              "x": 944,
+              "y": 2376
+            },
+            {
+              "x": 1304,
+              "y": 2376
+            }
+          ],
+          "label": {
+            "x": 1148,
+            "y": 2408
+          }
+        },
+        {
+          "id": "coolant-bypass",
+          "points": [
+            {
+              "x": 312,
+              "y": 2664
+            },
+            {
+              "x": 440,
+              "y": 2664
+            },
+            {
+              "x": 440,
+              "y": 2496
+            },
+            {
+              "x": 1240,
+              "y": 2496
+            },
+            {
+              "x": 1240,
+              "y": 2416
+            },
+            {
+              "x": 1304,
+              "y": 2416
+            }
+          ],
+          "label": {
+            "x": 840,
+            "y": 2528
+          }
+        },
+        {
+          "id": "coolant-return-pump",
+          "points": [
+            {
+              "x": 1576,
+              "y": 2336
+            },
+            {
+              "x": 1888,
+              "y": 2336
+            }
+          ],
+          "label": {
+            "x": 1732,
+            "y": 2368
+          }
+        },
+        {
+          "id": "coolant-degas",
+          "points": [
+            {
+              "x": 312,
+              "y": 2696
+            },
+            {
+              "x": 688,
+              "y": 2696
+            }
+          ],
+          "label": {
+            "x": 532,
+            "y": 2728
+          }
+        },
+        {
+          "id": "coolant-ast-pump",
+          "points": [
+            {
+              "x": 992,
+              "y": 2696
+            },
+            {
+              "x": 1024,
+              "y": 2696
+            },
+            {
+              "x": 1024,
+              "y": 2536
+            },
+            {
+              "x": 1824,
+              "y": 2536
+            },
+            {
+              "x": 1824,
+              "y": 2376
+            },
+            {
+              "x": 1888,
+              "y": 2376
+            }
+          ],
+          "label": {
+            "x": 1440,
+            "y": 2568
+          }
+        },
+        {
+          "id": "coolant-recovery",
+          "points": [
+            {
+              "x": 992,
+              "y": 2736
+            },
+            {
+              "x": 1304,
+              "y": 2736
+            }
+          ],
+          "label": {
+            "x": 1148,
+            "y": 2768
+          }
+        },
+        {
+          "id": "oil-pickup",
+          "points": [
+            {
+              "x": 1496,
+              "y": 1096
+            },
+            {
+              "x": 1536,
+              "y": 1096
+            },
+            {
+              "x": 1536,
+              "y": 1808
+            },
+            {
+              "x": 64,
+              "y": 1808
+            },
+            {
+              "x": 64,
+              "y": 1456
+            },
+            {
+              "x": 128,
+              "y": 1456
+            }
+          ],
+          "label": {
+            "x": 832,
+            "y": 1836
+          }
+        },
+        {
+          "id": "oil-drain",
+          "points": [
+            {
+              "x": 376,
+              "y": 1456
+            },
+            {
+              "x": 408,
+              "y": 1456
+            },
+            {
+              "x": 408,
+              "y": 944
+            },
+            {
+              "x": 1200,
+              "y": 944
+            },
+            {
+              "x": 1200,
+              "y": 1096
+            },
+            {
+              "x": 1264,
+              "y": 1096
+            }
+          ],
+          "label": {
+            "x": 832,
+            "y": 912
+          }
+        },
+        {
+          "id": "oil-cooler-feed",
+          "points": [
+            {
+              "x": 376,
+              "y": 1520
+            },
+            {
+              "x": 440,
+              "y": 1520
+            },
+            {
+              "x": 440,
+              "y": 1360
+            },
+            {
+              "x": 720,
+              "y": 1360
+            }
+          ],
+          "label": {
+            "x": 564,
+            "y": 1392
+          }
+        },
+        {
+          "id": "oil-cooler-return",
+          "points": [
+            {
+              "x": 928,
+              "y": 1360
+            },
+            {
+              "x": 984,
+              "y": 1360
+            },
+            {
+              "x": 984,
+              "y": 1704
+            },
+            {
+              "x": 96,
+              "y": 1704
+            },
+            {
+              "x": 96,
+              "y": 1520
+            },
+            {
+              "x": 128,
+              "y": 1520
+            }
+          ],
+          "label": {
+            "x": 564,
+            "y": 1740
+          }
+        },
+        {
+          "id": "oil-turbo-oil-feed",
+          "points": [
+            {
+              "x": 376,
+              "y": 1568
+            },
+            {
+              "x": 472,
+              "y": 1568
+            },
+            {
+              "x": 472,
+              "y": 1496
+            },
+            {
+              "x": 656,
+              "y": 1496
+            },
+            {
+              "x": 656,
+              "y": 1136
+            },
+            {
+              "x": 728,
+              "y": 1136
+            }
+          ],
+          "label": {
+            "x": 564,
+            "y": 1532
+          }
+        },
+        {
+          "id": "oil-turbo-oil-drain",
+          "points": [
+            {
+              "x": 936,
+              "y": 1136
+            },
+            {
+              "x": 1264,
+              "y": 1136
+            }
+          ],
+          "label": {
+            "x": 1108,
+            "y": 1172
+          }
+        },
+        {
+          "id": "oil-metered-feed",
+          "points": [
+            {
+              "x": 376,
+              "y": 1600
+            },
+            {
+              "x": 720,
+              "y": 1600
+            }
+          ],
+          "label": {
+            "x": 564,
+            "y": 1636
+          }
+        },
+        {
+          "id": "oil-injection",
+          "points": [
+            {
+              "x": 952,
+              "y": 1600
+            },
+            {
+              "x": 1264,
+              "y": 1600
+            }
+          ],
+          "label": {
+            "x": 1108,
+            "y": 1636
+          }
+        },
+        {
+          "id": "fuel-tank-pump",
+          "points": [
+            {
+              "x": 2432,
+              "y": 664
+            },
+            {
+              "x": 2464,
+              "y": 664
+            },
+            {
+              "x": 2464,
+              "y": 752
+            },
+            {
+              "x": 64,
+              "y": 752
+            },
+            {
+              "x": 64,
+              "y": 464
+            },
+            {
+              "x": 96,
+              "y": 464
+            }
+          ],
+          "label": {
+            "x": 1300,
+            "y": 780
+          }
+        },
+        {
+          "id": "fuel-pump-filter",
+          "points": [
+            {
+              "x": 352,
+              "y": 464
+            },
+            {
+              "x": 664,
+              "y": 464
+            }
+          ],
+          "label": {
+            "x": 508,
+            "y": 436
+          }
+        },
+        {
+          "id": "fuel-filter-rails",
+          "points": [
+            {
+              "x": 864,
+              "y": 464
+            },
+            {
+              "x": 1192,
+              "y": 464
+            }
+          ],
+          "label": {
+            "x": 1036,
+            "y": 436
+          }
+        },
+        {
+          "id": "fuel-injector-feed",
+          "points": [
+            {
+              "x": 1416,
+              "y": 464
+            },
+            {
+              "x": 1736,
+              "y": 464
+            }
+          ],
+          "label": {
+            "x": 1580,
+            "y": 496
+          }
+        },
+        {
+          "id": "fuel-rail-regulator",
+          "points": [
+            {
+              "x": 1416,
+              "y": 504
+            },
+            {
+              "x": 1448,
+              "y": 504
+            },
+            {
+              "x": 1448,
+              "y": 664
+            },
+            {
+              "x": 1736,
+              "y": 664
+            }
+          ],
+          "label": {
+            "x": 1580,
+            "y": 692
+          }
+        },
+        {
+          "id": "fuel-fuel-return",
+          "points": [
+            {
+              "x": 1928,
+              "y": 664
+            },
+            {
+              "x": 2240,
+              "y": 664
+            }
+          ],
+          "label": {
+            "x": 2084,
+            "y": 636
+          }
+        },
+        {
+          "id": "brakes-reservoir-a",
+          "points": [
+            {
+              "x": 1808,
+              "y": 1000
+            },
+            {
+              "x": 2120,
+              "y": 1000
+            }
+          ],
+          "label": {
+            "x": 1964,
+            "y": 960
+          }
+        },
+        {
+          "id": "brakes-reservoir-b",
+          "points": [
+            {
+              "x": 1808,
+              "y": 1048
+            },
+            {
+              "x": 1840,
+              "y": 1048
+            },
+            {
+              "x": 1840,
+              "y": 1056
+            },
+            {
+              "x": 2056,
+              "y": 1056
+            },
+            {
+              "x": 2056,
+              "y": 1048
+            },
+            {
+              "x": 2120,
+              "y": 1048
+            }
+          ],
+          "label": {
+            "x": 1964,
+            "y": 1092
+          }
+        },
+        {
+          "id": "brakes-circuit-a",
+          "points": [
+            {
+              "x": 2344,
+              "y": 1000
+            },
+            {
+              "x": 2656,
+              "y": 1000
+            }
+          ],
+          "label": {
+            "x": 2500,
+            "y": 960
+          }
+        },
+        {
+          "id": "brakes-circuit-b",
+          "points": [
+            {
+              "x": 2344,
+              "y": 1048
+            },
+            {
+              "x": 2376,
+              "y": 1048
+            },
+            {
+              "x": 2376,
+              "y": 1056
+            },
+            {
+              "x": 2592,
+              "y": 1056
+            },
+            {
+              "x": 2592,
+              "y": 1048
+            },
+            {
+              "x": 2656,
+              "y": 1048
+            }
+          ],
+          "label": {
+            "x": 2500,
+            "y": 1092
+          }
+        },
+        {
+          "id": "brakes-fl-line",
+          "points": [
+            {
+              "x": 2896,
+              "y": 1000
+            },
+            {
+              "x": 3240,
+              "y": 1000
+            }
+          ],
+          "label": {
+            "x": 3084,
+            "y": 1040
+          }
+        },
+        {
+          "id": "brakes-fr-line",
+          "points": [
+            {
+              "x": 2896,
+              "y": 1048
+            },
+            {
+              "x": 2992,
+              "y": 1048
+            },
+            {
+              "x": 2992,
+              "y": 1248
+            },
+            {
+              "x": 3240,
+              "y": 1248
+            }
+          ],
+          "label": {
+            "x": 3084,
+            "y": 1280
+          }
+        },
+        {
+          "id": "brakes-rl-line",
+          "points": [
+            {
+              "x": 2896,
+              "y": 1104
+            },
+            {
+              "x": 2960,
+              "y": 1104
+            },
+            {
+              "x": 2960,
+              "y": 1464
+            },
+            {
+              "x": 3240,
+              "y": 1464
+            }
+          ],
+          "label": {
+            "x": 3084,
+            "y": 1504
+          }
+        },
+        {
+          "id": "brakes-rr-line",
+          "points": [
+            {
+              "x": 2896,
+              "y": 1152
+            },
+            {
+              "x": 2928,
+              "y": 1152
+            },
+            {
+              "x": 2928,
+              "y": 1720
+            },
+            {
+              "x": 3240,
+              "y": 1720
+            }
+          ],
+          "label": {
+            "x": 3084,
+            "y": 1752
+          }
+        },
+        {
+          "id": "clutch-clutch-feed",
+          "points": [
+            {
+              "x": 256,
+              "y": 152
+            },
+            {
+              "x": 568,
+              "y": 152
+            }
+          ],
+          "label": {
+            "x": 412,
+            "y": 180
+          }
+        },
+        {
+          "id": "clutch-clutch-pressure",
+          "points": [
+            {
+              "x": 824,
+              "y": 152
+            },
+            {
+              "x": 1152,
+              "y": 152
+            }
+          ],
+          "label": {
+            "x": 992,
+            "y": 180
+          }
+        },
+        {
+          "id": "clutch-clutch-slave",
+          "points": [
+            {
+              "x": 1352,
+              "y": 152
+            },
+            {
+              "x": 1680,
+              "y": 152
+            }
+          ],
+          "label": {
+            "x": 1520,
+            "y": 180
+          }
+        },
+        {
+          "id": "steering-ps-suction",
+          "points": [
+            {
+              "x": 3208,
+              "y": 152
+            },
+            {
+              "x": 3520,
+              "y": 152
+            }
+          ],
+          "label": {
+            "x": 3364,
+            "y": 124
+          }
+        },
+        {
+          "id": "steering-ps-pressure",
+          "points": [
+            {
+              "x": 3712,
+              "y": 152
+            },
+            {
+              "x": 3744,
+              "y": 152
+            },
+            {
+              "x": 3744,
+              "y": 240
+            },
+            {
+              "x": 1952,
+              "y": 240
+            },
+            {
+              "x": 1952,
+              "y": 152
+            },
+            {
+              "x": 1984,
+              "y": 152
+            }
+          ],
+          "label": {
+            "x": 2860,
+            "y": 268
+          }
+        },
+        {
+          "id": "steering-ps-return",
+          "points": [
+            {
+              "x": 2176,
+              "y": 152
+            },
+            {
+              "x": 2488,
+              "y": 152
+            }
+          ],
+          "label": {
+            "x": 2332,
+            "y": 124
+          }
+        },
+        {
+          "id": "steering-ps-reservoir-return",
+          "points": [
+            {
+              "x": 2704,
+              "y": 152
+            },
+            {
+              "x": 3016,
+              "y": 152
+            }
+          ],
+          "label": {
+            "x": 2860,
+            "y": 124
+          }
+        }
+      ]
+    }
   },
   "assets": [],
   "integrity": {
     "algorithm": "SHA-256",
-    "payloadSha256": "68be0dff917f4f9b43a0f41b1049386d43c6407b50eba24765b98dc08918749e",
+    "payloadSha256": "218676b364ce26a0b3d9ae0db4d4c51854d869429097bd3ca3ede6a6739c576c",
     "exportMetadataSha256": "1642af532fa63c73f9ba78b79ff837888dc74bbc6d58f11591b28bae24e74ca5",
     "assets": []
   },

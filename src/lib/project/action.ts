@@ -18,6 +18,7 @@ import type {
   FluidMedium
 } from '../fluid/fluid';
 import type {
+  DiagramLayout,
   OperatingState,
   PartDefinition,
   PartRequirement,
@@ -40,6 +41,7 @@ type Causation = Readonly<{ causationId: string }>;
 
 export type ProjectAction =
   | (Causation & Readonly<{ type: 'rename-project'; name: string }>)
+  | (Causation & Readonly<{ type: 'tidy-diagram'; layout: DiagramLayout }>)
   | (Causation & Readonly<{ type: 'add-system'; system: System }>)
   | (Causation &
       Readonly<{
