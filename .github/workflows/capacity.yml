@@ -24,7 +24,7 @@ jobs:
         uses: kellen-miller/ci/.github/actions/changed-paths@9123b953c185a9f2550d88ed89e86dd37d482249
         with:
           filters: |
-            {"capacity": ["src/**", "static/**", "tests/**", "scripts/**", "*.js", "*.mjs", "*.cjs", "*.ts", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc", ".nvmrc", ".github/workflows/**", ".github/actions/**"]}
+            {"capacity": ["src/**", "static/**", "tests/**", "scripts/**", "*.js", "*.mjs", "*.cjs", "*.ts", "tsconfig*.json", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc", ".nvmrc", ".github/workflows/**", ".github/actions/**"]}
 
   smoke:
     needs: changes
