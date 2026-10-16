@@ -11,6 +11,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: kellen-miller/ci/.github/workflows/changed-paths.yaml@f01aacda5b78c7b67d1dc840bd0432be852a69a4
+    with:
+      filters: |
+        {"browsers": ["src/**", "static/**", "tests/**", "scripts/**", "*.js", "*.mjs", "*.cjs", "*.ts", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc", ".nvmrc", ".github/workflows/**", ".github/actions/**"]}
+
   checks:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -40,7 +46,10 @@ jobs:
           pnpm gate:evidence
 
   browsers:
-    needs: checks
+    needs: [changes, checks]
+    if: >-
+      ${{ !cancelled() && needs.checks.result == 'success' &&
+          (needs.changes.result != 'success' || fromJSON(needs.changes.outputs.changes).browsers) }}
     runs-on: ubuntu-24.04
     # Cold browser dependencies and the full suite need separate time budgets.
     timeout-minutes: 35
@@ -94,13 +103,20 @@ jobs:
 
   verify:
     if: always()
-    needs: [checks, browsers]
+    needs: [changes, checks, browsers]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
       - name: Require all validation jobs
         env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          BROWSERS_REQUIRED: ${{ needs.changes.result != 'success' || fromJSON(needs.changes.outputs.changes).browsers }}
           CHECKS_RESULT: ${{ needs.checks.result }}
           BROWSERS_RESULT: ${{ needs.browsers.result }}
         run: |
-          [[ "$CHECKS_RESULT" == success && "$BROWSERS_RESULT" == success ]]
+          [[ "$CHANGES_RESULT" == success && "$CHECKS_RESULT" == success ]] || exit 1
+          if [[ "$BROWSERS_REQUIRED" == true ]]; then
+            [[ "$BROWSERS_RESULT" == success ]]
+          else
+            [[ "$BROWSERS_RESULT" == skipped ]]
+          fi

@@ -130,8 +130,13 @@ describe('MVP-HANDOFF-002 pinned CI acceptance', () => {
     );
     expect(workflow).toContain('browser: [chromium, firefox, webkit]');
     expect(workflow).toContain('browsers: ${{ matrix.browser }}');
-    expect(workflow).toContain('needs: checks');
-    expect(workflow).toContain('needs: [checks, browsers]');
+    expect(workflow).toContain('needs: [changes, checks]');
+    expect(workflow).toContain('needs: [changes, checks, browsers]');
+    expect(workflow).toContain('fromJSON(needs.changes.outputs.changes).browsers');
+    expect(workflow).toContain(
+      '[[ "$CHANGES_RESULT" == success && "$CHECKS_RESULT" == success ]] || exit 1'
+    );
+    expect(workflow).toContain('[[ "$BROWSERS_RESULT" == skipped ]]');
     expect(workflow).toContain('if: always()');
     expect(workflow).toContain('projects+=(--project=workspace)');
 
