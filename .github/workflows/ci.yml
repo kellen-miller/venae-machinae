@@ -11,6 +11,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changes: ${{ steps.paths.outputs.changes }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: paths
+        uses: kellen-miller/ci/.github/actions/changed-paths@75c70f9d5db7117810669e0af01fd2eafdc396c6
+        with:
+          filters: |
+            {"browsers": ["src/**", "static/**", "tests/**", "scripts/**", "*.js", "*.mjs", "*.cjs", "*.ts", "tsconfig*.json", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc", ".nvmrc", ".github/workflows/**", ".github/actions/**"]}
+
   checks:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -40,7 +55,10 @@ jobs:
           pnpm gate:evidence
 
   browsers:
-    needs: checks
+    needs: [changes, checks]
+    if: >-
+      ${{ !cancelled() && needs.checks.result == 'success' &&
+          (needs.changes.result != 'success' || fromJSON(needs.changes.outputs.changes).browsers) }}
     runs-on: ubuntu-24.04
     # Cold browser dependencies and the full suite need separate time budgets.
     timeout-minutes: 35
@@ -94,13 +112,20 @@ jobs:
 
   verify:
     if: always()
-    needs: [checks, browsers]
+    needs: [changes, checks, browsers]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
       - name: Require all validation jobs
         env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          BROWSERS_REQUIRED: ${{ needs.changes.result != 'success' || fromJSON(needs.changes.outputs.changes).browsers }}
           CHECKS_RESULT: ${{ needs.checks.result }}
           BROWSERS_RESULT: ${{ needs.browsers.result }}
         run: |
-          [[ "$CHECKS_RESULT" == success && "$BROWSERS_RESULT" == success ]]
+          [[ "$CHANGES_RESULT" == success && "$CHECKS_RESULT" == success ]] || exit 1
+          if [[ "$BROWSERS_REQUIRED" == true ]]; then
+            [[ "$BROWSERS_RESULT" == success ]]
+          else
+            [[ "$BROWSERS_RESULT" == skipped ]]
+          fi

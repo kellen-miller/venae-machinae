@@ -11,7 +11,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changes: ${{ steps.paths.outputs.changes }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: paths
+        uses: kellen-miller/ci/.github/actions/changed-paths@75c70f9d5db7117810669e0af01fd2eafdc396c6
+        with:
+          filters: |
+            {"capacity": ["src/**", "static/**", "tests/**", "scripts/**", "*.js", "*.mjs", "*.cjs", "*.ts", "tsconfig*.json", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc", ".nvmrc", ".github/workflows/**", ".github/actions/**"]}
+
   smoke:
+    needs: changes
+    if: >-
+      ${{ !cancelled() && (needs.changes.result != 'success' ||
+          fromJSON(needs.changes.outputs.changes).capacity) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
