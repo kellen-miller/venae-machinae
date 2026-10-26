@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "browsers (chromium)",
+    "browsers (firefox)",
+    "browsers (webkit)",
+    "checks",
+    "Renovate / Config validation",
+    "smoke",
+    "verify",
+    "GitHub Actions / Workflow validation",
+    "Code duplication (CPD)"
+  ]
+}
