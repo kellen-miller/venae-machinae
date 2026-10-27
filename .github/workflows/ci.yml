@@ -27,7 +27,7 @@ jobs:
             {"browsers": ["src/**", "static/**", "tests/**", "scripts/**", "*.js", "*.mjs", "*.cjs", "*.ts", "tsconfig*.json", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc", ".nvmrc", ".github/workflows/**", ".github/actions/**"]}
 
   checks:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Check out repository
@@ -59,7 +59,7 @@ jobs:
     if: >-
       ${{ !cancelled() && needs.checks.result == 'success' &&
           (needs.changes.result != 'success' || fromJSON(needs.changes.outputs.changes).browsers) }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     # Cold browser dependencies and the full suite need separate time budgets.
     timeout-minutes: 35
     strategy:
@@ -113,7 +113,7 @@ jobs:
   verify:
     if: always()
     needs: [changes, checks, browsers]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Require all validation jobs
