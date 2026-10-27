@@ -144,7 +144,9 @@ test('MVP-NFR-002/MVP-ARCH-008 exposes mobile review and same-origin lease block
   await expect(page.locator('[data-capability-reason="mobile-review"]')).toContainText(
     'Use a larger screen to edit.'
   );
-  await expect(page.getByRole('button', { name: 'Add part A', includeHidden: true })).toBeDisabled();
+  await expect(
+    page.getByRole('button', { name: 'Add part A', includeHidden: true })
+  ).toBeDisabled();
   await page.locator('[data-renderer-node="battery"] .node-shell').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('[data-primary-selection="battery"]')).toBeVisible();
