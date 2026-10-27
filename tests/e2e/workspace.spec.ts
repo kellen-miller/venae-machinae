@@ -85,7 +85,7 @@ test('MVP-UX-003 MVP-UX-004 keeps explicit modes and independent projection view
   page
 }) => {
   const modeToolbar = page.getByRole('toolbar', { name: 'Workspace modes' });
-  await modeToolbar.getByRole('button', { name: 'Pan mode' }).click();
+  await modeToolbar.getByRole('button', { name: 'Pan H' }).click();
   await expect(page.locator('[data-workspace-mode="pan"]')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.locator('[data-workspace-mode="select"]')).toBeVisible();
