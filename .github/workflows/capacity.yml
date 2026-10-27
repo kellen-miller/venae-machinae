@@ -31,7 +31,7 @@ jobs:
     if: >-
       ${{ !cancelled() && (needs.changes.result != 'success' ||
           fromJSON(needs.changes.outputs.changes).capacity) }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Check out repository
@@ -43,10 +43,13 @@ jobs:
       - name: Set up Node project
         uses: kellen-miller/ci/.github/actions/setup-node@d1c91763535a5866b55282018f301d921b22bcd5
 
+      - name: Use Ubuntu archive for browser dependencies
+        run: |
+          sudo find /etc/apt -type f \( -name '*.list' -o -name '*.sources' -o -name 'apt-mirrors.txt' \) \
+            -exec sed -i -E 's|https?://azure[.]archive[.]ubuntu[.]com/ubuntu|https://archive.ubuntu.com/ubuntu|g' {} +
+
       - name: Set up Playwright
-        uses: kellen-miller/ci/.github/actions/playwright-setup@d1c91763535a5866b55282018f301d921b22bcd5
-        with:
-          browsers: chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Smoke capacity harness
         run: pnpm gate:capacity -- --ci-smoke

@@ -125,11 +125,10 @@ describe('MVP-HANDOFF-002 pinned CI acceptance', () => {
     expect(workflow).toMatch(
       /uses: kellen-miller\/ci\/\.github\/actions\/setup-node@[a-f0-9]{40}\b/
     );
-    expect(workflow).toMatch(
-      /uses: kellen-miller\/ci\/\.github\/actions\/playwright-setup@[a-f0-9]{40}\b/
+    expect(workflow).toContain(
+      'run: pnpm exec playwright install --with-deps ${{ matrix.browser }}'
     );
     expect(workflow).toContain('browser: [chromium, firefox, webkit]');
-    expect(workflow).toContain('browsers: ${{ matrix.browser }}');
     expect(workflow).toContain('needs: [changes, checks]');
     expect(workflow).toContain('needs: [changes, checks, browsers]');
     expect(workflow).toContain('fromJSON(needs.changes.outputs.changes).browsers');

@@ -128,7 +128,7 @@ test('MVP-FLUID-001..005 builds coolant, oil, and fuel construction', async ({ p
     purpose: 'fuel delivery and return topology'
   });
 
-  await page.getByRole('button', { name: 'Add mode' }).click();
+  await page.getByRole('button', { name: 'Add part' }).click();
   await addPrimitive(page, 'Engine coolant', /^Add fluid endpoint/, 2);
   await addPrimitive(page, 'Engine coolant', /^Add fluid fitting/);
   await addPrimitive(page, 'Engine coolant', /^Add fluid pump/);

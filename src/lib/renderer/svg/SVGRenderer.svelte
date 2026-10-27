@@ -357,7 +357,7 @@
             data-target-port={mapped.target.port.id}
             role="button"
             tabindex="0"
-            aria-label={`${mapped.connection.label}, ${physical.kind}${physical.sizeLabel ? `, ${physical.sizeLabel}` : ''}`}
+            aria-label={`${mapped.connection.label}, ${isWire ? physical.kind : `${physical.sizeLabel ?? 'Size unknown'} ${physical.kind}`}`}
             onpointerenter={() => (hoveredConnectionId = mapped.connection.id)}
             onpointerleave={() => (hoveredConnectionId = null)}
             onclick={() =>

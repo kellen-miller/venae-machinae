@@ -27,7 +27,7 @@ jobs:
             {"browsers": ["src/**", "static/**", "tests/**", "scripts/**", "*.js", "*.mjs", "*.cjs", "*.ts", "tsconfig*.json", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc", ".nvmrc", ".github/workflows/**", ".github/actions/**"]}
 
   checks:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Check out repository
@@ -59,7 +59,7 @@ jobs:
     if: >-
       ${{ !cancelled() && needs.checks.result == 'success' &&
           (needs.changes.result != 'success' || fromJSON(needs.changes.outputs.changes).browsers) }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     # Cold browser dependencies and the full suite need separate time budgets.
     timeout-minutes: 35
     strategy:
@@ -77,13 +77,11 @@ jobs:
 
       - name: Use Ubuntu archive for browser dependencies
         run: |
-          sudo find /etc/apt -type f \( -name '*.list' -o -name '*.sources' \) \
-            -exec sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' {} +
+          sudo find /etc/apt -type f \( -name '*.list' -o -name '*.sources' -o -name 'apt-mirrors.txt' \) \
+            -exec sed -i -E 's|https?://azure[.]archive[.]ubuntu[.]com/ubuntu|https://archive.ubuntu.com/ubuntu|g' {} +
 
       - name: Set up Playwright
-        uses: kellen-miller/ci/.github/actions/playwright-setup@d1c91763535a5866b55282018f301d921b22bcd5
-        with:
-          browsers: ${{ matrix.browser }}
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
 
       - name: Build production application
         run: pnpm build
@@ -113,7 +111,7 @@ jobs:
   verify:
     if: always()
     needs: [changes, checks, browsers]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Require all validation jobs

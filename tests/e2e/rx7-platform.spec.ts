@@ -7,16 +7,16 @@ test('MVP-NFR-001 MVP-NFR-002 MVP-NFR-004 MVP-ACC-015 crosses desktop, tablet, a
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await openBundledRx7Example(page);
-  await expect(page.getByRole('button', { name: 'Add mode' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Add part' })).toBeEnabled();
   await page.getByRole('button', { name: 'Apply project edit' }).click();
   await expect(page.locator('[data-save-status="saved"]')).toBeVisible();
 
   await page.setViewportSize({ width: 1120, height: 900 });
-  await expect(page.getByRole('button', { name: 'Add mode' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Add part' })).toBeEnabled();
   const tabletRevision = Number(
     await page.locator('[data-project-revision]').getAttribute('data-project-revision')
   );
-  await page.getByRole('button', { name: 'Add mode' }).click();
+  await page.getByRole('button', { name: 'Add part' }).click();
   await page.getByRole('button', { name: /^Add electrical source/ }).click();
   expect(
     Number(await page.locator('[data-project-revision]').getAttribute('data-project-revision'))
@@ -45,9 +45,9 @@ test('MVP-NFR-001 MVP-NFR-002 MVP-NFR-004 MVP-ACC-015 crosses desktop, tablet, a
   await expect(mobileNotice).toBeVisible();
   await expect(page.locator(`[data-project-revision="${durableRevision}"]`)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Apply project edit' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Add mode' })).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Connect mode' })).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Route mode' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Add part' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Connect C' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Route R' })).toBeHidden();
   await page.getByRole('combobox', { name: 'Operating State' }).selectOption({
     label: 'Run Hot / Fan On'
   });
@@ -70,7 +70,7 @@ test('MVP-NFR-001 MVP-NFR-002 MVP-NFR-004 MVP-ACC-015 crosses desktop, tablet, a
 
   await page.setViewportSize({ width: 700, height: 900 });
   await expect(mobileNotice).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Add mode' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Add part' })).toBeEnabled();
 });
 
 test('MVP-NFR-003 explains missing authoring APIs while retaining review', async ({ page }) => {
