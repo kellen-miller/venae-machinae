@@ -43,6 +43,11 @@ jobs:
       - name: Set up Node project
         uses: kellen-miller/ci/.github/actions/setup-node@d1c91763535a5866b55282018f301d921b22bcd5
 
+      - name: Use Ubuntu archive for browser dependencies
+        run: |
+          sudo find /etc/apt -type f \( -name '*.list' -o -name '*.sources' -o -name 'apt-mirrors.txt' \) \
+            -exec sed -i -E 's|https?://azure[.]archive[.]ubuntu[.]com/ubuntu|https://archive.ubuntu.com/ubuntu|g' {} +
+
       - name: Set up Playwright
         uses: kellen-miller/ci/.github/actions/playwright-setup@d1c91763535a5866b55282018f301d921b22bcd5
         with:
