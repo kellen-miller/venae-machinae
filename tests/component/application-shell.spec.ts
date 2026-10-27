@@ -15,7 +15,9 @@ describe('application shell', () => {
       screen.getByRole('heading', { name: 'Your vehicle systems work stays in this browser.' })
     ).toBeVisible();
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Blank project' })).toBeEnabled();
+      expect(
+        screen.getByRole('button', { name: 'Blank project One empty immutable snapshot' })
+      ).toBeEnabled();
     });
     expect(screen.getByText('Server project data').nextElementSibling).toHaveTextContent('None');
   });
