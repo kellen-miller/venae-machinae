@@ -90,7 +90,7 @@
     </div>
     <button
       type="button"
-      aria-label={`Increase ${activeView === 'circuits-lines' ? 'Circuits & Lines' : activeView === 'harnesses-bundles' ? 'Harnesses & Bundles' : activeView.charAt(0).toUpperCase() + activeView.slice(1)} lens zoom`}
+      aria-label={`Increase ${activeView === 'circuits-lines' ? 'Circuits & Lines' : activeView === 'harnesses-bundles' ? 'Harnesses & Bundles' : activeView.charAt(0).toUpperCase() + activeView.slice(1)} lens zoom, ${viewport.zoom.toFixed(1)}×`}
       onclick={onincreasezoom}
     >
       {viewport.zoom.toFixed(1)}×

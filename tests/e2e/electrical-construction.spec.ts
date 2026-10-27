@@ -87,7 +87,7 @@ test('builds and revises a complete auxiliary-cooling electrical construction', 
   await page.getByRole('button', { name: 'Add electrical System' }).click();
   await expect(page.getByText(/add-system accepted at revision \d+/)).toBeVisible();
 
-  await page.getByRole('button', { name: 'Add mode' }).click();
+  await page.getByRole('button', { name: 'Add part' }).click();
   await addPrimitive(page, /^Add electrical source/);
   await addPrimitive(page, /^Add fuse/);
   await addPrimitive(page, /^Add connector/, 2);

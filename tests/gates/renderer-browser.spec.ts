@@ -158,7 +158,7 @@ test('MVP-GATE-001 fits the production renderer interface in browsers', async ({
   await targetButton.focus();
   await page.keyboard.press('Enter');
   const routeButton = authorLens.getByRole('button', {
-    name: 'Move route point 1 for Fuel feed. Use arrow keys.',
+    name: 'Route 1: 390, 210. Move route point 1 for Fuel feed. Use arrow keys.',
     exact: true
   });
   await routeButton.focus();

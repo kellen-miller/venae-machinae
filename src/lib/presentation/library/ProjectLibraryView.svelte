@@ -77,7 +77,7 @@
 
 <main class="library-shell" data-shell-state={state} data-library-state={state}>
   <header class="masthead">
-    <a class="wordmark" href={resolve('/')} aria-label="Venae Machinae Project Library">
+    <a class="wordmark" href={resolve('/')}>
       <span class="wordmark-mark" aria-hidden="true">VM</span>
       <span>
         <strong>Venae Machinae</strong>
@@ -178,12 +178,7 @@
       <h2 id="creation-heading">Open directly into the canvas</h2>
     </div>
     <div class="creation-grid">
-      <button
-        type="button"
-        aria-label={state === 'creating' ? 'Creating project' : 'Blank project'}
-        disabled={!ready}
-        onclick={onblank}
-      >
+      <button type="button" disabled={!ready} onclick={onblank}>
         <strong>{state === 'creating' ? 'Creating…' : 'Blank project'}</strong>
         <span>One empty immutable snapshot</span>
       </button>

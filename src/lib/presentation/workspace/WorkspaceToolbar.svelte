@@ -88,7 +88,7 @@
     {#each modes as candidate (candidate.id)}
       <button
         type="button"
-        aria-label={`${candidate.label} mode`}
+        aria-keyshortcuts={candidate.shortcut}
         aria-pressed={mode === candidate.id}
         disabled={!canAuthor && candidate.id !== 'select' && candidate.id !== 'pan'}
         onclick={() => onmode(candidate.id)}
@@ -196,10 +196,10 @@
     <button type="button" disabled={!canRedo} onclick={onredo} aria-label="Redo Project action"
       >↷</button
     >
-    <button type="button" onclick={onsearch} aria-label="Search project subjects">
+    <button type="button" onclick={onsearch} aria-label="Search project subjects /">
       Search <kbd>/</kbd>
     </button>
-    <button type="button" onclick={oncommand} aria-label="Open command palette">
+    <button type="button" onclick={oncommand} aria-keyshortcuts="Meta+k">
       Commands <kbd>⌘K</kbd>
     </button>
   </div>

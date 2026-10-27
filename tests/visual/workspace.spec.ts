@@ -216,7 +216,7 @@ test('records final M7 help, tablet authoring, mobile review, and server loss', 
   await page.getByRole('button', { name: 'Close help' }).click();
 
   await page.setViewportSize({ width: 1120, height: 900 });
-  await page.getByRole('button', { name: 'Add mode' }).click();
+  await page.getByRole('button', { name: 'Add part' }).click();
   await expect(page.getByRole('button', { name: /^Add electrical source/ })).toBeEnabled();
   await page.screenshot({
     path: 'evidence/frontend/M7-rx7-tablet-authoring.png',

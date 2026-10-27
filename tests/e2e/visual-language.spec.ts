@@ -136,7 +136,7 @@ test('MVP-NFR-002/MVP-ARCH-008 exposes mobile review and same-origin lease block
   await expect(secondPage.locator('[data-capability-reason="lease-held"]')).toContainText(
     'another window owns this Project’s authoring lease'
   );
-  await expect(secondPage.getByRole('button', { name: 'Add mode' })).toBeDisabled();
+  await expect(secondPage.getByRole('button', { name: 'Add part' })).toBeDisabled();
   await secondPage.close();
 
   await page.setViewportSize({ width: 699, height: 900 });
@@ -144,7 +144,7 @@ test('MVP-NFR-002/MVP-ARCH-008 exposes mobile review and same-origin lease block
   await expect(page.locator('[data-capability-reason="mobile-review"]')).toContainText(
     'Use a larger screen to edit.'
   );
-  await expect(page.getByRole('button', { name: 'Add mode', includeHidden: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Add part', includeHidden: true })).toBeDisabled();
   await page.locator('[data-renderer-node="battery"] .node-shell').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('[data-primary-selection="battery"]')).toBeVisible();

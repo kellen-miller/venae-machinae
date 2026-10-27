@@ -281,7 +281,7 @@
                       <button
                         type="button"
                         disabled={capability !== 'author'}
-                        aria-label={`Move route point ${index + 1} for ${connection.label}. Use arrow keys.`}
+                        aria-label={`Route ${index + 1}: ${point.position.x}, ${point.position.y}. Move route point ${index + 1} for ${connection.label}. Use arrow keys.`}
                         onkeydown={(event) => moveRoutePoint(event, connection, point)}
                         onclick={() =>
                           onintent({ type: 'select', target: 'route-point', id: point.id })}
