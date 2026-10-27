@@ -56,9 +56,9 @@ jobs:
 
   browsers:
     needs: [changes, checks]
-    if: >-
-      ${{ !cancelled() && needs.checks.result == 'success' &&
-          (needs.changes.result != 'success' || fromJSON(needs.changes.outputs.changes).browsers) }}
+    if: ${{ !cancelled() && needs.checks.result == 'success' }}
+    env:
+      BROWSERS_REQUIRED: ${{ needs.changes.result != 'success' || fromJSON(needs.changes.outputs.changes).browsers }}
     runs-on: ubuntu-latest
     # Cold browser dependencies and the full suite need separate time budgets.
     timeout-minutes: 35
@@ -67,26 +67,32 @@ jobs:
       matrix:
         browser: [chromium, firefox, webkit]
     steps:
-      - name: Check out repository
+      - if: ${{ env.BROWSERS_REQUIRED == 'true' }}
+        name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Set up Node project
+      - if: ${{ env.BROWSERS_REQUIRED == 'true' }}
+        name: Set up Node project
         uses: kellen-miller/ci/.github/actions/setup-node@d1c91763535a5866b55282018f301d921b22bcd5
 
-      - name: Use Ubuntu archive for browser dependencies
+      - if: ${{ env.BROWSERS_REQUIRED == 'true' }}
+        name: Use Ubuntu archive for browser dependencies
         run: |
           sudo find /etc/apt -type f \( -name '*.list' -o -name '*.sources' -o -name 'apt-mirrors.txt' \) \
             -exec sed -i -E 's|https?://azure[.]archive[.]ubuntu[.]com/ubuntu|https://archive.ubuntu.com/ubuntu|g' {} +
 
-      - name: Set up Playwright
+      - if: ${{ env.BROWSERS_REQUIRED == 'true' }}
+        name: Set up Playwright
         run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Build production application
+      - if: ${{ env.BROWSERS_REQUIRED == 'true' }}
+        name: Build production application
         run: pnpm build
 
-      - name: Test production browsers
+      - if: ${{ env.BROWSERS_REQUIRED == 'true' }}
+        name: Test production browsers
         env:
           PLAYWRIGHT_SKIP_BUILD: '1'
           BROWSER: ${{ matrix.browser }}
@@ -99,7 +105,7 @@ jobs:
           pnpm test:browser "${projects[@]}"
 
       - name: Upload browser reports
-        if: ${{ failure() && !cancelled() }}
+        if: ${{ env.BROWSERS_REQUIRED == 'true' && failure() && !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: playwright-${{ matrix.browser }}
@@ -117,13 +123,8 @@ jobs:
       - name: Require all validation jobs
         env:
           CHANGES_RESULT: ${{ needs.changes.result }}
-          BROWSERS_REQUIRED: ${{ needs.changes.result != 'success' || fromJSON(needs.changes.outputs.changes).browsers }}
           CHECKS_RESULT: ${{ needs.checks.result }}
           BROWSERS_RESULT: ${{ needs.browsers.result }}
         run: |
           [[ "$CHANGES_RESULT" == success && "$CHECKS_RESULT" == success ]] || exit 1
-          if [[ "$BROWSERS_REQUIRED" == true ]]; then
-            [[ "$BROWSERS_RESULT" == success ]]
-          else
-            [[ "$BROWSERS_RESULT" == skipped ]]
-          fi
+          [[ "$BROWSERS_RESULT" == success ]]
