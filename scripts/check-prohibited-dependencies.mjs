@@ -26,7 +26,10 @@ if (
 }
 
 for (const [name, version] of Object.entries(selected)) {
-  if (typeof version !== 'string' || !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version)) {
+  if (
+    typeof version !== 'string' ||
+    !/^(?:npm:(?:@[^/]+\/)?[^@]+@)?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version)
+  ) {
     throw new Error(`${name} is not pinned to an exact version: ${version}`);
   }
 }
