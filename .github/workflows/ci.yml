@@ -1,4 +1,4 @@
-name: CI
+name: Fluid editor
 
 on:
   pull_request:
@@ -11,7 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  changes:
+  editor-paths:
+    name: Editor changed paths
     runs-on: ubuntu-latest
     outputs:
       changes: ${{ steps.paths.outputs.changes }}
@@ -26,7 +27,8 @@ jobs:
           filters: |
             {"browsers": ["src/**", "static/**", "tests/**", "scripts/**", "*.js", "*.mjs", "*.cjs", "*.ts", "tsconfig*.json", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc", ".nvmrc", ".github/workflows/**", ".github/actions/**"]}
 
-  checks:
+  verify-editor:
+    name: Build and package verification
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -54,11 +56,12 @@ jobs:
           pnpm bundle:check
           pnpm gate:evidence
 
-  browsers:
-    needs: [changes, checks]
-    if: ${{ !cancelled() && needs.checks.result == 'success' }}
+  browser-tests:
+    name: Browser end-to-end tests (${{ matrix.browser }})
+    needs: [editor-paths, verify-editor]
+    if: ${{ !cancelled() && needs.verify-editor.result == 'success' }}
     env:
-      BROWSERS_REQUIRED: ${{ needs.changes.result != 'success' || fromJSON(needs.changes.outputs.changes).browsers }}
+      BROWSERS_REQUIRED: ${{ needs.editor-paths.result != 'success' || fromJSON(needs.editor-paths.outputs.changes).browsers }}
     runs-on: ubuntu-latest
     # Cold browser dependencies and the full suite need separate time budgets.
     timeout-minutes: 35
@@ -114,17 +117,18 @@ jobs:
             test-results/
           retention-days: 7
 
-  verify:
+  required-verification:
+    name: Merge / Required verification
     if: always()
-    needs: [changes, checks, browsers]
+    needs: [editor-paths, verify-editor, browser-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Require all validation jobs
         env:
-          CHANGES_RESULT: ${{ needs.changes.result }}
-          CHECKS_RESULT: ${{ needs.checks.result }}
-          BROWSERS_RESULT: ${{ needs.browsers.result }}
+          CHANGES_RESULT: ${{ needs.editor-paths.result }}
+          CHECKS_RESULT: ${{ needs.verify-editor.result }}
+          BROWSERS_RESULT: ${{ needs.browser-tests.result }}
         run: |
           [[ "$CHANGES_RESULT" == success && "$CHECKS_RESULT" == success ]] || exit 1
           [[ "$BROWSERS_RESULT" == success ]]

@@ -1,13 +1,13 @@
 {
   "checks": [
-    "browsers (chromium)",
-    "browsers (firefox)",
-    "browsers (webkit)",
-    "checks",
-    "Renovate / Config validation",
-    "smoke",
-    "verify",
-    "GitHub Actions / Workflow validation",
-    "Code duplication (CPD)"
+    "Browser end-to-end tests (chromium)",
+    "Browser end-to-end tests (firefox)",
+    "Browser end-to-end tests (webkit)",
+    "Build and package verification",
+    "renovate.json / Config validation",
+    "Smoke tests",
+    "Merge / Required verification",
+    ".github/workflows / Workflow validation",
+    "JSCPD scan"
   ]
 }

@@ -129,14 +129,16 @@ describe('MVP-HANDOFF-002 pinned CI acceptance', () => {
       'run: pnpm exec playwright install --with-deps ${{ matrix.browser }}'
     );
     expect(workflow).toContain('browser: [chromium, firefox, webkit]');
-    expect(workflow).toContain('needs: [changes, checks]');
-    expect(workflow).toContain('needs: [changes, checks, browsers]');
-    expect(workflow).toContain('fromJSON(needs.changes.outputs.changes).browsers');
+    expect(workflow).toContain('needs: [editor-paths, verify-editor]');
+    expect(workflow).toContain('needs: [editor-paths, verify-editor, browser-tests]');
+    expect(workflow).toContain('fromJSON(needs.editor-paths.outputs.changes).browsers');
     expect(workflow).toContain(
       '[[ "$CHANGES_RESULT" == success && "$CHECKS_RESULT" == success ]] || exit 1'
     );
     expect(workflow).toContain('[[ "$BROWSERS_RESULT" == success ]]');
-    expect(workflow).toContain("if: ${{ !cancelled() && needs.checks.result == 'success' }}");
+    expect(workflow).toContain(
+      "if: ${{ !cancelled() && needs.verify-editor.result == 'success' }}"
+    );
     expect(workflow).toContain("if: ${{ env.BROWSERS_REQUIRED == 'true' }}");
     expect(workflow).not.toContain('[[ "$BROWSERS_RESULT" == skipped ]]');
     expect(workflow).toContain('if: always()');
