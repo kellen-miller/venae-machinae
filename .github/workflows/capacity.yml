@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   capacity-paths:
-    name: Capacity harness / Changed paths
+    name: Capacity changed paths
     runs-on: ubuntu-latest
     outputs:
       changes: ${{ steps.paths.outputs.changes }}
@@ -28,7 +28,7 @@ jobs:
             {"capacity": ["src/**", "static/**", "tests/**", "scripts/**", "*.js", "*.mjs", "*.cjs", "*.ts", "tsconfig*.json", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc", ".nvmrc", ".github/workflows/**", ".github/actions/**"]}
 
   smoke-tests:
-    name: Capacity harness / Smoke tests
+    name: Smoke tests
     needs: capacity-paths
     if: >-
       ${{ !cancelled() && (needs.capacity-paths.result != 'success' ||
