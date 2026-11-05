@@ -8,6 +8,6 @@
     "Capacity harness / Smoke tests",
     "Merge / Required verification",
     "GitHub Actions / Workflow validation",
-    "Code duplication / Source analysis"
+    "Code duplication / JSCPD scan"
   ]
 }
