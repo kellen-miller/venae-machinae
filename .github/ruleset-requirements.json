@@ -1,13 +1,13 @@
 {
   "checks": [
-    "browsers (chromium)",
-    "browsers (firefox)",
-    "browsers (webkit)",
-    "checks",
+    "Fluid editor / Browser end-to-end tests (chromium)",
+    "Fluid editor / Browser end-to-end tests (firefox)",
+    "Fluid editor / Browser end-to-end tests (webkit)",
+    "Fluid editor / Build and package verification",
     "Renovate / Config validation",
-    "smoke",
-    "verify",
+    "Capacity harness / Smoke tests",
+    "Merge / Required verification",
     "GitHub Actions / Workflow validation",
-    "Code duplication (CPD)"
+    "Code duplication / Source analysis"
   ]
 }

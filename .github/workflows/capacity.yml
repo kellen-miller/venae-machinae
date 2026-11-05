@@ -1,4 +1,4 @@
-name: Capacity harness smoke
+name: Capacity harness
 
 on:
   pull_request:
@@ -7,11 +7,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: Capacity harness smoke-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  changes:
+  capacity-paths:
+    name: Capacity harness / Changed paths
     runs-on: ubuntu-latest
     outputs:
       changes: ${{ steps.paths.outputs.changes }}
@@ -26,11 +27,12 @@ jobs:
           filters: |
             {"capacity": ["src/**", "static/**", "tests/**", "scripts/**", "*.js", "*.mjs", "*.cjs", "*.ts", "tsconfig*.json", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", ".npmrc", ".nvmrc", ".github/workflows/**", ".github/actions/**"]}
 
-  smoke:
-    needs: changes
+  smoke-tests:
+    name: Capacity harness / Smoke tests
+    needs: capacity-paths
     if: >-
-      ${{ !cancelled() && (needs.changes.result != 'success' ||
-          fromJSON(needs.changes.outputs.changes).capacity) }}
+      ${{ !cancelled() && (needs.capacity-paths.result != 'success' ||
+          fromJSON(needs.capacity-paths.outputs.changes).capacity) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
