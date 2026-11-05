@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   delete-pr-artifacts:
-    name: GitHub Actions
+    name: Pull request artifacts
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'pull_request'
     uses: kellen-miller/ci/.github/workflows/pr-artifact-cleanup.yaml@c188397b9147dbf21030cf2f3e4fc41bff37358b
     with:

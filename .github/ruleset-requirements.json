@@ -4,10 +4,10 @@
     "Browser end-to-end tests (firefox)",
     "Browser end-to-end tests (webkit)",
     "Build and package verification",
-    "Renovate / Config validation",
+    "renovate.json / Config validation",
     "Smoke tests",
     "Merge / Required verification",
-    "GitHub Actions / Workflow validation",
+    ".github/workflows / Workflow validation",
     "JSCPD scan"
   ]
 }
