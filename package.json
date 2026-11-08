@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@12.16.1",
+  "packageManager": "pnpm@12.18.0",
   "engines": {
     "node": "26.13.0",
-    "pnpm": "12.16.1"
+    "pnpm": "12.18.0"
   },
   "scripts": {
     "dev": "vite dev --host localhost --port 4173 --strictPort",
@@ -68,19 +68,19 @@
     "axe-core": "4.14.0",
     "eslint": "10.14.0",
     "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-svelte": "3.23.1",
+    "eslint-plugin-svelte": "3.24.0",
     "fake-indexeddb": "6.2.7",
     "fast-check": "4.10.2",
-    "globals": "17.13.0",
+    "globals": "17.14.0",
     "jsdom": "30.1.3",
     "prettier": "3.9.10",
     "prettier-plugin-svelte": "4.1.1",
     "svelte": "5.57.3",
-    "svelte-check": "4.7.7",
+    "svelte-check": "4.7.8",
     "typescript": "npm:@typescript/typescript6@6.0.2",
     "typescript-eslint": "8.72.1",
-    "vite": "8.3.5",
-    "vitest": "5.0.5"
+    "vite": "8.3.6",
+    "vitest": "5.1.0"
   },
   "imports": {
     "#lib/*": "./src/lib/*"
